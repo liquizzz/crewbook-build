@@ -4,13 +4,13 @@
 # Runs once the Lead sets the repo variable during setup, e.g.
 #   gh variable set CODEQL_LANGUAGES --body "javascript-typescript"
 # Free on public repos; on private repos it needs GitHub Code Security, so it is skipped there.
+# Runs on main (each release) and once a week, to save minutes.
+# Skipped when the repo variable CI_MODE is local (scripts/ci-mode.mjs): a skipped job uses no Actions minutes.
 name: codeql
 
 on:
   push:
-    branches: [dev, main]
-  pull_request:
-    branches: [dev]
+    branches: [main]
   schedule:
     - cron: "17 3 * * 1"
   workflow_dispatch:
@@ -22,7 +22,7 @@ permissions:
 
 jobs:
   analyze:
-    if: ${{ !github.event.repository.private && vars.CODEQL_LANGUAGES != '' }}
+    if: ${{ !github.event.repository.private && vars.CODEQL_LANGUAGES != '' && vars.CI_MODE != 'local' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

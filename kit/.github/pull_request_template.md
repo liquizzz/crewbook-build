@@ -13,6 +13,7 @@ Closes #
 
 ## Checked (tests per level: rule "Change level" in `CLAUDE.md`)
 - [ ] Build and lint pass
+- [ ] CI on this machine (local mode): `ci-local` PASS line pasted here
 - [ ] A unit test for the change (L1+)
 - [ ] Module tests and the main scenario run locally (L2+)
 - [ ] Integration tests, edge cases and `security-review` (L3)

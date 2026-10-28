@@ -3,7 +3,7 @@
 // Crewbook by Hai Nguyen (github.com/liquizzz/crewbook-build)
 // Tests init.mjs (with flags and with answers to its questions) and scripts/set-level.mjs on temporary folders.
 // Run:  node kit/init.test.mjs      (needs git, Docker and Docker Compose, like init itself; never touches GitHub)
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -52,8 +52,17 @@ try {
   check("see it first: screen sketches at G1-G2, one solution design at G3", read(a, "CLAUDE.md").includes("See it first, then build it") && read(a, "START-HERE.md").includes("docs/product/screens/") && read(a, "START-HERE.md").includes("design/look-and-feel.html") && read(a, ".claude", "commands", "next.md").includes("Two ways to start") && read(a, ".claude", "commands", "next.md").includes("docs/tech/solution-design.md") && fs.existsSync(path.join(a, "docs", "templates", "solution-design.md")) && fs.existsSync(path.join(a, "docs", "product", "screens")));
   check("setup: no stack question, opens gate issues and team folders", !read(a, ".claude", "commands", "setup.md").includes("stack in mind") && read(a, ".claude", "commands", "setup.md").includes("label") && read(a, ".claude", "commands", "setup.md").includes("new-role-worktree.mjs po"));
   check("reports: on /progress report only, no daily brief", read(a, ".claude", "commands", "progress.md").includes("docs/reports/<YYYY-MM-DD>.md") && !/morning brief|end-of-day/i.test(read(a, ".claude", "roles", "po.md") + read(a, ".claude", "roles", "lead.md") + read(a, "CLAUDE.md") + read(a, "START-HERE.md")));
+  // A repo that is not public runs CI on this machine: run.mjs builds the tag here; in github mode it pulls the image.
+  check("ci: local by default without a public repo", JSON.parse(read(a, ".claude", "project.json")).ci === "local" && node([path.join("scripts", "ci-mode.mjs")], { cwd: a }).includes("ci: local"));
+  const runLocal = node([path.join("scripts", "run.mjs"), "v0.1.0", "--dry-run"], { cwd: a });
+  const projectFile = path.join(a, ".claude", "project.json");
+  const projectText = fs.readFileSync(projectFile, "utf8");
+  fs.writeFileSync(projectFile, JSON.stringify({ ...JSON.parse(projectText), ci: "github" }, null, 2) + "\n");
   const runDry = node([path.join("scripts", "run.mjs"), "v0.1.0", "--dry-run"], { cwd: a });
+  fs.writeFileSync(projectFile, projectText);
   check("run.mjs: one command pulls, waits for the healthcheck and opens the app", runDry.includes("docker compose pull app   (IMAGE_TAG=v0.1.0)") && runDry.includes("--wait") && runDry.includes("http://localhost:3000"));
+  check("run.mjs: with CI on this machine it builds the tag here", runLocal.includes("build app from v0.1.0 in a temporary worktree") && !runLocal.includes("docker compose pull app"));
+  check("workflows: every job skips when CI_MODE is local; CI only on PRs, no dev image", ["ci.yml", "codeql.yml", "docs-check.yml", "image-app.yml"].every((f) => read(a, ".github", "workflows", f).includes("vars.CI_MODE != 'local'")) && !read(a, ".github", "workflows", "ci.yml").includes("branches: [dev]") && read(a, ".github", "workflows", "image-app.yml").includes("branches: [staging]"));
   check("docker: healthcheck on the app, START-HERE runs run.mjs", read(a, "docker-compose.yml").includes("healthcheck:") && read(a, "START-HERE.md").includes("node scripts/run.mjs v0.1.0") && !read(a, "START-HERE.md").includes("docker login"));
   check("G3: small image and a working healthcheck", read(a, ".claude", "commands", "next.md").includes("Keep the image small") && read(a, ".claude", "commands", "release.md").includes("node scripts/run.mjs staging"));
   const plug = node([path.join("scripts", "plugins.mjs"), "--dry-run"], { cwd: a });
@@ -101,7 +110,7 @@ try {
   check("PO: pictures the project, requirements with the SRS's FRs, acceptance on staging, handover", ["**Picture the project (G1 and G2, one approval):**", "**The requirements (G2):**", "**Acceptance on `staging`**", "**Handover:**"].every((t) => read(a, ".claude", "roles", "po.md").includes(t)));
   check("Lead: the owner's contact from G3, every change, release with no new tests", ["one contact", "**Changes**", "**Release (G6), no new tests:**"].every((t) => read(a, ".claude", "roles", "lead.md").includes(t)));
   check("Lite: Dev1 does the Test work; data changes have update and rollback scripts", read(a, ".claude", "roles", "dev.md").includes("you also do the Test work") && read(a, "CLAUDE.md").includes("**Data changes.**"));
-  check("auto-merge: every level after review by level", read(a, "CLAUDE.md").includes("L3 `code-review` and `security-review`) and green CI without asking") && !read(a, "CLAUDE.md").includes("L3 PRs, and every PR while auto-merge is off, wait"));
+  check("auto-merge: every level after review by level", read(a, "CLAUDE.md").includes("L3 `code-review` and `security-review`) and green CI (rule \"Where CI runs\") without asking") && !read(a, "CLAUDE.md").includes("L3 PRs, and every PR while auto-merge is off, wait"));
   check("templates: change register and handover; handover folder", fs.existsSync(path.join(a, "docs", "templates", "changes.md")) && fs.existsSync(path.join(a, "docs", "templates", "handover.md")) && fs.existsSync(path.join(a, "docs", "product", "handover")));
   check("release: regression and PO acceptance on staging, handover at G5 and G6", read(a, ".claude", "commands", "release.md").includes("`Accept v<X.Y.Z> on staging.`") && read(a, ".claude", "commands", "gate.md").includes("docs/product/handover/vX.Y.Z.md"));
   check("hand-off rule reads the setting", read(a, "CLAUDE.md").includes("crew-settings.mjs handoff"));
@@ -123,6 +132,13 @@ try {
   check("new worktree: a git-ignored .env is carried too", read(wt(a, "dev1"), ".env.local").includes("STACK_KEY=from-dot-env") && git(a, "status", "--porcelain") === "");
   node([path.join("scripts", "new-role-worktree.mjs"), "dev4"], { cwd: wt(a, "lead") });
   check("several Devs: dev4 gets its own worktree, port and rules", read(wt(a, "dev4"), ".env.local").includes("PORT=5204") && read(wt(a, "dev4"), ".claude", "role").trim() === "dev4" && read(a, "CLAUDE.md").includes("**Several Devs**") && read(a, ".claude", "commands", "build.md").includes("up to four Devs") && read(a, ".github", "pull_request_template.md").includes("Self-review"));
+  // ci-local: the default steps pass on dev (no app/ yet); a failing step on a branch makes it FAIL with exit 1.
+  const ciPass = spawnSync("node", [path.join("scripts", "ci-local.mjs"), "dev", "--no-fetch"], { cwd: wt(a, "lead"), encoding: "utf8" });
+  fs.writeFileSync(path.join(wt(a, "dev4"), "scripts", "ci-steps.json"), JSON.stringify({ steps: [{ name: "Unit tests", run: "node -e \"process.exit(3)\"" }] }));
+  git(wt(a, "dev4"), "add", "scripts/ci-steps.json");
+  git(wt(a, "dev4"), "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "test: failing step");
+  const ciFail = spawnSync("node", [path.join("scripts", "ci-local.mjs"), "role/dev4", "--no-fetch"], { cwd: wt(a, "lead"), encoding: "utf8" });
+  check("ci-local: PASS on dev, FAIL with exit 1 on a failing step", ciPass.status === 0 && ciPass.stdout.includes("ci-local dev") && ciPass.stdout.includes(": PASS") && ciFail.status === 1 && ciFail.stdout.includes("FAIL Unit tests") && git(a, "worktree", "list").split("\n").length === git(wt(a, "lead"), "worktree", "list").split("\n").length);
   check("Full: Test opens after G3 to write test cases", read(a, ".claude", "roles", "test.md").includes("**Test cases first**") && read(a, ".claude", "roles", "lead.md").includes("`Write the test cases for v<X.Y.Z>.`") && read(a, ".claude", "commands", "build.md").includes("`Write the test cases for v<X.Y.Z>.`") && read(a, ".claude", "commands", "gate.md").includes("`docs/tech/test-cases/` covers every requirement"));
   let badName = false;
   try {

@@ -5,14 +5,19 @@
 //   node scripts/run.mjs            the latest release tag (or the dev image when there is none)
 //   node scripts/run.mjs v0.1.0     that release
 //   node scripts/run.mjs staging    the image CI built from staging (what the owner tries before a release)
-//   node scripts/run.mjs dev        the image CI built from dev (the work in progress)
+//   node scripts/run.mjs dev        the work in progress on dev, built on this machine
+// With CI on this machine ("ci": "local" in .claude/project.json, scripts/ci-mode.mjs) GitHub builds no image:
+// staging and every tag are built here too, from that branch or tag, in a throw-away worktree.
 //   node scripts/run.mjs --source   build what is checked out here instead of pulling an image
 //   node scripts/run.mjs --stop     stop it
 //   --dry-run                       print the steps without running Docker
 // It checks that Docker runs and port 3000 is free, logs in to ghcr.io with the gh CLI when the image is private,
 // pulls the image, starts the app, waits for its healthcheck and opens the browser. It never prints a token.
 import { execFileSync, spawnSync } from "node:child_process";
+import fs from "node:fs";
 import net from "node:net";
+import os from "node:os";
+import path from "node:path";
 import { mainCheckout, readProject } from "./project-level.mjs";
 
 const args = process.argv.slice(2);
@@ -74,8 +79,24 @@ if (busy && !ours && !dry) {
 step(busy && ours ? `port ${PORT}: the running app is replaced` : `port ${PORT} is free`);
 
 // 3. The image: pull it (logging in to ghcr.io with gh when the repo is private), or build it here.
+// dev is always built here; with CI on this machine, staging and tags too (GitHub builds no image then).
+const buildHere = !source && (tag === "dev" || project.ci === "local");
+const buildFrom = (ref) => {
+  if (dry) return step(`build app from ${ref} in a temporary worktree   (IMAGE_TAG=${ref})`);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "crewbook-run-"));
+  const work = path.join(dir, "src");
+  const commit = quiet("git", ["rev-parse", "--verify", "-q", `${ref}^{commit}`]) || quiet("git", ["rev-parse", "--verify", "-q", `origin/${ref}^{commit}`]);
+  if (!commit) stop(`There is no branch or tag ${ref}. Check the tags with  git tag`);
+  quiet("git", ["worktree", "add", "--detach", work, commit]);
+  const r = spawnSync("docker", ["compose", "-f", path.join(work, "docker-compose.yml"), "build", "app"], { cwd: work, stdio: "inherit", env: { ...process.env, IMAGE_TAG: ref } });
+  quiet("git", ["worktree", "remove", "--force", work]);
+  fs.rmSync(dir, { recursive: true, force: true });
+  return r.status === 0;
+};
 if (source) {
   if (compose(["build", "app"], tag) === false) stop("The build failed. Send the lines above to the Lead.");
+} else if (buildHere) {
+  if (buildFrom(tag) === false) stop("The build failed. Send the lines above to the Lead.");
 } else if (compose(["pull", "app"], tag) === false) {
   const token = owner ? quiet("gh", ["auth", "token"]) : null;
   const login = token && quiet("docker", ["login", "ghcr.io", "-u", owner, "--password-stdin"], { input: token, stdio: ["pipe", "pipe", "pipe"] });
@@ -85,7 +106,7 @@ if (source) {
 - A version that does not exist: check the tags with  git tag  (or use "dev").`);
   }
 }
-step(source ? "image built from this folder" : `image ${tag} downloaded`);
+step(source ? "image built from this folder" : buildHere ? `image ${tag} built here` : `image ${tag} downloaded`);
 
 // 4. Start and wait for the healthcheck.
 if (compose(["up", "-d", "--no-build", "--wait", "--wait-timeout", "120", "app"], tag) === false) {

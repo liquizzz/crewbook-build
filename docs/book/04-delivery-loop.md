@@ -107,12 +107,28 @@ Each task is checked once more at the end of the milestone, whatever its level, 
 | Type | When | Tests | Merge |
 |---|---|---|---|
 | `/build try [#n]` | You want to see a task working, try it, change direction | None; it only has to run | No. Committed and pushed to `role/<role>`; the issue stays In progress |
-| `/build done [#n]` | The task is finished | Exactly the task's confirmed level (section 6) | A PR the Lead merges; the Lead closes the issue when CI on `dev` is green |
+| `/build done [#n]` | The task is finished | Exactly the task's confirmed level (section 6) | A PR the Lead merges after its review and green CI (section 8); the Lead then closes the issue |
 | `/release demo` | You want to show the milestone to someone | Regression and the PO's acceptance on `staging`, your acceptance scenarios | No tag; the demo runs the `:staging` image |
 | `/release` | You publish a version | None more: the accepted `staging` commit is released | `main`, a tag and a versioned image ([chapter 5](05-releases.md)) |
 
 Only `/build done` puts code into `dev`, so `dev` always holds tested work. The board follows each issue: Ready, In progress, In review (back to In progress when the Lead asks for changes), Testing (Full, only with `/auto testing on`), Done. Anything waiting for the Lead's review or your merge is in In review, docs PRs included.
 
 > **Token tip:** most tasks are L0-L1. Keeping them at "build + changed spot" is where most testing tokens are saved; do not ask for a full regression after each merge.
+
+## 8. Where CI runs
+
+**What it does:** runs the build, lint and tests of every PR somewhere, without spending more than you have. A GitHub account's free Actions minutes (2,000 a month) are shared by all its private repos, and a project with a real stack uses them up in days.
+
+| Mode | When | What runs where |
+|---|---|---|
+| `github` | Public repo (free minutes), or you pay for minutes | GitHub Actions: CI on each PR (PRs that only change documents are skipped), the image on `staging` and on each tag, CodeQL on `main` and once a week |
+| `local` | Private repo (the default) | Your machine: `node scripts/ci-local.mjs <branch>` runs the steps of `scripts/ci-steps.json` on the branch merged with `dev`. The Dev runs it before the PR, the Lead again right before the merge, and `node scripts/run.mjs` builds the images here. The workflows stay in the repo and skip their jobs |
+
+**Ask the Lead:**
+> Run CI on GitHub from now on. (or: on my machine)
+
+**Claude does:** runs `node scripts/ci-mode.mjs github` (or `local`), which sets `"ci"` in `.claude/project.json` and the repo variable `CI_MODE`, and commits. At G3 it writes the same steps in `.github/workflows/ci.yml` and `scripts/ci-steps.json`, so you can switch at any time.
+
+**You check:** in local mode your machine builds and tests more (Docker must be running for the image and for tests that use containers). CodeQL does not run on a private repo either way; L3 work keeps its `security-review`.
 
 Next: [Chapter 5: Releases](05-releases.md).

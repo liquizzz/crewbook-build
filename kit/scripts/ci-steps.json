@@ -1,0 +1,6 @@
+{
+  "about": "Steps of scripts/ci-local.mjs (CI on this machine). The Lead fits them to the stack at G3, the same as .github/workflows/ci.yml. \"if\": a path that must exist for the step to run.",
+  "steps": [
+    { "name": "Build the app image", "if": "app", "run": "docker build -f docker/app.Dockerfile -t app-ci ." }
+  ]
+}

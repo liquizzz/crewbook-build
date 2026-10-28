@@ -1,17 +1,18 @@
 # SPDX-License-Identifier: MIT
 # Crewbook by Hai Nguyen (github.com/liquizzz/crewbook-build)
 # image-app: builds the product image only when the app or its Docker file changes, plus every release tag.
-#   push to dev      ->  :dev, :dev-<sha>
 #   push to staging  ->  :staging, :staging-<sha>   (regression and owner acceptance run on this)
 #   tag vX.Y.Z       ->  :vX.Y.Z, :latest           (what you deploy; roll back by running an older tag)
 #                        plus an SBOM (list of every library in the image) as a run artifact, and on public
 #                        repos a signed provenance attestation: check it with gh attestation verify oci://<image> -R <repo>
+# The work in progress on dev is built on the machine instead (node scripts/run.mjs dev), to save minutes.
 # Deploying the image to your own servers is up to you and is not part of this workflow.
+# Skipped when the repo variable CI_MODE is local (scripts/ci-mode.mjs): a skipped job uses no Actions minutes.
 name: image-app
 
 on:
   push:
-    branches: [dev, staging]
+    branches: [staging]
     paths:
       - "app/**"
       - "packages/**"
@@ -29,6 +30,7 @@ permissions:
 
 jobs:
   build:
+    if: ${{ vars.CI_MODE != 'local' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

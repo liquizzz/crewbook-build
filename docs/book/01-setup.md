@@ -45,7 +45,7 @@ node crewbook-build/kit/init.mjs
 
 **It does:** creates `main`, `dev` and `staging`, writes your language into `CLAUDE.md`, leaves out the design pipeline unless you asked for it, commits the kit, creates the Lead's worktree in `<projects>/<project>-wt/lead/` (setup creates the others), marks the setup as not done yet; if you chose a repo, creates it, pushes the branches and creates the labels and the kanban board (`scripts/setup-board.mjs`).
 
-**You check:** the report, then open `START-HERE.md` in the project. If init created a repo, open its Actions tab on GitHub: a new repo may show **Enable Actions on this repository**, and nothing runs until you click it.
+**You check:** the report, then open `START-HERE.md` in the project. If init created a public repo, open its Actions tab on GitHub (a private repo runs CI on your machine instead, see [chapter 4](04-delivery-loop.md)): a new repo may show **Enable Actions on this repository**, and nothing runs until you click it.
 
 For scripts or CI: `node crewbook-build/kit/init.mjs <folder> --name "<name>" --level lite --github none --yes` asks nothing.
 

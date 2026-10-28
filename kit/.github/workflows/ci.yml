@@ -1,13 +1,17 @@
 # SPDX-License-Identifier: MIT
 # Crewbook by Hai Nguyen (github.com/liquizzz/crewbook-build)
-# CI: lint, type check, unit tests and build on every PR and every push to dev.
+# CI: lint, type check, unit tests and build on every PR (a squash merge into dev adds nothing new to test,
+# and a PR that only changes documents is skipped).
+# Skipped when the repo variable CI_MODE is local (scripts/ci-mode.mjs): a skipped job uses no Actions minutes.
 # Until the Lead adds the stack's lint and test steps during setup, it checks that the app image builds.
 name: ci
 
 on:
   pull_request:
-  push:
-    branches: [dev]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -15,10 +19,12 @@ concurrency:
 
 jobs:
   build:
+    if: ${{ vars.CI_MODE != 'local' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Setup adds the stack's install, lint, type check, test and build steps here.
+      # The Lead adds the stack's install, lint, type check, test and build steps here at G3,
+      # and the same steps to scripts/ci-steps.json for CI on the machine.
       - name: Build the app image
         run: |
           if [ -d app ]; then docker build -f docker/app.Dockerfile -t app-ci .; else echo "No app/ folder yet: nothing to build."; fi

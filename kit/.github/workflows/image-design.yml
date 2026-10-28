@@ -4,6 +4,7 @@
 # A merge into dev that touches only app/ does not rebuild it, so the client's demo stays as it was.
 #   push to dev (design/ or tokens changed)  ->  :dev and :dev-<sha>
 #   tag design-vN (approved design)          ->  :design-vN   (pin the client demo to this tag)
+# Skipped when the repo variable CI_MODE is local (scripts/ci-mode.mjs): a skipped job uses no Actions minutes.
 name: image-design
 
 on:
@@ -22,6 +23,7 @@ permissions:
 
 jobs:
   build:
+    if: ${{ vars.CI_MODE != 'local' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

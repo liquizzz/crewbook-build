@@ -16,7 +16,7 @@ Done by `init`: the kit, branches `main`, `dev` and `staging`, GitHub repo {{rep
 
 **Open** the Lead: in Claude Code desktop, open a new session, choose the folder `{{lead}}`, name the session "{{name}} - Lead", and type `/setup`. Setup comes first: the Lead finishes it before anyone else works, opens the gate issues (one GitHub issue per gate, where its work is tracked) and milestone v0.1.0 (your first small release), then creates the PO's folder `{{po}}` and offers to open the PO's session for you, in the right folder with the right name (or you open it yourself and paste its prompt). Setup asks you nothing: your idea comes next, the stack at G3.
 
-**You do:** if the repo is new, open {{actions}} and click **Enable Actions on this repository** if GitHub shows it. Open the board once (GitHub → your profile → Projects), choose View → Layout → Board, and click **Save**.
+**You do:** if the repo is new and public (CI on GitHub), open {{actions}} and click **Enable Actions on this repository** if GitHub shows it. Open the board once (GitHub → your profile → Projects), choose View → Layout → Board, and click **Save**.
 
 ## 2. Picture the project: gates G1 and G2 ([ch. 3](https://github.com/liquizzz/crewbook-build/blob/main/docs/book/03-foundation.md)). Session: PO
 
@@ -61,6 +61,7 @@ It checks that Docker is running and port 3000 is free, downloads the release im
 | Where the project stands | `/progress` (any session) |
 | Send a hand-off prompt without switching | `/send` in the session that gave it |
 | What runs without you | `/auto` (any session): `/auto relay on|off` (sessions pass prompts), `/auto merge on|off` (the Lead merges PRs), `/auto testing on|off` (Test checks each task after its merge; off by default) |
+| Where CI runs | `node scripts/ci-mode.mjs`. A private repo runs CI on this machine (`node scripts/ci-local.mjs`), so it uses none of your GitHub Actions minutes; a public repo runs it on GitHub for free. `node scripts/ci-mode.mjs github` or `local` switches it |
 | Is a gate ready? | `/gate <G1-G6>` |
 | A secret (an API key, a password) | `node scripts/set-secret.mjs <NAME>` in `{{main}}`: paste the value when asked; it is not shown and never goes in the chat |
 | Restart after closing a session | Open a new session in the same folder; it knows its role and finds where it stopped |

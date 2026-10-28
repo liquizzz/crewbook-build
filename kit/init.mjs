@@ -261,7 +261,9 @@ fill(".claude/settings.json", (t) => {
 });
 // setup: false until the Lead's /setup is done; the session-start hook keeps other roles waiting until then.
 // kitVersion: the playbook commit the kit came from; update.mjs starts from it.
-writeProject(dest, { name, level, repo: repo || null, language, docsLanguage, design, humanize, setup: false, kitVersion: kitVersion(playbook) });
+// ci: where CI runs. A public repo has free Actions minutes; a private one (or none) runs CI on this machine.
+const ci = github === "public" ? "github" : "local";
+writeProject(dest, { name, level, repo: repo || null, language, docsLanguage, design, humanize, setup: false, ci, kitVersion: kitVersion(playbook) });
 renderStartHere(dest, { name, level, repo }, dest);
 created.push(".claude/project.json", "START-HERE.md");
 
@@ -359,7 +361,14 @@ if (repo) {
   } catch (e) {
     warnings.push(`Kanban board not created: ${String(e.stderr || e.message).trim().split("\n")[0]} Then run: node scripts/setup-board.mjs`);
   }
-  warnings.push(`Open https://github.com/${repo}/actions once: a new repo may show "Enable Actions on this repository", and CI and images do not run until you click it.`);
+  try {
+    run("gh", ["variable", "set", "CI_MODE", "--body", ci, "--repo", repo]);
+    created.push(`(CI_MODE=${ci})`);
+  } catch (e) {
+    warnings.push(`CI_MODE not set: ${String(e.stderr || e.message).trim().split("\n")[0]} Then run: node scripts/ci-mode.mjs ${ci}`);
+  }
+  if (ci === "github") warnings.push(`Open https://github.com/${repo}/actions once: a new repo may show "Enable Actions on this repository", and CI and images do not run until you click it.`);
+  else warnings.push(`CI runs on this machine (private repo, no Actions minutes used): node scripts/ci-local.mjs <branch>. To use GitHub Actions instead: node scripts/ci-mode.mjs github`);
 }
 
 // 2i. The Lead's worktree (it starts from the committed kit, so only in a fresh repo). /setup creates the others.

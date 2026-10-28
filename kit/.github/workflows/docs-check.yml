@@ -2,6 +2,7 @@
 # Crewbook by Hai Nguyen (github.com/liquizzz/crewbook-build)
 # docs-check: warns when a PR labelled type:* does not touch the SRS or the changelog.
 # It never fails the build; the Lead decides in review.
+# Skipped when the repo variable CI_MODE is local (scripts/ci-mode.mjs): a skipped job uses no Actions minutes.
 name: docs-check
 
 on:
@@ -10,7 +11,7 @@ on:
 
 jobs:
   check:
-    if: contains(join(github.event.pull_request.labels.*.name, ','), 'type:')
+    if: ${{ vars.CI_MODE != 'local' && contains(join(github.event.pull_request.labels.*.name, ','), 'type:') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

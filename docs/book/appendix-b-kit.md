@@ -24,6 +24,8 @@
 | `scripts/set-level.mjs` | Changes the level (lite, full) up or down: branches, worktrees, `CLAUDE.md`, `START-HERE.md`; deletes nothing |
 | `scripts/set-secret.mjs` | The owner sets one secret: hidden input, written to the git-ignored `.env.local` of every checkout; new worktrees copy it |
 | `scripts/project-level.mjs` | What each level needs; shared by `init.mjs` and `set-level.mjs` |
+| `scripts/ci-mode.mjs` | Shows or sets where CI runs (`github` or `local`): `"ci"` in `.claude/project.json` and the repo variable `CI_MODE`, which every workflow job checks; init picks `local` for a private repo |
+| `scripts/ci-local.mjs` | CI on this machine: the steps of `scripts/ci-steps.json` on a branch merged with `dev`, in a throw-away worktree; prints PASS or FAIL per step |
 | `scripts/new-role-worktree.mjs` | Creates a role's worktree, branch, role file and local port (`dev1` to `dev4`: ports 5201 to 5204) |
 | `scripts/setup-labels.mjs` | Creates the labels |
 | `scripts/setup-board.mjs` | Creates the kanban board: a GitHub Project linked to the repo, with columns Backlog · Approved · Ready · In progress · In review · Testing (Full, with `/auto testing on`) · Done and fields Role, Module, Level, Priority |

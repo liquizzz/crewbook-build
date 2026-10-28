@@ -53,7 +53,7 @@ It asks eight questions, each with a one-line hint. Press Enter to take the sugg
 
 Then it installs the kit, creates the branches and the Lead's worktree, creates and pushes the GitHub repo with its labels and kanban board, and writes `START-HERE.md`.
 
-Read the "Please check" lines at the end of its report. On a new repo, open its Actions tab on GitHub once: if it shows **Enable Actions on this repository**, click it, or CI and the Docker images never run.
+Read the "Please check" lines at the end of its report. A private repo runs CI on your machine (`node scripts/ci-local.mjs`), so it uses none of your GitHub Actions minutes; switch with `node scripts/ci-mode.mjs github`. On a new public repo, open its Actions tab on GitHub once: if it shows **Enable Actions on this repository**, click it, or CI and the Docker images never run.
 
 ## 3. Follow START-HERE.md
 
