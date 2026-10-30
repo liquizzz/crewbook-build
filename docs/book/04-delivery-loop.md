@@ -122,13 +122,13 @@ Only `/build done` puts code into `dev`, so `dev` always holds tested work. The 
 | Mode | When | What runs where |
 |---|---|---|
 | `github` | Public repo (free minutes), or you pay for minutes | GitHub Actions: CI on each PR (PRs that only change documents are skipped), the image on `staging` and on each tag, CodeQL on `main` and once a week |
-| `local` | Private repo (the default) | Your machine: `node scripts/ci-local.mjs <branch>` runs the steps of `scripts/ci-steps.json` on the branch merged with `dev`. The Dev runs it before the PR, the Lead again right before the merge, and `node scripts/run.mjs` builds the images here. The workflows stay in the repo and skip their jobs |
+| `local` | Private repo (the default) | Your machine: `node scripts/ci-local.mjs <branch>` runs the steps of `scripts/ci-steps.json` on the branch merged with `dev`. The Dev runs it before the PR, the Lead again right before the merge (reused at once when neither the branch nor `dev` has moved), and `node scripts/run.mjs` builds the images here. One run at a time; the others wait. The workflows stay in the repo and skip their jobs |
 
 **Ask the Lead:**
 > Run CI on GitHub from now on. (or: on my machine)
 
 **Claude does:** runs `node scripts/ci-mode.mjs github` (or `local`), which sets `"ci"` in `.claude/project.json` and the repo variable `CI_MODE`, and commits. At G3 it writes the same steps in `.github/workflows/ci.yml` and `scripts/ci-steps.json`, so you can switch at any time.
 
-**You check:** in local mode your machine builds and tests more (Docker must be running for the image and for tests that use containers). CodeQL does not run on a private repo either way; L3 work keeps its `security-review`.
+**You check:** `ci-local` prints the time of each step and the total. When a run takes more than about 5 minutes, ask the Lead `Make CI faster.`; it starts with the slowest step. In local mode your machine builds and tests more (Docker must be running for the image and for tests that use containers). CodeQL does not run on a private repo either way; L3 work keeps its `security-review`.
 
 Next: [Chapter 5: Releases](05-releases.md).

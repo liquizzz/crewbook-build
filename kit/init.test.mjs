@@ -139,6 +139,29 @@ try {
   git(wt(a, "dev4"), "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "test: failing step");
   const ciFail = spawnSync("node", [path.join("scripts", "ci-local.mjs"), "role/dev4", "--no-fetch"], { cwd: wt(a, "lead"), encoding: "utf8" });
   check("ci-local: PASS on dev, FAIL with exit 1 on a failing step", ciPass.status === 0 && ciPass.stdout.includes("ci-local dev") && ciPass.stdout.includes(": PASS") && ciFail.status === 1 && ciFail.stdout.includes("FAIL Unit tests") && git(a, "worktree", "list").split("\n").length === git(wt(a, "lead"), "worktree", "list").split("\n").length);
+  // ci-local in a small repo: a step runs only when the branch changed its paths, a PASS is reused for the same
+  // pair of commits, and a stale lock is cleared.
+  const cr = path.join(tmp, "ci-repo");
+  fs.mkdirSync(path.join(cr, "scripts"), { recursive: true });
+  fs.copyFileSync(path.join(kit, "scripts", "ci-local.mjs"), path.join(cr, "scripts", "ci-local.mjs"));
+  fs.writeFileSync(path.join(cr, "scripts", "ci-steps.json"), JSON.stringify({ steps: [{ name: "Bundle", changed: ["web/**"], run: "node -e \"process.exit(3)\"" }, { name: "Unit", changed: ["src/**"], run: "node -e \"0\"" }] }));
+  const cg = (...a) => git(cr, "-c", "user.name=t", "-c", "user.email=t@t", ...a);
+  cg("init", "-q", "-b", "dev");
+  cg("add", ".");
+  cg("commit", "-q", "-m", "steps");
+  cg("checkout", "-q", "-b", "feature");
+  fs.mkdirSync(path.join(cr, "src"));
+  fs.writeFileSync(path.join(cr, "src", "a.txt"), "a\n");
+  cg("add", ".");
+  cg("commit", "-q", "-m", "src change");
+  const lockFile = path.join(cr, ".git", "ci-local.lock");
+  fs.writeFileSync(lockFile, "1 old\n");
+  fs.utimesSync(lockFile, new Date(Date.now() - 2 * 3600 * 1000), new Date(Date.now() - 2 * 3600 * 1000));
+  const ciRun = () => spawnSync("node", [path.join("scripts", "ci-local.mjs"), "feature", "--no-fetch"], { cwd: cr, encoding: "utf8" });
+  const ciFirst = ciRun();
+  const ciSecond = ciRun();
+  check("ci-local: changed-only step skipped, total time, stale lock cleared", ciFirst.status === 0 && ciFirst.stdout.includes("SKIP (no change) Bundle") && ciFirst.stdout.includes("PASS Unit") && /: PASS in \d+ s/.test(ciFirst.stdout) && !fs.existsSync(lockFile));
+  check("ci-local: a PASS for the same branch and dev is reused", ciSecond.status === 0 && ciSecond.stdout.includes("(reused: passed") && !ciSecond.stdout.includes("- Unit"));
   check("Full: Test opens after G3 to write test cases", read(a, ".claude", "roles", "test.md").includes("**Test cases first**") && read(a, ".claude", "roles", "lead.md").includes("`Write the test cases for v<X.Y.Z>.`") && read(a, ".claude", "commands", "build.md").includes("`Write the test cases for v<X.Y.Z>.`") && read(a, ".claude", "commands", "gate.md").includes("`docs/tech/test-cases/` covers every requirement"));
   let badName = false;
   try {
