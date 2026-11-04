@@ -6,7 +6,7 @@
 |---|---|
 | Client | <anonymised: the client> |
 | Duration | <AI time · owner's time · outside waits> |
-| Team | <1 owner + AI role sessions: PO, Lead, Dev, Test, UI/UX, DevOps> |
+| Team | <1 owner + AI role sessions: Lead, Dev, Test, UI/UX, DevOps> |
 | Releases | <number of milestones, first and last version> |
 | Stack | <...> |
 

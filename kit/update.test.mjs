@@ -61,6 +61,7 @@ for (const h of git(playbook, "log", "--all", "--format=%H", "--", "kit/CLAUDE.m
   }
 }
 const oldRelay = pastFile("kit/commands/relay.md");
+const oldBuild = pastFile("kit/commands/build.md");
 
 try {
   check("kit history: an old command and an old rule are found", Boolean(oldRelay && oldRule));
@@ -78,10 +79,17 @@ try {
   delete project.kitVersion;
   write(lead, ".claude/project.json", JSON.stringify({ ...project, setup: true }, null, 2) + "\n");
   write(lead, ".claude/commands/relay.md", oldRelay || "");
-  fs.rmSync(path.join(lead, ".claude/commands/auto.md"));
+  fs.rmSync(path.join(lead, ".claude/commands/cb-auto.md"));
   write(lead, ".claude/roles/dev.md", read(lead, ".claude/roles/dev.md") + "\nA local note.\n");
   write(lead, ".github/workflows/ci.yml", read(lead, ".github/workflows/ci.yml") + "# project job\n");
   write(lead, "scripts/own.mjs", "// the project's own script\n");
+  // Commands from before the cb- prefix (one changed here), the project's own ci-local without ci-steps.json, a PO worktree.
+  fs.rmSync(path.join(lead, ".claude/commands/cb-build.md"));
+  write(lead, ".claude/commands/build.md", oldBuild || "");
+  write(lead, ".claude/commands/setup.md", "a setup this project changed\n");
+  write(lead, "scripts/ci-local.mjs", "// the project's own CI\n");
+  fs.rmSync(path.join(lead, "scripts/ci-steps.json"));
+  fs.mkdirSync(path.join(tmp, "old-shop-wt", "po"), { recursive: true });
   let claude = read(lead, "CLAUDE.md")
     .replace(/^- Stage: .*$/m, "- Stage: Delivery, milestone v0.2.0.")
     .replace("- <none>", "- Payment provider: needed before v0.3.0. Issue #9.")
@@ -99,17 +107,20 @@ try {
 
   // 3. A dry run writes nothing.
   const dry = update(lead, "--dry-run");
-  check("dry run: reports the plan", dry.ok && dry.out.includes("Dry run") && dry.out.includes(".claude/commands/auto.md"));
+  check("dry run: reports the plan", dry.ok && dry.out.includes("Dry run") && dry.out.includes(".claude/commands/cb-auto.md"));
   check("dry run: nothing written", git(lead, "status", "--porcelain") === "");
 
   // 4. The update
   const run = update(lead);
   check("update runs", run.ok);
-  check("missing kit file added", fs.existsSync(path.join(lead, ".claude/commands/auto.md")));
+  check("missing kit file added", fs.existsSync(path.join(lead, ".claude/commands/cb-auto.md")));
   check("old untouched kit file removed", !fs.existsSync(path.join(lead, ".claude/commands/relay.md")) && run.out.includes(".claude/commands/relay.md"));
   check("changed kit file replaced and reported", read(lead, ".claude/roles/dev.md") === read(kit, ".claude/roles/dev.md") && /had changes made in this project[\s\S]*\.claude\/roles\/dev\.md/.test(run.out));
   check("changed .github file kept and reported", read(lead, ".github/workflows/ci.yml").includes("# project job") && /Kept[\s\S]*\.github\/workflows\/ci\.yml/.test(run.out));
   check("the project's own script stays", fs.existsSync(path.join(lead, "scripts/own.mjs")));
+  check("old command names removed, cb- names added", fs.existsSync(path.join(lead, ".claude/commands/cb-build.md")) && !fs.existsSync(path.join(lead, ".claude/commands/build.md")) && !fs.existsSync(path.join(lead, ".claude/commands/setup.md")) && run.out.includes(".claude/commands/setup.md removed: now .claude/commands/cb-setup.md"));
+  check("the project's own ci-local.mjs kept until ci-steps.json has its steps", read(lead, "scripts/ci-local.mjs") === "// the project's own CI\n" && run.out.includes("move the steps of your scripts/ci-local.mjs into scripts/ci-steps.json"));
+  check("a retired PO worktree and a missing model mode are reported", run.out.includes("Retired roles: po (its work goes to the Lead") && run.out.includes("/cb-model mode"));
   claude = read(lead, "CLAUDE.md");
   check("CLAUDE.md: title, Stage and Open decisions kept", claude.startsWith("# Old Shop") && claude.includes("- Stage: Delivery, milestone v0.2.0.") && claude.includes("- Payment provider: needed before v0.3.0. Issue #9."));
   check("CLAUDE.md: the project's rule kept, the old kit rule removed", claude.includes("- Prices are shown with VAT.") && !claude.includes(oldRule));

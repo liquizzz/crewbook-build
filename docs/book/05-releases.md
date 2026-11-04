@@ -11,29 +11,29 @@
 
 ## 1. Release a milestone
 
-**What it does:** turns a finished milestone into an approved version with an updated changelog and SRS. It is tested once, on `staging`, by the team and by the PO, who answers to the client; then you try it yourself. AI tests check what the SRS says; only you can confirm it is what the business needs. The release itself adds no tests: if it fails where it runs, it is rolled back (section 4).
+**What it does:** turns a finished milestone into an approved version with an updated changelog and SRS. It is tested once, on `staging`: the regression, then the acceptance against every story and CR; then you try it yourself. AI tests check what the SRS says; only you can confirm it is what the business needs. The release itself adds no tests: if it fails where it runs, it is rolled back (section 4).
 
 **Ask the Lead:**
-> /release v1.4.0
+> /cb-release v1.4.0
 
-For a demo (to a client, or just for you) without publishing, ask for `/release demo`: the same checks on `staging` and your acceptance scenarios, then it stops before `main` and the tag.
+For a demo (to a client, or just for you) without publishing, ask for `/cb-release demo`: the same checks on `staging` and your acceptance scenarios, then it stops before `main` and the tag.
 
 **Claude asks you:** only if something is still open: unfinished issues (move them or wait?) or open medium defects (accept or fix first?).
 
 **Claude does:**
 - merges `dev` into `staging`, which builds the `:staging` image;
 - asks for the regression on `staging` (Full: the Test session; Lite: Dev1): tests, eval and adversarial sets, and when the milestone changes data, the update and rollback scripts on the staging database;
-- opens the PO for the acceptance: it tries every acceptance criterion of the milestone's stories and CRs on `staging` (it is responsible for this test), records the results in `docs/product/handover/v1.4.0.md` and opens a defect for each failure. A defect is fixed on `dev` and merged into `staging` again, and only the affected area and the main journeys are tested again;
-- sends you 3-5 of the PO's scenarios in plain steps ("Log in as a sales user → create an order with 2 items → total shows 1,250,000 VND") and the command to run the staging image: `node scripts/run.mjs staging` (or your own staging server).
+- has every acceptance criterion of the milestone's stories and CRs tried on `staging` (Full: by the Test session, after its regression; Lite: by the Lead itself), with each result in the acceptance section of `docs/tech/test-reports/v1.4.0.md`, and a defect for each failure. A defect is fixed on `dev` and merged into `staging` again, and only the affected area and the main journeys are tested again;
+- copies the results into section 1 of `docs/product/handover/v1.4.0.md` and sends you 3-5 of them as your scenarios, in plain steps ("Log in as a sales user → create an order with 2 items → total shows 1,250,000 VND") and the command to run the staging image: `node scripts/run.mjs staging` (or your own staging server).
 
 **You do:** try each scenario, plus anything you know real users do. Reply per scenario: "1 ok, 2 ok, 3 wrong total when discount applied".
 
 **Claude does:** turns each failure into a defect and fixes it the same way; when all pass:
-- the PO finishes the handover for the client ([template](../../templates/handover.md)): what is delivered, the changes in this version with who approved them and whether they are billed, what the client must prepare (server, accounts, a specialist for a large data migration), the risks you accepted, how to roll back, and a sign-off block. You send it;
-- the Lead runs `scripts/release.mjs` (version from labels; `CHANGELOG.md` and SRS Revision History updated), writes `docs/releases/v1.4.0.md` ([template](../../templates/release-checklist.md)) and sends the summary:
-  > **v1.4.0** (from v1.3.2) · MINOR · CR-12, CR-15 · Fixed: #88, #91 · SRS §3.2, §5.1 · Regression on staging passed · Data: update and rollback tried · PO acceptance passed (14/14) · Owner scenarios passed (5/5) · Handover: link · Codex: 3 findings, 2 fixed · Risks: … · Buffer used: 40 min of AI time → Approve / Reject
+- the Lead finishes the handover for the client ([template](../../templates/handover.md)): what is delivered, the changes in this version with who approved them and whether they are billed, what the client must prepare (server, accounts, a specialist for a large data migration), the risks you accepted, how to roll back, and a sign-off block. You send it;
+- it runs `scripts/release.mjs` (version from labels; `CHANGELOG.md` and SRS Revision History updated), writes `docs/releases/v1.4.0.md` ([template](../../templates/release-checklist.md)) and sends the summary:
+  > **v1.4.0** (from v1.3.2) · MINOR · CR-12, CR-15 · Fixed: #88, #91 · SRS §3.2, §5.1 · Regression on staging passed · Data: update and rollback tried · Acceptance passed (14/14) · Owner scenarios passed (5/5) · Handover: link · Codex: 3 findings, 2 fixed · Risks: … · Buffer used: 40 min of AI time → Approve / Reject
 
-**You check:** the summary; reply Approve or Reject (with a reason). After Approve, the Lead merges exactly the accepted `staging` commit into `main` and pushes the tag, with no new tests; the `:v1.4.0` image is built and the Lead checks that it starts and answers its healthcheck. Deploy it when you choose.
+**You check:** the summary; reply Approve or Reject (with a reason). After Approve, the Lead merges exactly the accepted `staging` commit into `main` and pushes the tag, with no new tests; the `:v1.4.0` image is built and the Lead checks that it starts and answers its healthcheck. Deploy it when you choose. Then the Lead writes where things stand in the next milestone file and asks you to type `/clear` in its session, so the next milestone starts with a fresh context ([chapter 9](09-token-budget.md#start-fresh-contexts)).
 
 **Claude asks before:** pushing `main`, pushing the tag, creating the GitHub release.
 
@@ -82,6 +82,6 @@ For a demo (to a client, or just for you) without publishing, ask for `/release 
 
 > **Data changes:** the kit makes a migration lighter (a staging database, an update and a rollback script, both tried before the release), but it does not replace people. For a large or risky migration, have a database specialist review it; the handover lists it for the client.
 
-> **Token tip:** run the regression once per milestone, on `staging`, and test only the affected area after a fix. Close the Test and PO sessions when their reports are written.
+> **Token tip:** run the regression once per milestone, on `staging`, and test only the affected area after a fix. Close the Test session when its report is written.
 
 Next: [Chapter 6: Continuity](06-continuity.md).

@@ -4,13 +4,13 @@
 
 | Path in the project | What it does |
 |---|---|
-| `CLAUDE.md` | Shared rules every session reads: roles, your gates, "AI does the work; the owner decides", "Plain language", "See it first, then build it", Open decisions, build modes, git rules, compact instructions |
-| `.claude/roles/<role>.md` | One file per role: mission, inputs and outputs, paths, must-nots, when to ask, recovery |
+| `CLAUDE.md` | Shared rules every session reads: roles, your gates, "AI does the work; the owner decides", "Plain language", "See it first, then build it", "Two Devs", "Models", "Fresh context", Open decisions, build modes, git rules, compact instructions |
+| `.claude/roles/<role>.md` | One file per role (`lead`, `dev`, `test`, `uiux`, `devops`): mission, inputs and outputs, paths, must-nots, when to ask, recovery. Dev1 and Dev2 share `dev.md` |
 | `.claude/role` (per worktree, not committed) | The worktree's role name, read by the hook |
 | `.claude/hooks/role-guard.cjs` | Blocks or asks before risky commands and edits, per role (chapter 2). It also sees through wrappers and nested shells (`rtk git push`, `env … git push`, `bash -c "git push …"`, `powershell -Command "…"`) and refuses encoded PowerShell |
 | `.claude/hooks/role-guard.test.cjs` | 101 test cases for the hook, including wrapped and nested commands and per-Dev modules |
 | `.claude/hooks/session-start.cjs` | Runs when a session starts, resumes or is compacted: tells Claude its role, its role's skills, and to draft at once, ask at most three questions and write in plain language, so you never type it |
-| `.claude/ownership.json` (optional) | Overrides which paths each role may edit; with several Devs, one key per Dev (`"dev2": [...]`) limits it to its module |
+| `.claude/ownership.json` (optional) | Overrides which paths each role may edit; with two Devs, the keys `dev1` and `dev2` (`"dev2": [...]`) limit each to its own workstream, and a shared file has one owner |
 | `.claude/settings.json` | Registers the hook; shared allow and deny rules; the minimum plugin set |
 | `.claude/commands/` | The steps as slash commands, so the owner types a word and the session follows the full prompt ([Commands](#commands)). Each reads the level from `.claude/project.json` |
 | `.github/ISSUE_TEMPLATE/` | Issue forms: CR, Task, Defect, Design |
@@ -26,13 +26,14 @@
 | `scripts/project-level.mjs` | What each level needs; shared by `init.mjs` and `set-level.mjs` |
 | `scripts/ci-mode.mjs` | Shows or sets where CI runs (`github` or `local`): `"ci"` in `.claude/project.json` and the repo variable `CI_MODE`, which every workflow job checks; init picks `local` for a private repo |
 | `scripts/ci-local.mjs` | CI on this machine: the steps of `scripts/ci-steps.json` on a branch merged with `dev`, in a throw-away worktree, one run at a time; skips a step whose `"changed"` paths the branch did not touch, reuses a PASS for the same branch and `dev`; prints PASS or FAIL and the time per step and in total |
-| `scripts/new-role-worktree.mjs` | Creates a role's worktree, branch, role file and local port (`dev1` to `dev4`: ports 5201 to 5204) |
+| `scripts/new-role-worktree.mjs` | Creates a role's worktree, branch, role file, local port (Dev1 5201, Dev2 5202) and the role's model settings |
+| `scripts/model.mjs` | Shows or sets each role's provider and model (`/cb-model`): `mode <claude\|deepseek\|mix>` for the project, `<role> <model\|default>` for one role; writes each worktree's git-ignored `.claude/settings.local.json` and reads the DeepSeek key from `.env.local` without printing it |
 | `scripts/setup-labels.mjs` | Creates the labels |
-| `scripts/setup-board.mjs` | Creates the kanban board: a GitHub Project linked to the repo, with columns Backlog · Approved · Ready · In progress · In review · Testing (Full, with `/auto testing on`) · Done and fields Role, Module, Level, Priority |
-| `scripts/crew-settings.mjs` | Settings shared by every session, kept in the repo's git folder (nothing to commit): messages between sessions and auto-merge (both on until `/auto` turns them off), per-task testing (off), and the hand-off tips, shown three times at most while messages are off |
+| `scripts/setup-board.mjs` | Creates the kanban board: a GitHub Project linked to the repo, with columns Backlog · Approved · Ready · In progress · In review · Testing (Full, with `/cb-auto testing on`) · Done and fields Role, Module, Level, Priority |
+| `scripts/crew-settings.mjs` | Settings shared by every session, kept in the repo's git folder (nothing to commit): messages between sessions and auto-merge (both on until `/cb-auto` turns them off), per-task testing (off), and the hand-off tips, shown three times at most while messages are off |
 | `scripts/board-status.mjs` | Moves an issue, or a PR with no task issue, to a board column (`node scripts/board-status.mjs 12 "In progress"`); the commands call it as work moves |
 | `scripts/run.mjs` | Runs a version in Docker with one command (`node scripts/run.mjs v0.1.0`, `staging`, `dev`, `--source`, `--stop`): checks Docker and port 3000, logs in to ghcr.io when the repo is private, pulls the image, waits for the healthcheck, opens the browser |
-| `scripts/plugins.mjs` | Installs the Claude Code plugins `.claude/settings.json` enables (adds their marketplaces, then `claude plugin install --scope user`), or prints the `/plugin install` lines when the `claude` command is missing; `init` runs it, `/setup` when a required plugin is missing, and the Lead at G3 when it enables the design plugins |
+| `scripts/plugins.mjs` | Installs the Claude Code plugins `.claude/settings.json` enables (adds their marketplaces, then `claude plugin install --scope user`), or prints the `/plugin install` lines when the `claude` command is missing; `init` runs it, `/cb-setup` when a required plugin is missing, and the Lead at G3 when it enables the design plugins |
 | `scripts/release.mjs` | Computes the version from labels; updates `CHANGELOG.md` and the SRS (either line ending) |
 | `scripts/release.test.mjs` | Tests the release script without GitHub |
 | `.git/hooks/pre-commit` | Blocks commits with `.env` files or credential-like values |
@@ -41,22 +42,24 @@
 
 | Command | What it does |
 |---|---|
-| `/setup` | First step, with no questions: `CLAUDE.md`, gate issues, milestone, the team's worktrees |
-| `/next <idea>` | The next foundation step up to your approval: in the PO, picture the project (proposal and screen sketches, G1 and G2); in the Lead, how we build it (the solution design, G3) |
-| `/build try` | Quick: no tests, no merge |
-| `/build done` | Tests at the task's level, then a PR the Lead merges |
-| `/release demo` | Full checks, no tag |
-| `/release [version]` | A tagged version and its image |
-| `/change <request>` | In the Lead after G2. Sorts the request: a functional change (a feature added or cut) becomes a CR (who asked, impact, price, the client's approval, a row in `changes.md`) with the SRS update; a technical change becomes an ADR |
-| `/progress` | Live state in ten lines |
-| `/gate G1`…`G6` | Checks a gate against the repo and GitHub |
-| `/send` | Sends the prompt of the last hand-off block to the session it names |
-| `/kit-update [path]` | Lead only: brings the project up to the newest kit through a PR you approve ([chapter 6](06-continuity.md#7-get-the-newest-kit)) |
-| `/auto` | Shows or switches what runs without you, shared by every session: `/auto relay on|off` (sessions pass prompts to each other) `/auto merge on|off` (the Lead merges every PR after its review by level and green CI), both on at the start, and `/auto testing on|off` (Full: Test checks each merged task; off at the start) |
+| `/cb-setup` | First step, with one question (the model mode): `CLAUDE.md`, gate issues, milestone, the team's worktrees |
+| `/cb-next <idea>` | The next foundation step up to your approval, in the Lead: picture the project (proposal and screen sketches, G1 and G2), then how we build it (the solution design, G3) |
+| `/cb-build try` | Quick: no tests, no merge |
+| `/cb-build done` | Tests at the task's level, then a PR the Lead merges |
+| `/cb-release demo` | Full checks, no tag |
+| `/cb-release [version]` | A tagged version and its image |
+| `/cb-change <request>` | In the Lead after G2. Sorts the request: a functional change (a feature added or cut) becomes a CR (who asked, impact, price, the client's approval, a row in `changes.md`) with the SRS update; a technical change becomes an ADR |
+| `/cb-progress` | Live state in ten lines |
+| `/cb-gate G1`…`G6` | Checks a gate against the repo and GitHub |
+| `/cb-send` | Sends the prompt of the last hand-off block to the session it names |
+| `/cb-update [path]` | Lead only: brings the project up to the newest kit through a PR you approve ([chapter 6](06-continuity.md#7-get-the-newest-kit)) |
+| `/cb-model` | Shows each role's provider and model; `/cb-model mode <claude\|deepseek\|mix>` changes the project, `/cb-model <role> <opus\|sonnet\|deepseek-pro\|deepseek-flash\|default>` one role ([chapter 9](09-token-budget.md#choose-the-models)) |
+| `/cb-add-dev [workstream]` | Lead only: adds Dev2 with its own workstream, after you approve the split ([chapter 4](04-delivery-loop.md#9-add-a-second-dev)) |
+| `/cb-auto` | Shows or switches what runs without you, shared by every session: `/cb-auto relay on|off` (sessions pass prompts to each other) `/cb-auto merge on|off` (the Lead merges every PR after its review by level and green CI), both on at the start, and `/cb-auto testing on|off` (Full: Test checks each merged task; off at the start) |
 
 ## Plugins
 
-The kit's `.claude/settings.json` enables the minimum set, so every role uses the same plugins. Enabling a plugin there does not download it: `init` installs them with `scripts/plugins.mjs` (the `claude` command), `/setup` checks them first, and on another machine you run `node scripts/plugins.mjs` once.
+The kit's `.claude/settings.json` enables the minimum set, so every role uses the same plugins. Enabling a plugin there does not download it: `init` installs them with `scripts/plugins.mjs` (the `claude` command), `/cb-setup` checks them first, and on another machine you run `node scripts/plugins.mjs` once.
 
 | Plugin | Marketplace (`/plugin marketplace add …`) | Who uses it | Level |
 |---|---|---|---|
@@ -68,9 +71,9 @@ The kit's `.claude/settings.json` enables the minimum set, so every role uses th
 | ui-ux-pro-max | `nextlevelbuilder/ui-ux-pro-max-skill` | UI/UX; the Lead at Lite | Products with screens (the Lead enables it at G3) |
 | figma | `anthropics/knowledge-work-plugins` | UI/UX | Only if the design lives in Figma |
 | codex | `openai/codex-plugin-cc` | Lead | Optional: independent review (chapter 2) |
-| product-management | `anthropics/knowledge-work-plugins` | PO | Optional: `write-spec`, `competitive-brief` and `stakeholder-update` for a PO who wants them; adds about 850 tokens and several connectors to each session |
+| product-management | `anthropics/knowledge-work-plugins` | Lead | Optional: `write-spec`, `competitive-brief` and `stakeholder-update` for a Lead that wants them; adds about 850 tokens and several connectors to each session |
 | humanizer | `blader/humanizer` | Every role that writes documents | Only with polished documents (init question 6) |
-| rampstack-seo | Anthropic plugin directory | Dev, PO on a public site | Off: the kit's `.claude/settings.json` sets it to `false`, so an install on your machine does not load SEO skills into every session. Set it to `true` for a product that needs SEO |
+| rampstack-seo | Anthropic plugin directory | Dev, Lead on a public site | Off: the kit's `.claude/settings.json` sets it to `false`, so an install on your machine does not load SEO skills into every session. Set it to `true` for a product that needs SEO |
 
 ### Skills by task
 
@@ -80,11 +83,13 @@ Install a plugin with `/plugin install <name>@<marketplace>`, then `/reload-plug
 
 ## Update the kit in a running project
 
-`kit/update.mjs` stays in crewbook-build and is not installed: `/kit-update` runs it from a clone (`~/.crewbook/crewbook-build` unless you give a path). It runs in the Lead's worktree with nothing uncommitted, and `--dry-run` prints the plan only. It looks every project file up in the kit's git history, so it knows whether you changed it:
+`kit/update.mjs` stays in crewbook-build and is not installed: `/cb-update` runs it from a clone (`~/.crewbook/crewbook-build` unless you give a path). It runs in the Lead's worktree with nothing uncommitted, and `--dry-run` prints the plan only. It looks every project file up in the kit's git history, so it knows whether you changed it:
 
 | Files | What the update does |
 |---|---|
 | `.claude/roles/`, `hooks/`, `commands/`, `start-here/`, `scripts/` (the kit's), `docs/templates/` | Replaced. A file the kit dropped is deleted if you never changed it. A file you changed is replaced too and listed, so the Lead can put your change back |
+| Old command names (`/build`, `/kit-update` …) and the retired `.claude/roles/po.md` | Removed even if you changed them; the report names each new `/cb-` command. A worktree of a retired role (PO, Dev3, Dev4) is listed, and the Lead moves its open work |
+| Your own `scripts/ci-local.mjs` | Kept until its steps are in `scripts/ci-steps.json`; then the next update takes the kit's script |
 | `.github/` | Replaced only if you never changed it; new files are added; the files you changed are kept and listed |
 | `CLAUDE.md` | The kit's sections and rules are replaced; your title, description, Stage, Documents, Open decisions, stack lines, own rules, own table rows and own sections stay |
 | `.claude/settings.json` | The kit's marketplaces, hooks and permissions are merged with yours; every plugin you enabled stays |

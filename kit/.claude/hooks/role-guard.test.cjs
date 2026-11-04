@@ -47,8 +47,8 @@ const commandCases = [
   ["dev1", "git push origin HEAD:role/dev1", "allow"],
   ["dev1", "git push origin dev", "block"],
   ["dev1", "git push origin role/dev2", "block"],
-  ["dev4", "git push origin role/dev4", "allow"],
-  ["dev4", "git push origin role/dev3", "block"],
+  ["dev2", "git push origin role/dev2", "allow"],
+  ["dev2", "git push origin role/dev1", "block"],
   ["dev1", "git push origin role/dev1:main", "block"],
   ["dev1", "git -C ../x push origin main", "block"],
   ["dev1", "git add . && git commit -m wip && git push origin main", "block"],
@@ -59,8 +59,8 @@ const commandCases = [
   ["dev1", "gh pr create --base dev --fill", "allow"],
   ["dev1", "gh secret set TOKEN", "block"],
   ["dev1", "git status", "allow"],
-  ["po", "git push origin role/po", "allow"],
-  ["po", "git push origin dev", "block"],
+  ["devops", "git push origin role/devops", "allow"],
+  ["devops", "git push origin dev", "block"],
   ["test", "git push origin role/test", "allow"],
   ["uiux", "git push origin role/uiux", "allow"],
   ["uiux", "git push origin staging", "block"],
@@ -92,9 +92,9 @@ const editCases = [
   ["dev1", "design/index.html", "block"],
   ["dev1", ".env", "block"],
   ["dev1", ".env.example", "allow"],
-  ["po", "docs/product/cr/CR-12.md", "allow"],
-  ["po", "docs/tech/srs.md", "allow"],
-  ["po", "docs/tech/spec/CR-12.md", "block"],
+  ["lead", "docs/product/cr/CR-12.md", "allow"],
+  ["lead", "docs/tech/srs.md", "allow"],
+  ["po", "docs/product/prd.md", "block"],
   ["test", "docs/tech/test-reports/v1.4.0.md", "allow"],
   ["test", "app/src/login.ts", "block"],
   ["uiux", "packages/tokens/theme.css", "allow"],
@@ -132,17 +132,17 @@ const levelCases = [
 for (const [dir, role, file, expected] of levelCases) report("edit", role, `${path.basename(dir)}/${file}`, expected, outcome(checkEdit(path.join(dir, file), role, dir, dir)));
 fs.rmSync(lite, { recursive: true, force: true });
 
-// Several Devs: a Dev's own entry in ownership.json limits it to its module; Devs without one keep the family paths.
+// Two Devs: each Dev's own entry in ownership.json limits it to its workstream.
 const multi = fs.mkdtempSync(path.join(os.tmpdir(), "guard-multi-"));
 fs.mkdirSync(path.join(multi, ".claude"));
-fs.writeFileSync(path.join(multi, ".claude", "ownership.json"), JSON.stringify({ dev2: ["src/Modules/Media/", "tests/unit/Media/", "CHANGELOG.md"], dev3: ["src/Modules/Publishing/"] }));
+fs.writeFileSync(path.join(multi, ".claude", "ownership.json"), JSON.stringify({ dev1: ["src/Modules/Users/"], dev2: ["src/Modules/Media/", "tests/unit/Media/", "CHANGELOG.md"] }));
 const multiCases = [
   [multi, "dev2", "src/Modules/Media/Upload.cs", "allow"],
   [multi, "dev2", "src/Modules/Publishing/Publish.cs", "block"],
-  [multi, "dev3", "src/Modules/Media/Upload.cs", "block"],
-  [multi, "dev3", "src/Modules/Publishing/Publish.cs", "allow"],
+  [multi, "dev1", "src/Modules/Media/Upload.cs", "block"],
   [multi, "dev1", "src/Modules/Users/Create.cs", "allow"],
-  [multi, "dev4", "src/Startup.cs", "allow"],
+  [multi, "dev2", "CHANGELOG.md", "allow"],
+  [multi, "dev1", "CHANGELOG.md", "block"],
 ];
 for (const [dir, role, file, expected] of multiCases) report("edit", role, `${path.basename(dir)}/${file}`, expected, outcome(checkEdit(path.join(dir, file), role, dir, dir)));
 fs.rmSync(multi, { recursive: true, force: true });

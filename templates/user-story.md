@@ -1,12 +1,12 @@
 # US-NNN: <Short title>
 
-Save as `docs/product/stories/US-NNN-<slug>.md`. Written by the PO from the approved screen sketches. Write the criteria in the user's words: what they do and what they see on the screen, with real example values, no technical terms.
+Save as `docs/product/stories/US-NNN-<slug>.md`. Written by the Lead from the approved screen sketches. Write the criteria in the user's words: what they do and what they see on the screen, with real example values, no technical terms.
 
 | Field | Value |
 |---|---|
 | PRD must-have | <#> |
 | Screen | `docs/product/screens/<file>.html` |
-| SRS requirements | <FR-xxx, written by the PO at G2> |
+| SRS requirements | <FR-xxx, written by the Lead at G2> |
 | Priority | Must / Should / Could |
 | Status | Draft / Approved / Delivered in <vX.Y.Z> |
 

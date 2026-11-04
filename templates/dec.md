@@ -1,11 +1,11 @@
 # DEC-<n>: <Business decision title>
 
-Save as `docs/product/dec/DEC-<n>-<slug>.md`. Written by the PO the moment a business decision is made ("decided means written"). Technical decisions use an ADR instead.
+Save as `docs/product/dec/DEC-<n>-<slug>.md`. Written by the Lead the moment a business decision is made ("decided means written"). Technical decisions use an ADR instead.
 
 | Field | Value |
 |---|---|
 | Date | YYYY-MM-DD |
-| Decided by | <owner / PO> |
+| Decided by | <owner / client> |
 | Related | <CR-n, US-n, issue #n> |
 | Status | Active / Replaced by DEC-<n> |
 

@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Client | <client, or "own product"> |
-| Prepared by | PO, from the owner's idea |
+| Prepared by | Lead, from the owner's idea |
 | Status | Draft / Approved (G1 and G2) |
 | Approved on | YYYY-MM-DD |
 | Screens | `docs/product/screens/index.html` |

@@ -5,7 +5,7 @@
 // Adds it to the board first if it is not there yet. A PR goes on the board when it has no task issue of its own
 // (a docs PR), so everything waiting for review or the owner's merge shows in In review.
 //   node scripts/board-status.mjs <issue or PR number> "<column>"
-// Columns: Backlog, Approved, Ready, In progress, In review, Testing (Full, with /auto testing on), Done.
+// Columns: Backlog, Approved, Ready, In progress, In review, Testing (Full, with /cb-auto testing on), Done.
 // Needs the gh CLI with the "project" scope. With no board it prints a note and exits 0, so it never blocks work.
 import { execFileSync } from "node:child_process";
 

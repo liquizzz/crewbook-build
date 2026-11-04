@@ -1,6 +1,6 @@
 # Chapter 1: Setup
 
-**Purpose:** go from an empty folder to a project with the kit installed, GitHub ready, the setup done and the PO's session ready to open.
+**Purpose:** go from an empty folder to a project with the kit installed, GitHub ready, the setup done and the Lead ready for your idea.
 
 ## You do this yourself (once)
 
@@ -8,7 +8,7 @@ These involve your machine, accounts or secrets:
 - Install the Claude Code desktop app, Git, Node.js 20+, the GitHub CLI (`gh`), Docker and, for front-end products, pnpm. Docker is required: `kit/init.mjs` stops if `docker` or `docker compose` is missing, and warns if Docker is installed but not running. Check with `docker compose version`.
 - Clone Crewbook: Build: `git clone https://github.com/liquizzz/crewbook-build.git`.
 - Sign in to GitHub in a terminal: `gh auth login`, then `gh auth refresh -s project`.
-- The Claude Code plugins the kit uses. `init` installs them for you with the `claude` command, and the Lead's `/setup` checks them first; type these in any Claude Code session only if `init` asks you to:
+- The Claude Code plugins the kit uses. `init` installs them for you with the `claude` command, and the Lead's `/cb-setup` checks them first; type these in any Claude Code session only if `init` asks you to:
 
 | Plugin | Why the kit needs it | Install |
 |---|---|---|
@@ -20,11 +20,11 @@ These involve your machine, accounts or secrets:
 | frontend-design | Products with screens, enabled by the Lead at G3: screens that look designed, in the look and feel you picked | `/plugin install frontend-design@claude-plugins-official` |
 | ui-ux-pro-max | Products with screens, enabled by the Lead at G3: searches styles, palettes and fonts for the look-and-feel options | `/plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill` then `/plugin install ui-ux-pro-max@ui-ux-pro-max-skill` |
 
-Then run `/reload-plugins`. Optional plugins (Figma, Codex review, product-management for the PO…) are listed in [Appendix B](appendix-b-kit.md#plugins). You do not pick skills: the kit's `CLAUDE.md` names the skill for each task, and every session uses it. Every plugin adds to each session's context, so install only what the project uses ([chapter 9](09-token-budget.md)).
+Then run `/reload-plugins`. Optional plugins (Figma, Codex review, product-management for the Lead…) are listed in [Appendix B](appendix-b-kit.md#plugins). You do not pick skills: the kit's `CLAUDE.md` names the skill for each task, and every session uses it. Every plugin adds to each session's context, so install only what the project uses ([chapter 9](09-token-budget.md)).
 
 ## 1. Create the project
 
-**What it does:** installs the kit (shared `CLAUDE.md`, role files, guard hook, issue forms, workflows, scripts, Docker files, document templates in `docs/templates/`), creates the docs folders, the branches and the Lead's worktree, optionally creates the GitHub repo, and writes `START-HERE.md`: your next steps as commands to type (`/setup`, `/next`, `/build try`, `/build done`, `/release`).
+**What it does:** installs the kit (shared `CLAUDE.md`, role files, guard hook, issue forms, workflows, scripts, Docker files, document templates in `docs/templates/`), creates the docs folders, the branches and the Lead's worktree, optionally creates the GitHub repo, and writes `START-HERE.md`: your next steps as commands to type (`/cb-setup`, `/cb-next`, `/cb-build try`, `/cb-build done`, `/cb-release`).
 
 **You run,** in a terminal:
 1. Go to your projects folder, the one that holds `crewbook-build`, with `cd <your projects folder>`. The Claude Code Terminal panel opens in your home folder, so this step applies there too.
@@ -43,7 +43,7 @@ node crewbook-build/kit/init.mjs
 7. One-line description (optional).
 8. Create the GitHub repo now: `private` (suggested, as `<you>/<name>`), `public` or `none`.
 
-**It does:** creates `main`, `dev` and `staging`, writes your language into `CLAUDE.md`, leaves out the design pipeline unless you asked for it, commits the kit, creates the Lead's worktree in `<projects>/<project>-wt/lead/` (setup creates the others), marks the setup as not done yet; if you chose a repo, creates it, pushes the branches and creates the labels and the kanban board (`scripts/setup-board.mjs`).
+**It does:** creates `main`, `dev` and `staging`, writes your language into `CLAUDE.md`, leaves out the design pipeline unless you asked for it, commits the kit, creates the Lead's worktree in `<projects>/<project>-wt/lead/` (the Lead creates the others), marks the setup as not done yet; if you chose a repo, creates it, pushes the branches and creates the labels and the kanban board (`scripts/setup-board.mjs`).
 
 **You check:** the report, then open `START-HERE.md` in the project. If init created a public repo, open its Actions tab on GitHub (a private repo runs CI on your machine instead, see [chapter 4](04-delivery-loop.md)): a new repo may show **Enable Actions on this repository**, and nothing runs until you click it.
 
@@ -51,25 +51,40 @@ For scripts or CI: `node crewbook-build/kit/init.mjs <folder> --name "<name>" --
 
 ## 2. Finish the setup
 
-**What it does:** fits `CLAUDE.md` to your project, opens the gate issues and milestones on GitHub, and creates the PO's folder (Lite: also Dev1's). Setup comes first: until it is done, any other session only tells you to finish it.
+**What it does:** fits `CLAUDE.md` to your project, opens the gate issues and milestones on GitHub, sets the model each role runs on, and (Lite) creates Dev1's folder. Setup comes first: until it is done, any other session only tells you to finish it.
 
 **Ask:** open a Claude Code session in the `lead` worktree and type:
-> /setup
+> /cb-setup
 
-**Claude asks you:** nothing. Your idea and any constraints (a required platform, a deadline, systems it must work with) come at G1, the stack at G3 ([chapter 3](03-foundation.md)).
+**Claude asks you:** one thing, the model mode (suggested: `claude`):
+
+| Mode | Lead, UI/UX, DevOps | Dev, Test |
+|---|---|---|
+| `claude` | Claude Opus | Claude Sonnet |
+| `deepseek` | Lead and DevOps `deepseek-pro`; UI/UX `deepseek-flash` | `deepseek-flash` |
+| `mix` | Claude Opus | `deepseek-flash` |
+
+The roles that look at screens run on `deepseek-flash`, because `deepseek-pro` reads no images; in `deepseek` mode the Lead looks at a screen through a subagent on `deepseek-flash`. `deepseek` and `mix` send the code those roles see to DeepSeek's servers, so a client project needs the client's OK. They also need your DeepSeek key first: run `node scripts/set-secret.mjs DEEPSEEK_API_KEY` in a terminal (never paste it in the chat); without it the Lead cannot choose them. Your idea and any constraints (a required platform, a deadline, systems it must work with) come at G1, the stack at G3 ([chapter 3](03-foundation.md)).
 
 **Claude does:**
 - fills in `CLAUDE.md`: the description from init, the stage and the Stack line ("chosen at G3, in the solution design");
 - creates milestone v0.1.0 (Full: also v0.2.0) and one issue per foundation gate: "G1 Proposal", "G2 Requirements", "G3 Design, stack and SRS";
 - in Claude Code desktop, renames its own session `<Project> - Lead` if needed and files it in a sidebar group named after the project;
-- marks the setup done, merges into `dev`, checks that CI ran on GitHub;
-- creates the PO's worktree (Lite: also Dev1's) and offers to open the PO's session for you.
+- marks the setup done, sets the model mode, merges into `dev`, checks that CI ran on GitHub;
+- Lite: creates Dev1's worktree. Full: none yet; UI/UX joins at G3, Dev1 and Test when G3 is approved.
 
 **You check:** the report, `CLAUDE.md` and the board on GitHub.
 
-## 3. Open the next session
+## 3. Give the Lead your idea
 
-**You do:** say yes when the Lead offers to open the PO's session; it opens `<Project> - PO` in the right folder, already given `/next`. Or open a session in the folder the report names, titled `<Project> - PO`, and paste the prompt from the box. A session knows its role when it starts and finds where the work stands by itself; after a restart, open a new session in the same folder.
+**You do:** stay in the Lead's session and type `/cb-next <your idea, in your own words>` ([chapter 3](03-foundation.md)). The Lead opens the other sessions when there is work for them. A session knows its role when it starts and finds where the work stands by itself; after a restart, open a new session in the same folder.
+
+## Change the models later
+
+**Ask the Lead:**
+> /cb-model
+
+**Claude does:** shows each role with its provider and model. `/cb-model mode <claude|deepseek|mix>` changes the whole project; `/cb-model <role> <opus|sonnet|deepseek-pro|deepseek-flash|default>` changes one role, for example a Dev on a hard task. A running session keeps its old model until it restarts; the Lead says which sessions to restart.
 
 ## Change the level later
 

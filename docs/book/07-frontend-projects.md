@@ -2,7 +2,7 @@
 
 **Purpose:** show each design round (to you or a client) the same day, without exposing unfinished product code.
 
-**Setup:** answer yes to init's question 5 (separate design prototype). Without it, the kit leaves out the design image, its workflow and its Dockerfile. The product still gets its design: the PO's grey screen sketches at G1-G2, then at G3, in the solution design, 2-3 named directions applied to those sketches in `design/look-and-feel.html`; you pick one when you approve the solution design. The choice is recorded in SRS section 2.3.
+**Setup:** answer yes to init's question 5 (separate design prototype). Without it, the kit leaves out the design image, its workflow and its Dockerfile. The product still gets its design: the Lead's grey screen sketches at G1-G2, then at G3, in the solution design, 2-3 named directions applied to those sketches in `design/look-and-feel.html`; you pick one when you approve the solution design. The choice is recorded in SRS section 2.3.
 
 **Layout:** one repo with a pnpm workspace (several packages in one repo, sharing one install): `design/` (UI/UX prototype), `packages/tokens/` (shared design tokens: colours, fonts and spacing as named values), `app/` (product code). Use a second repo only if an outside partner makes the design or the client must see the design repo.
 

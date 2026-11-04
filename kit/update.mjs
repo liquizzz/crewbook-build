@@ -5,7 +5,7 @@
 // Bring a Crewbook project that already runs up to this kit's version, keeping what belongs to the project.
 //   node <playbook>/kit/update.mjs [<folder>] [--dry-run]
 // Run it in the Lead's worktree (a role/ branch, clean working tree). It changes files only; the Lead reviews
-// the diff, commits it and opens a PR into dev (/kit-update). --dry-run prints the plan and writes nothing.
+// the diff, commits it and opens a PR into dev (/cb-update). --dry-run prints the plan and writes nothing.
 //
 // What it does with each kind of file:
 // - Kit files (.claude/roles, hooks, commands, start-here, scripts, docs/templates): replaced by the new version.
@@ -20,7 +20,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { LEVELS, REMOVED_LEVELS, kitVersion, languageLine, mainCheckout, readProject, renderStartHere, writeProject } from "./scripts/project-level.mjs";
+import { LEVELS, REMOVED_LEVELS, RETIRED_ROLES, kitVersion, languageLine, mainCheckout, readProject, renderStartHere, worktreePath, writeProject } from "./scripts/project-level.mjs";
 
 const argv = process.argv.slice(2);
 const dry = argv.includes("--dry-run");
@@ -92,11 +92,19 @@ const FOLDERS = [
   ["templates", "docs/templates", "kit"],
   ["kit/.github", ".github", "shared"],
 ];
+// A project that wrote its own scripts/ci-local.mjs keeps it until its steps are in scripts/ci-steps.json.
+const ownCiLocal = exists("scripts/ci-local.mjs") && !exists("scripts/ci-steps.json") && !untouched("scripts/ci-local.mjs");
 for (const [from, to, owner] of FOLDERS) {
   const now = files(path.join(playbook, from));
   for (const name of now) {
     if (!project.design && name === "workflows/image-design.yml") continue;
     const rel = `${to}/${name}`;
+    if (rel === "scripts/ci-local.mjs" && ownCiLocal) {
+      out.kept.push(`${rel} (this project's own; the kit's runs the steps of scripts/ci-steps.json)`);
+      out.notes.push("CI on this machine: move the steps of your scripts/ci-local.mjs into scripts/ci-steps.json (the kit's ci-local.mjs runs them, reuses a PASS and skips steps by changed paths), then run the update again to take the kit's script.");
+      continue;
+    }
+    if (rel === "scripts/ci-steps.json" && ownCiLocal) continue; // added with the kit's ci-local.mjs, not before
     const text = fs.readFileSync(path.join(playbook, from, name));
     if (!exists(rel)) {
       write(rel, text);
@@ -123,6 +131,16 @@ for (const [from, to, owner] of FOLDERS) {
       out.removed.push(rel);
     }
   }
+}
+
+// Kit files renamed or retired: removed even when the project changed them (the kit owns these folders).
+const RENAMED = { ...Object.fromEntries(["auto", "build", "change", "gate", "next", "progress", "release", "send", "setup"].map((c) => [`.claude/commands/${c}.md`, `.claude/commands/cb-${c}.md`])),
+  ".claude/commands/kit-update.md": ".claude/commands/cb-update.md", ".claude/roles/po.md": null };
+for (const [old, now] of Object.entries(RENAMED)) {
+  if (!exists(old) || out.removed.includes(old)) continue;
+  if (!untouched(old)) out.yoursReplaced.push(`${old} removed${now ? `: now ${now}` : ""} (it had changes made here)`);
+  else out.removed.push(`${old}${now ? ` (now ${now})` : " (the role is retired)"}`);
+  remove(old);
 }
 
 // 4. CLAUDE.md: sections by "## " title, bullets by their bold label (or their first words).
@@ -348,6 +366,10 @@ for (const f of ["docker-compose.yml", "docker/app.Dockerfile", ".dockerignore"]
   const changed = project.kitVersion && git(playbook, ["diff", "--quiet", project.kitVersion, "HEAD", "--", `kit/docker/${path.basename(f)}`]) === null;
   if (changed) out.notes.push(`${f} is yours, so it was not changed; the kit's ${path.relative(playbook, kitFile).split(path.sep).join("/")} has changed since your version: compare them.`);
 }
+const main = mainCheckout(root);
+const retired = Object.keys(RETIRED_ROLES).filter((r) => fs.existsSync(worktreePath(main, r)));
+if (retired.length) out.notes.push(`Retired roles: ${retired.map((r) => `${r} (its work goes to ${RETIRED_ROLES[r]})`).join(", ")}. The Lead moves their open work, the owner closes their sessions, then removes each worktree: git worktree remove "${worktreePath(main, retired[0])}".`);
+if (!project.models) out.notes.push("Models: choose the project's mode with /cb-model mode <claude|deepseek|mix> (claude: Lead, UI/UX and DevOps on Opus, Dev and Test on Sonnet). Until then every session keeps the model it has.");
 if (!level) out.notes.push(`The level "${project.level}" no longer exists: run node scripts/set-level.mjs lite (or full).`);
 else if (out.added.concat(out.replaced, out.yoursReplaced).some((f) => f.startsWith(".claude/start-here/"))) {
   if (/^english$/i.test(project.language || "English")) {

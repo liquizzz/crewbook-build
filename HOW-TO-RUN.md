@@ -16,7 +16,7 @@ gh auth login
 gh auth refresh -s project
 ```
 
-You do not install Claude Code plugins by hand: `init` (step 2) installs the ones the project uses with the `claude` command, and the Lead's `/setup` checks them before anything else. If `init` cannot, it prints the `/plugin install` lines to paste into any session. The list is in [chapter 1](docs/book/01-setup.md#you-do-this-yourself-once).
+You do not install Claude Code plugins by hand: `init` (step 2) installs the ones the project uses with the `claude` command, and the Lead's `/cb-setup` checks them before anything else. If `init` cannot, it prints the `/plugin install` lines to paste into any session. The list is in [chapter 1](docs/book/01-setup.md#you-do-this-yourself-once).
 
 ## 1. Clone the playbook
 
@@ -44,11 +44,11 @@ It asks eight questions, each with a one-line hint. Press Enter to take the sugg
 |---|---|---|---|
 | 1 | Project name | | Any name, for example "Tiny Todo" |
 | 2 | Where to create the project | `./tiny-todo` | A new folder; init creates it |
-| 3 | Level: 1 (Lite) or 2 (Full) | `1` (Lite) | Lite: PO, Lead and Dev. Start here. Full: adds Test, UI/UX and DevOps sessions, for money, security, personal data or formal sign-off of each release. Change it any time |
+| 3 | Level: 1 (Lite) or 2 (Full) | `1` (Lite) | Lite: Lead and Dev1. Start here. Full: adds Test, UI/UX and DevOps sessions, for money, security, personal data or formal sign-off of each release. Change it any time |
 | 4 | Working language | `English` | The sessions talk to you in it; you also choose the language of the documents |
 | 5 | Separate design prototype | `no` | Yes only if someone reviews a clickable design before the app is built |
 | 6 | Polished documents | `no` | Yes adds a humanizer pass to every document: reads better, costs more tokens. Worth it for documents other people read; turn it on later by telling the Lead |
-| 7 | One-line description | | Optional; you give your idea to the PO later |
+| 7 | One-line description | | Optional; you give your idea to the Lead later |
 | 8 | GitHub repo | `private`, as `<you>/tiny-todo` | `none` to connect later |
 
 Then it installs the kit, creates the branches and the Lead's worktree, creates and pushes the GitHub repo with its labels and kanban board, and writes `START-HERE.md`.
@@ -57,18 +57,18 @@ Read the "Please check" lines at the end of its report. A private repo runs CI o
 
 ## 3. Follow START-HERE.md
 
-Open `START-HERE.md` in your new project folder. Its first step tells you which folder to open in Claude Code (a worktree, which is a second folder of the same project, one per session, such as `tiny-todo-wt\lead`) and the command to type there: `/setup`. Setup comes first: it creates the other sessions' folders and ends with the next session's prompt in a box you copy. Each later step names the session, the command, what you check, and what you get.
+Open `START-HERE.md` in your new project folder. Its first step tells you which folder to open in Claude Code (a worktree, which is a second folder of the same project, one per session, such as `tiny-todo-wt\lead`) and the command to type there: `/cb-setup` (every command starts with `cb`, for Crewbook). Setup comes first. It asks one question, which models the team runs on: `claude` (the suggestion), `deepseek` or `mix` (Dev and Test on DeepSeek). Both send those sessions' code to DeepSeek, so a client project needs the client's OK. Set the key first with `node scripts/set-secret.mjs DEEPSEEK_API_KEY`; `/cb-model` changes the choice later. Then it creates the other sessions' folders and ends with the next prompt in a box you copy. Each later step names the session, the command, what you check, and what you get.
 
-At Lite it goes: `/setup` (Lead, no questions), `/next <your idea>` (PO: a one-page proposal and grey screen sketches you approve once, then the requirements and the SRS's functional part without asking again), `/next` (Lead: one solution design with the look and feel you approve, then the ADRs, the SRS baseline and the plan; from here on you work with the Lead), `/build try` and `/build done` (Dev1), `/release` (Lead: the milestone goes to `staging`, Dev1 runs the regression, the PO accepts it and writes the handover, you try it yourself), then run it in Docker. `/progress` tells you where the project stands at any time. Set API keys and passwords with `node scripts/set-secret.mjs <NAME>`, never in the chat.
+At Lite you work with the Lead from the idea to the release, and it hands tasks to Dev1: `/cb-setup` (Lead, the model question), `/cb-next <your idea>` (Lead: a one-page proposal and grey screen sketches you approve once, then the requirements and the SRS's functional part without asking again), `/cb-next` (Lead: one solution design with the look and feel you approve, then the ADRs, the SRS baseline and the plan), `/cb-build try` and `/cb-build done` (Dev1), `/cb-release` (Lead: the milestone goes to `staging`, Dev1 runs the regression, the Lead runs the acceptance and writes the handover, you try it yourself), then run it in Docker. `/cb-add-dev` adds a second Dev for its own module when you want one. `/cb-progress` tells you where the project stands at any time. Set API keys and passwords with `node scripts/set-secret.mjs <NAME>`, never in the chat.
 
 ## 4. Get kit updates later
 
-The kit gets better between your projects. To bring a project that already runs up to the newest kit, type `/kit-update` in its Lead session. The Lead fetches crewbook-build, shows you what will change, updates the kit files in its own folder and keeps your project's files, rules and decisions. The update reaches `dev` through a PR that waits for your OK. A project made before `/kit-update` existed has no such command yet: run this once in its Lead folder (`<project>-wt/lead`), with your clone of crewbook-build next to the project:
+The kit gets better between your projects. To bring a project that already runs up to the newest kit, type `/cb-update` in its Lead session. The Lead fetches crewbook-build, shows you what will change, updates the kit files in its own folder and keeps your project's files, rules and decisions. The update reaches `dev` through a PR that waits for your OK. A project that still has `/kit-update` types that once; it brings in `/cb-update`. A project with neither command: run this once in its Lead folder (`<project>-wt/lead`), with your clone of crewbook-build next to the project:
 
 ```bash
 node ../../crewbook-build/kit/update.mjs --dry-run
 ```
 
-Then ask the Lead: "Update the kit as the dry run shows, then open a PR." From then on, `/kit-update` is there.
+Then ask the Lead: "Update the kit as the dry run shows, then open a PR." From then on, `/cb-update` is there.
 
 When you want to know why a step works the way it does, the [book](README.md#the-book) has a chapter for it.

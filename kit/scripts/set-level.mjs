@@ -49,7 +49,7 @@ for (const b of LEVELS[level].branches) {
     done.push(`created branch ${b} (push it: git push -u origin ${b})`);
   }
 }
-// Worktrees the level needs. Before /setup is done only the Lead's: setup creates the others.
+// Worktrees the level needs. Before /cb-setup is done only the Lead's: setup creates the others.
 const roles = project.setup === false ? ["lead"] : LEVELS[level].worktrees;
 for (const role of roles) {
   if (fs.existsSync(worktreePath(root, role))) continue;
@@ -57,7 +57,7 @@ for (const role of roles) {
   done.push(`created worktree ${role}: ${worktreePath(root, role)}`);
 }
 // Worktrees the level no longer uses: kept, only listed (the full process can use every role)
-const unused = level === "full" ? [] : LEVEL_ORDER.flatMap((l) => LEVELS[l].worktrees).concat(["dev2", "dev3", "dev4", "test", "uiux", "devops"])
+const unused = level === "full" ? [] : LEVEL_ORDER.flatMap((l) => LEVELS[l].worktrees).concat(["dev2", "test", "uiux", "devops"])
   .filter((r, i, all) => all.indexOf(r) === i && !LEVELS[level].worktrees.includes(r) && fs.existsSync(worktreePath(root, r)));
 
 project.level = level;
@@ -67,7 +67,7 @@ const start = renderStartHere(here, project, root);
 done.push(`updated .claude/project.json${claude ? ", CLAUDE.md" : ""}${start ? ", START-HERE.md" : ""}`);
 
 const up = !LEVELS[from] || LEVEL_ORDER.indexOf(level) > LEVEL_ORDER.indexOf(from);
-// START-HERE.md is rendered in English; in another language the Lead rewrites it (as /setup does).
+// START-HERE.md is rendered in English; in another language the Lead rewrites it (as /cb-setup does).
 const translate = project.language && !/^english$/i.test(project.language) ? ` and rewrite START-HERE.md in ${project.language}` : "";
 console.log(`Level: ${from ? (LEVELS[from] ? LEVELS[from].title : from) : "(not set)"} → ${LEVELS[level].title}\n  ${done.join("\n  ")}`);
 if (!claude) console.warn('Warning: CLAUDE.md has no "- Level:" line; add one by hand.');

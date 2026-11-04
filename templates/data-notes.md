@@ -6,7 +6,7 @@
 | Where the copy lives | <client environment / local machine; never in git> |
 | Access | <read-only login name> |
 | Status | Draft / Approved (G2) |
-| Owner | PO (Lead checks the technical mapping) |
+| Owner | Lead |
 
 > Counts and structure only. No real records, personal data or credentials in this file.
 

@@ -5,9 +5,11 @@
 // The owner runs it and pastes the value when asked; nothing is shown on screen or printed.
 // It writes NAME=value to the git-ignored .env.local of the main checkout and of every role worktree,
 // so new worktrees get it too (scripts/new-role-worktree.mjs copies it). Run it again to change the value.
+// DEEPSEEK_API_KEY also updates the roles that run on DeepSeek (scripts/model.mjs --apply).
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const name = process.argv[2] || "";
 if (!/^[A-Z][A-Z0-9_]*$/.test(name)) {
@@ -72,3 +74,11 @@ for (const dir of checkouts) {
   count++;
 }
 console.log(`${name} set in .env.local of ${count} checkout${count === 1 ? "" : "s"} (git-ignored). Restart the app to use it.`);
+// The DeepSeek key also goes into the settings of the roles that run on DeepSeek (scripts/model.mjs).
+const modelScript = path.join(path.dirname(fileURLToPath(import.meta.url)), "model.mjs");
+if (name === "DEEPSEEK_API_KEY" && fs.existsSync(modelScript)) {
+  try {
+    const out = execFileSync("node", [modelScript, "--apply"], { stdio: ["ignore", "pipe", "pipe"] }).toString().trim();
+    if (out) console.log(out);
+  } catch {}
+}

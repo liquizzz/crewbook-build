@@ -20,7 +20,7 @@ Open a new session in the same folder: it recovers its state from the issues and
 That should not happen: each role has its own worktree and paths. Ask the Lead: "Check which paths each role touched in the last day and fix the overlap." Review `.claude/ownership.json`.
 
 **I want to talk to Dev directly.**
-That is normal while building: type `/build try #<n>` or `/build done #<n>` in Dev1 for a task it has. Anything new goes to the Lead (a feature added or cut becomes a CR, a change in how it is built an ADR, a fault a defect), so the plan and the issues stay in step.
+That is normal while building: type `/cb-build try #<n>` or `/cb-build done #<n>` in Dev1 for a task it has. Anything new goes to the Lead (a feature added or cut becomes a CR, a change in how it is built an ADR, a fault a defect), so the plan and the issues stay in step.
 
 ## Guardrails
 
@@ -45,19 +45,25 @@ Yes. The sessions write the code, the tests and the documents; you describe what
 Run `node scripts/set-level.mjs lite` in the Lead's worktree. Nothing is deleted.
 
 **My project runs on an older kit.**
-Type `/kit-update` in the Lead session ([chapter 6](06-continuity.md#7-get-the-newest-kit)). Without that command, run `node <crewbook-build>/kit/update.mjs --dry-run` in the Lead's folder once, then ask the Lead to apply it and open a PR.
+Type `/cb-update` in the Lead session ([chapter 6](06-continuity.md#7-get-the-newest-kit)). Without that command, run `node <crewbook-build>/kit/update.mjs --dry-run` in the Lead's folder once, then ask the Lead to apply it and open a PR.
 
 **A document is full of technical words.**
 Every document must be readable on the first read, and a technical one opens with "In short". Say: "Rewrite `<file>` in plain language, following the rule in CLAUDE.md."
 
 **I cannot picture what the product will look like.**
-Give the PO a one-line idea and ask for screens first: it sketches 2-3 grey screens you can click through, and you react to them. The proposal follows from what the screens show ([chapter 3](03-foundation.md)).
+Give the Lead a one-line idea and ask for screens first: it sketches 2-3 grey screens you can click through, and you react to them. The proposal follows from what the screens show ([chapter 3](03-foundation.md)).
 
 **Do I really need an SRS for a small change?**
 Yes. Even a one-line requirement change updates the SRS, so the SRS stays true. For L0 display changes with no requirement change, the SRS is untouched.
 
 **The milestone keeps growing.**
 Ask the Lead: "What did we take into this milestone, and what is the buffer left?" Move anything that does not fit to the next milestone.
+
+**A Dev keeps failing on one task.**
+It stops by itself after two red tries and tells the Lead, which gives it a stronger model, splits the task or does the hard part ([chapter 4](04-delivery-loop.md#10-a-task-is-stuck)). To see which model each session runs on, type `/cb-model` in the Lead.
+
+**Can two Devs work at once?**
+Yes, when the milestone has two workstreams that do not touch each other. Type `/cb-add-dev` in the Lead ([chapter 4](04-delivery-loop.md#9-add-a-second-dev)). The kit has at most two Devs.
 
 **A client asks for a change by email.**
 Paste it to the Lead: "Client request: …", with the email's date and sender. It becomes a CR with that request, the impact and price, and the client's approval when it comes, and a row in `docs/product/changes.md`, so you can show later what was asked and what it cost.

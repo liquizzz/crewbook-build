@@ -22,8 +22,8 @@ The rules:
 
 In the [news chatbot example](../examples/news-chatbot/walkthrough.md), moving the search to a self-hosted model to avoid paying for AI calls was technical, and so was skipping the full eval before the demo. Dropping the search of official sources for later was functional: the client got less.
 
-**Ask the Lead** (after G2 every change goes to the Lead; `/change` sorts it first):
-> /change `<what, in business terms>`
+**Ask the Lead** (after G2 every change goes to the Lead; `/cb-change` sorts it first):
+> /cb-change `<what, in business terms>`
 
 **Claude asks you:** only what your request does not say, at most three questions together, each with its suggested answer. A CR needs:
 1. Who asked, how (email, chat, meeting) and when.
@@ -52,13 +52,13 @@ A task is Done when it is pushed, its PR (`Closes #n`) passed CI and the Lead's 
 **What it does:** shows the live state of the project: stage, what is done, in progress, waiting for you or blocked, CI, and the next step.
 
 **Ask any session**, whenever you want:
-> /progress
+> /cb-progress
 
 **Claude does:** checks GitHub and git live and replies in at most 10 lines with links. It writes nothing.
 
 **You check:** "waiting for the owner" and "blocked". Answer the decisions in one reply, e.g. "1 yes, 2 next milestone".
 
-When you want it kept, for yourself or a client, type `/progress report` in the PO or the Lead: it saves the same state in `docs/reports/<date>.md` ([template](../../templates/daily-report.md)) and sends you the link.
+When you want it kept, for yourself or a client, type `/cb-progress report` in the Lead: it saves the same state in `docs/reports/<date>.md` ([template](../../templates/daily-report.md)) and sends you the link.
 
 ## 4. Something urgent comes up
 
@@ -81,7 +81,7 @@ When you want it kept, for yourself or a client, type `/progress report` in the 
 
 **What it does:** tests exactly what the change level requires, so small changes cost little and risky ones are covered. The level is confirmed before any test starts.
 
-| Level | Dev before the PR | Test after merge (only with `/auto testing on`, Full) |
+| Level | Dev before the PR | Test after merge (only with `/cb-auto testing on`, Full) |
 |---|---|---|
 | L0 Display | Build, lint, local look | None now; covered by the milestone regression |
 | L1 Setting | + unit tests for the change | Check the changed spot only |
@@ -98,7 +98,7 @@ When you want it kept, for yourself or a client, type `/progress report` in the 
 
 **Claude does:** compares the diff with the level rules and confirms or raises it.
 
-Each task is checked once more at the end of the milestone, whatever its level, on `staging`: the regression (Full: Test; Lite: Dev1), then the PO's acceptance. The release adds no tests.
+Each task is checked once more at the end of the milestone, whatever its level, on `staging`: the regression (Full: Test; Lite: Dev1), then the acceptance (Full: Test; Lite: the Lead). The release adds no tests.
 
 ## 7. Build modes
 
@@ -106,12 +106,12 @@ Each task is checked once more at the end of the milestone, whatever its level, 
 
 | Type | When | Tests | Merge |
 |---|---|---|---|
-| `/build try [#n]` | You want to see a task working, try it, change direction | None; it only has to run | No. Committed and pushed to `role/<role>`; the issue stays In progress |
-| `/build done [#n]` | The task is finished | Exactly the task's confirmed level (section 6) | A PR the Lead merges after its review and green CI (section 8); the Lead then closes the issue |
-| `/release demo` | You want to show the milestone to someone | Regression and the PO's acceptance on `staging`, your acceptance scenarios | No tag; the demo runs the `:staging` image |
-| `/release` | You publish a version | None more: the accepted `staging` commit is released | `main`, a tag and a versioned image ([chapter 5](05-releases.md)) |
+| `/cb-build try [#n]` | You want to see a task working, try it, change direction | None; it only has to run | No. Committed and pushed to `role/<role>`; the issue stays In progress |
+| `/cb-build done [#n]` | The task is finished | Exactly the task's confirmed level (section 6) | A PR the Lead merges after its review and green CI (section 8); the Lead then closes the issue |
+| `/cb-release demo` | You want to show the milestone to someone | Regression and acceptance on `staging`, your acceptance scenarios | No tag; the demo runs the `:staging` image |
+| `/cb-release` | You publish a version | None more: the accepted `staging` commit is released | `main`, a tag and a versioned image ([chapter 5](05-releases.md)) |
 
-Only `/build done` puts code into `dev`, so `dev` always holds tested work. The board follows each issue: Ready, In progress, In review (back to In progress when the Lead asks for changes), Testing (Full, only with `/auto testing on`), Done. Anything waiting for the Lead's review or your merge is in In review, docs PRs included.
+Only `/cb-build done` puts code into `dev`, so `dev` always holds tested work. The board follows each issue: Ready, In progress, In review (back to In progress when the Lead asks for changes), Testing (Full, only with `/cb-auto testing on`), Done. Anything waiting for the Lead's review or your merge is in In review, docs PRs included.
 
 > **Token tip:** most tasks are L0-L1. Keeping them at "build + changed spot" is where most testing tokens are saved; do not ask for a full regression after each merge.
 
@@ -130,5 +130,26 @@ Only `/build done` puts code into `dev`, so `dev` always holds tested work. The 
 **Claude does:** runs `node scripts/ci-mode.mjs github` (or `local`), which sets `"ci"` in `.claude/project.json` and the repo variable `CI_MODE`, and commits. At G3 it writes the same steps in `.github/workflows/ci.yml` and `scripts/ci-steps.json`, so you can switch at any time.
 
 **You check:** `ci-local` prints the time of each step and the total. When a run takes more than about 5 minutes, ask the Lead `Make CI faster.`; it starts with the slowest step. In local mode your machine builds and tests more (Docker must be running for the image and for tests that use containers). CodeQL does not run on a private repo either way; L3 work keeps its `security-review`.
+
+## 9. Add a second Dev
+
+**What it does:** splits the milestone between two Devs when it has two workstreams that do not touch each other. One Dev (Dev1) is the default; the kit has at most two.
+
+**Ask the Lead:**
+> /cb-add-dev `<the workstream for Dev2, e.g. the media module>`
+
+**Claude does:** splits the open tasks into two workstreams (a module, its folders, its tests) and shows you a short table: workstream, folders, tasks, and the shared files with their one owner (migrations, routing, menus, `CHANGELOG.md`). When the milestone has no two independent workstreams, it says so and adds no Dev2.
+
+**You check:** the split; answer yes or say what to change.
+
+**Claude does,** on your yes: writes the two workstreams under `dev1` and `dev2` in `.claude/ownership.json` (the role guard enforces them), assigns Dev2's tasks with the shared-file tasks first, creates Dev2's worktree (port 5202; Dev1 runs on 5201) and opens its session.
+
+## 10. A task is stuck
+
+**What it does:** stops a Dev from burning tokens on a task it cannot finish. The Lead writes each task with its approach, the files to change and the tests that must pass, so a Dev on a smaller model builds it without guessing.
+
+**Claude does:** after two tries that leave the tests or CI red, the Dev stops and tells the Lead what it tried and what fails. The Lead then picks one: a stronger model for that Dev (`/cb-model dev1 opus`, for example), a smaller split of the task, or it does the hard part itself. It notes the choice on the issue.
+
+**You check:** nothing, unless the Lead asks you to restart a session so it picks up the new model.
 
 Next: [Chapter 5: Releases](05-releases.md).

@@ -6,29 +6,27 @@
 
 | Role | Talk to it when you want to | Reports to | Open |
 |---|---|---|---|
-| PO | Give it your idea and approve the proposal and the screen sketches (G1-G2); it comes back to accept each milestone on `staging` and write the handover | You | G1-G2, then at the end of each milestone (close it in between) |
-| Lead | From G3, everything: the solution design, tasks, a technical solution, a change (a feature added or cut), quality, a release | You | Always |
-| Dev (1-2) | Run `/build try` and `/build done` on the tasks the Lead assigns | Lead | When tasks are ready |
-| Test | Rarely; the Lead assigns its work | Lead | Full: the regression at the end of each milestone (and per task with `/auto testing on`) |
+| Lead | Everything, from the idea to each release: the proposal and screen sketches, the requirements, the solution design, tasks, a change (a feature added or cut), quality, the handover, a release | You | Always |
+| Dev1, Dev2 | Run `/cb-build try` and `/cb-build done` on the tasks the Lead assigns | Lead | Dev1 when tasks are ready; Dev2 only when you ask (`/cb-add-dev`) |
+| Test | Rarely; the Lead assigns its work | Lead | Full, when G3 is approved: writes the test cases while the Devs build, then the regression and the acceptance on `staging` (and per task with `/cb-auto testing on`) |
 | UI/UX | Pick a look and feel at G3, review a design round | Lead | Full, products with screens |
 | DevOps | Rarely; hosting and pipelines | Lead | Larger infrastructure work |
 
-The minimum team is PO + Lead + one Dev (Lite: the Lead also does the design and DevOps, Dev1 also the Test work). Each role follows its file in `.claude/roles/` ([kit](../../kit/.claude/roles/)).
+The minimum team is the Lead and Dev1 (Lite: the Lead also does the design, the DevOps work and the acceptance on `staging`; Dev1 also the regression). Each role follows its file in `.claude/roles/` ([kit](../../kit/.claude/roles/)).
 
 | Role | Writes | Pushes |
 |---|---|---|
-| PO | `docs/product/` (screen sketches and handovers included), the SRS's functional part at G2, `docs/reports/` | `role/po` |
-| Lead | `docs/tech/`, CRs and `docs/product/changes.md`, milestones, `docs/releases/`, `CHANGELOG.md`, `CLAUDE.md`, `docs/ai-log.md`; merges | every branch (`main`, `production`, tags need you) |
-| Dev | `app/` or source folders, unit tests; with several Devs only its module's folders (`.claude/ownership.json`) | `role/dev1` (at Full up to `role/dev4`, one per module) |
+| Lead | `docs/product/` (screen sketches, CRs, `changes.md` and handovers included), `docs/tech/`, `docs/reports/`, milestones, `docs/releases/`, `CHANGELOG.md`, `CLAUDE.md`, `docs/ai-log.md`; merges | every branch (`main`, `production`, tags need you) |
+| Dev | `app/` or source folders, unit tests; with two Devs only its workstream's folders (`.claude/ownership.json`) | `role/dev1` (`role/dev2` when you add Dev2) |
 | Test (Lite: Dev1) | `tests/`, `docs/tech/test-cases/`, `docs/tech/test-reports/` | `role/test` |
 | UI/UX | `design/`, `packages/tokens/` | `role/uiux` |
 | DevOps | `.github/workflows/`, `infra/`, `scripts/`, `docs/tech/ops/` | `role/devops` |
 
-**Branches:** `role/<role>` → `dev` (daily integration) → `staging` (release candidate: regression, the PO's acceptance, demo; Lite too) → `main` (released, tagged) → `production` (live, from go-live). One worktree per role; nobody rebases or force-pushes `dev`, `staging` or `main`.
+**Branches:** `role/<role>` → `dev` (daily integration) → `staging` (release candidate: regression, acceptance, demo; Lite too) → `main` (released, tagged) → `production` (live, from go-live). One worktree per role; nobody rebases or force-pushes `dev`, `staging` or `main`.
 
 ## 1. Add a team member
 
-**What it does:** opens a Dev, Test, UI/UX or DevOps session when there is work for it. The Lead proposes it: UI/UX at G3 for the look and feel of a product with screens, Dev and Test when G3 is approved (Test writes the test cases while Dev builds and runs the regression at the end), any role when a task needs one. You can also ask.
+**What it does:** opens a Dev, Test, UI/UX or DevOps session when there is work for it. The Lead proposes it: UI/UX at G3 for the look and feel of a product with screens, Dev1 and Test when G3 is approved (Test writes the test cases while Dev1 builds, and runs the regression and the acceptance at the end), any role when a task needs one. You can also ask. Each new session gets its role's model ([chapter 1](01-setup.md#change-the-models-later)).
 
 **Ask the Lead:**
 > We need a dev1 for the tasks in milestone v0.1.0. Prepare it.
@@ -41,14 +39,35 @@ The minimum team is PO + Lead + one Dev (Lite: the Lead also does the design and
 
 **You check:** the session lists its assigned issues and starts the first one.
 
+## Add a second Dev
+
+**What it does:** lets two Devs build at once when the milestone has two parts that do not touch each other (two Devs at most).
+
+**Ask the Lead:**
+> /cb-add-dev `<the work for Dev2, or nothing>`
+
+**Claude asks you:** "Add Dev2 with this split?", after a short table of the two workstreams (folders, tasks, shared files and who owns each).
+
+**Claude does:** gives each Dev one workstream, writes its folders under the Dev's key in `.claude/ownership.json` (the role guard then stops each Dev from editing the other's folders), gives each shared file (a migration, the menu, start-up code) one owner, creates `<project>-wt/dev2` and opens `<Project> - Dev2`. If no two parts are independent, it says so and adds no Dev.
+
+**You check:** the split table makes sense for your product.
+
+## Who thinks, who builds
+
+**What it does:** keeps cost down by giving the hard thinking to the Lead's model. The Lead writes each task with its approach, the files to change and the tests that must pass; a Dev builds what the task says.
+
+**Claude does:** a Dev that is still red after two tries stops and tells the Lead. The Lead then moves that task to a stronger model (`/cb-model dev1 opus`, for example), splits it, or does the hard part itself. After each merged task, the Lead clears the Dev's context when it has no other open PR, because a long session pays for its whole history on every call; the Dev picks up its next task from the issue.
+
+**You do:** type `/clear` in the Lead's session when it asks, after G2 and after each release. It writes down where things stand first.
+
 ## 2. How a task moves (nothing to ask)
 
 - The Dev commits on its branch, pushes, opens a PR into `dev` with `Closes #n` and sends the Lead the link. The card moves to In review.
 - The Lead reviews a PR before any other work. When it asks for changes, the card goes back to In progress, and to In review again when the Dev pushes the fixes. Then the Lead squash-merges.
-- Each task is checked once, at the end of the milestone, on `staging`: the regression (Full: Test; Lite: Dev1), then the PO's acceptance. With `/auto testing on` (Full), an L1-L3 task also moves to Testing after its merge, where Test checks it against its acceptance criteria.
+- Each task is checked once, at the end of the milestone, on `staging`: the regression (Full: Test; Lite: Dev1), then the acceptance (Full: Test; Lite: the Lead), then the 3-5 scenarios you try yourself. With `/cb-auto testing on` (Full), an L1-L3 task also moves to Testing after its merge, where Test checks it against its acceptance criteria.
 - The issue closes and the card moves to Done. A docs PR with no task issue of its own has its own card: In review while it waits for you, Done when merged.
 
-**You check:** "Waiting for the owner" in `/progress`.
+**You check:** "Waiting for the owner" in `/cb-progress`.
 
 ## 3. Ask for an independent review
 
@@ -75,17 +94,17 @@ A blocked session sees the reason and changes course. An approval request appear
 
 ## 5. How automatic it is
 
-**What it does:** the team runs on its own between your decisions: sessions pass the work to each other and the Lead merges every PR after its review and green CI, while you approve the gates and every release. Nothing reaches `main` without `staging`, the PO's acceptance and your approval. `/auto` shows the switches; turn either off when you want to follow each step.
+**What it does:** the team runs on its own between your decisions: sessions pass the work to each other and the Lead merges every PR after its review and green CI, while you approve the gates and every release. Nothing reaches `main` without `staging`, the acceptance and your approval. `/cb-auto` shows the switches; turn either off when you want to follow each step.
 
 | Automation | What happens on its own | What you still do |
 |---|---|---|
-| 1 By hand (`/auto relay off`, `/auto merge off`) | Each open session takes its assigned issues, works, hands off on the issue and ends with a prompt for the next session | Paste each prompt (or `/send` it); approve every merge, gate and release |
+| 1 By hand (`/cb-auto relay off`, `/cb-auto merge off`) | Each open session takes its assigned issues, works, hands off on the issue and ends with a prompt for the next session | Paste each prompt (or `/cb-send` it); approve every merge, gate and release |
 | 2 Default | Each session sends the next one its one-line prompt when a step ends (Claude Code desktop can send messages between local sessions); the Lead merges every PR after its review (by level) and green CI; a session that is needed and not running is opened for you, in its folder and with its name, as a session of its own | Say yes once to each session the Lead opens; answer the questions sessions ask; approve gates and releases |
 | 3 Timers (`/loop`, `/goal`) | A session re-checks or keeps working on its own | Not recommended: every cycle costs tokens even when there is nothing to do |
 
-At automation 2 every session names in its recap what it sent and what it merged ("Sent to Lead: Review the PR for #46.", "Merged PR #58 (L2), CI green."), so you can read what happened. A message costs little: the prompt is one line and the receiving session reads the issue and the documents, as it would if you pasted it. At automation 1 you carry the work yourself: the report ends with the session to open and a short prompt alone in a box, which you copy with one click and paste there, or send with `/send` from the same session. The first few blocks show a one-line tip about `/send` and `/auto relay on`; it stops once you have used either. The receiving session comments `Started #n` on the issue when it begins, so the board shows whether it really picked the work up. An issue comment alone does not start a closed session.
+At automation 2 every session names in its recap what it sent and what it merged ("Sent to Lead: Review the PR for #46.", "Merged PR #58 (L2), CI green."), so you can read what happened. A message costs little: the prompt is one line and the receiving session reads the issue and the documents, as it would if you pasted it. At automation 1 you carry the work yourself: the report ends with the session to open and a short prompt alone in a box, which you copy with one click and paste there, or send with `/cb-send` from the same session. The first few blocks show a one-line tip about `/cb-send` and `/cb-auto relay on`; it stops once you have used either. The receiving session comments `Started #n` on the issue when it begins, so the board shows whether it really picked the work up. An issue comment alone does not start a closed session.
 
-**Type** `/auto relay off` and `/auto merge off` in any session to go back to automation 1, and `on` to return. A session the Lead opens is detached at once, so it runs on its own like one you opened yourself; the app asks for your yes before each new session, and the first time a folder opens it may ask whether you trust it.
+**Type** `/cb-auto relay off` and `/cb-auto merge off` in any session to go back to automation 1, and `on` to return. A session the Lead opens is detached at once, so it runs on its own like one you opened yourself; the app asks for your yes before each new session, and the first time a folder opens it may ask whether you trust it.
 
 Limits: sessions do not wake up on GitHub events by themselves; a closed session does nothing until opened; gates and releases always wait for you; every running session uses tokens.
 

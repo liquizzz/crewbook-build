@@ -3,7 +3,7 @@
 Save as `docs/releases/vX.Y.Z.md`. Prepared by the Lead; the summary at the top is what the owner reads to approve.
 
 ## Release summary
-> **v<X.Y.Z>** (from v<A.B.C>) · <MAJOR / MINOR / PATCH> · CRs: <CR-12, CR-15> · Defects fixed: <#88, #91> · SRS: <§3.2, §5.1> changed · Regression on `staging`: <passed> · Data changes: <none / update and rollback tried> · PO acceptance: <passed n/n> · Owner scenarios: <passed n/n> · Handover: <link> · Extra review: <none / Codex: n findings, x fixed, y rejected> · Risks: <...> · Buffer used: <1 h of AI time>
+> **v<X.Y.Z>** (from v<A.B.C>) · <MAJOR / MINOR / PATCH> · CRs: <CR-12, CR-15> · Defects fixed: <#88, #91> · SRS: <§3.2, §5.1> changed · Regression on `staging`: <passed> · Data changes: <none / update and rollback tried> · Acceptance: <passed n/n> · Owner scenarios: <passed n/n> · Handover: <link> · Extra review: <none / Codex: n findings, x fixed, y rejected> · Risks: <...> · Buffer used: <1 h of AI time>
 >
 > **Approve / Approve and deploy / Reject**
 
@@ -18,15 +18,15 @@ Save as `docs/releases/vX.Y.Z.md`. Prepared by the Lead; the summary at the top 
 - [ ] Every milestone issue is Done or moved to the next milestone with a note
 - [ ] `dev` merged into `staging`; regression passed on `staging` (`docs/tech/test-reports/vX.Y.Z.md`; Full: Test, Lite: Dev1); eval meets pass marks: <metric = value>
 - [ ] Data changes: update and rollback scripts run on the staging database (<none / scripts and result>); a specialist reviewed a large or risky migration (<not needed / who>)
-- [ ] PO acceptance: every acceptance criterion passed on `staging` (`docs/product/handover/vX.Y.Z.md` section 1)
+- [ ] Acceptance (Full: Test, Lite: Lead): every acceptance criterion passed on `staging` (`docs/tech/test-reports/vX.Y.Z.md`, copied into `docs/product/handover/vX.Y.Z.md` section 1)
 - [ ] No open `sev:high` or `sev:medium` defects (or accepted by the owner: <#>)
 - [ ] Owner acceptance: the owner tried each scenario on the `:staging` image (`node scripts/run.mjs staging`) and confirmed it
-- [ ] Handover finished by the PO (`docs/product/handover/vX.Y.Z.md`): delivered, changes, what the client must prepare, accepted risks, how to roll back
+- [ ] Handover finished (`docs/product/handover/vX.Y.Z.md`): delivered, changes, what the client must prepare, accepted risks, how to roll back
 - [ ] Nothing reached `staging` after the acceptance
 - [ ] `release` script run: version computed from labels, `CHANGELOG.md` finalised, SRS version and Revision History updated
 - [ ] Secret check passes; no credentials or client data in the repo or images
 
-## Owner acceptance scenarios (picked by the PO from its acceptance, tried by the owner on the staging image)
+## Owner acceptance scenarios (picked by the Lead from the acceptance, tried by the owner on the staging image)
 | # | Scenario (plain steps) | Expected | Owner result |
 |---|---|---|---|
 | 1 | <Log in as … → do … → see …> | <...> | <ok / problem: …> |

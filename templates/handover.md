@@ -1,6 +1,6 @@
 # Handover: <Project name> vX.Y.Z
 
-Save as `docs/product/handover/vX.Y.Z.md`. The PO fills in section 1 during its acceptance on `staging`, and the rest after the owner's acceptance. The owner sends it to the client.
+Save as `docs/product/handover/vX.Y.Z.md`. The Lead fills in section 1 from the acceptance on `staging` (Full: Test's results in the test report), and the rest after the owner's acceptance. The owner sends it to the client.
 
 | Field | Value |
 |---|---|

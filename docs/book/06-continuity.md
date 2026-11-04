@@ -11,7 +11,7 @@
 **You do:** open a new session in the role's folder (its worktree). It knows its role and recovers by itself; to be sure, say:
 > Read CLAUDE.md and continue as `<role>`.
 
-**Claude does:** reads `CLAUDE.md` and its role file; checks `git status` and recent commits; lists its issues and reads the last comment on each (PO and Lead also read the latest report and milestone file); reports in three lines: working on · where it stands · next step.
+**Claude does:** reads `CLAUDE.md` and its role file; checks `git status` and recent commits; lists its issues and reads the last comment on each (the Lead also reads the latest report and the milestone file); reports in three lines: working on · where it stands · next step.
 
 **You check:** the three lines match what you expect. If not, say what is wrong; the session corrects from the issue.
 
@@ -52,6 +52,8 @@ A session never does another role's work. If you ask one for it, you get a hand-
 
 **You do:** type `/compact`. The compact instructions in `CLAUDE.md` keep role, current issue, branch and last commit, decisions, items waiting for you and open risks. To drop only a side discussion, press Esc twice (rewind) and pick "Summarize from here".
 
+Devs and the Lead need this less: the Lead clears a Dev's context after each merged task, and its own after G2 and after each release ([chapter 9](09-token-budget.md#start-fresh-contexts)).
+
 ## 5. Work from a second machine
 
 **What it does:** lets you follow and approve while away from the main machine.
@@ -75,7 +77,7 @@ Then open each role's session with the restart sentence. Fill in each `.env.loca
 **What it does:** brings a project that already runs up to the newest Crewbook kit, so a long project gets the kit's fixes too.
 
 **Ask the Lead:**
-> /kit-update
+> /cb-update
 
 **Claude does:** fetches crewbook-build; shows you the kit versions, the kit decisions that change how you work, and what happens to each file; on your yes, replaces the kit files, keeps your own (Docker files, workflows you changed, `docs/`), merges `CLAUDE.md` (your description, Stage, Open decisions, stack and rules stay) and `.claude/settings.json` (your plugins and permissions stay); runs the tests and opens a PR into `dev`.
 
@@ -83,7 +85,13 @@ Then open each role's session with the restart sentence. Fill in each `.env.loca
 
 **Claude asks before:** the update itself, and the merge. After the merge it tells every running session to merge `dev` and restart.
 
-A project made before `/kit-update` existed runs the update once by hand: `node <crewbook-build>/kit/update.mjs --dry-run` in the Lead's folder ([How to run](../../HOW-TO-RUN.md)).
+An update from an older kit can also bring:
+- renamed commands: they all start with `/cb-` now (`/cb-build` instead of `/build`, `/cb-update` instead of `/kit-update`); the Lead tells you once;
+- retired roles: the PO's work goes to the Lead, Dev3's and Dev4's modules to Dev1 or Dev2. The Lead proposes who takes each open issue; you close those sessions once their work is merged;
+- your own `scripts/ci-local.mjs` is kept until its steps are in `scripts/ci-steps.json`; the Lead moves them in the same PR;
+- no model mode yet: the Lead asks you which one (`claude`, `deepseek` or `mix`).
+
+A project made before `/cb-update` existed runs the update once by hand: `node <crewbook-build>/kit/update.mjs --dry-run` in the Lead's folder ([How to run](../../HOW-TO-RUN.md)).
 
 > **Token tip:** a fresh session with the restart sentence is often cheaper than a long, compacted one; restart instead of compacting a second time.
 

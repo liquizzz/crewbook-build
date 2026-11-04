@@ -6,7 +6,7 @@
 // Needs the gh CLI with the "project" scope:  gh auth refresh -s project
 // GitHub's API cannot switch a project to the board layout: open the project once, choose View → Layout → Board, then Save.
 // Issues and docs PRs move between columns with: node scripts/board-status.mjs <number> "<column>"
-// Every level gets the same columns, so changing the level never touches the board; Testing is used at Full with per-task testing on (/auto testing on).
+// Every level gets the same columns, so changing the level never touches the board; Testing is used at Full with per-task testing on (/cb-auto testing on).
 import { execFileSync } from "node:child_process";
 
 const STATUSES = [
@@ -15,11 +15,11 @@ const STATUSES = [
   ["Ready", "PURPLE", "Meets the Definition of Ready"],
   ["In progress", "YELLOW", "One task per person"],
   ["In review", "ORANGE", "PR open: waiting for the Lead's review or the owner's merge"],
-  ["Testing", "PINK", "Merged; the Test session checks it at its change level (Full, when /auto testing is on)"],
+  ["Testing", "PINK", "Merged; the Test session checks it at its change level (Full, when /cb-auto testing is on)"],
   ["Done", "GREEN", "Merged and CI green (and tested, when it went to Testing)"],
 ];
 const FIELDS = [
-  ["Role", ["po", "lead", "dev", "test", "uiux", "devops"]],
+  ["Role", ["lead", "dev", "test", "uiux", "devops"]],
   ["Level", ["L0", "L1", "L2", "L3"]],
   ["Priority", ["P1", "P2", "P3"]],
 ];

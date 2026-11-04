@@ -1,6 +1,6 @@
 # Test report v<X.Y.Z>
 
-Save as `docs/tech/test-reports/vX.Y.Z.md`. Written by Test (Lite: Dev1) for the regression on `staging` (G5), or for a hotfix check.
+Save as `docs/tech/test-reports/vX.Y.Z.md`. Written by Test (Lite: Dev1) for the regression on `staging` (G5), or for a hotfix check. The acceptance section is filled by Test (Lite: the Lead) after the regression passes.
 
 | Field | Value |
 |---|---|
@@ -24,6 +24,13 @@ Save as `docs/tech/test-reports/vX.Y.Z.md`. Written by Test (Lite: Dev1) for the
 | Metric | Pass mark | Result |
 |---|---|---|
 | <hit@5> | <≥ 0.8> | <...> |
+
+## Acceptance
+Every acceptance criterion of the milestone's stories and CRs, tried on `staging` (desktop and about 390 px wide for a product with screens).
+
+| Story or CR | Criterion | Result | Note |
+|---|---|---|---|
+| US-<n> / CR-<n> | Given … When … Then … | Pass / Fail (#defect) | <…> |
 
 ## Defects
 | Issue | Severity | Status | Blocks release? |

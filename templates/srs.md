@@ -1,6 +1,6 @@
 # Software Requirements Specification: <Project name>
 
-Save as `docs/tech/srs.md`. Structure follows ISO/IEC/IEEE 29148 (software requirements), cut down to what one owner needs. The PO writes sections 1-3 (the functional part: one `FR-xxx` per requirement, with its origin and acceptance) at G2; the Lead adds the NFR targets, the architecture and the traceability at G3 and keeps the SRS current after that through CRs. Sections 1-3 are in plain words, like the PRD; the NFRs and the architecture may be technical but each section opens with a sentence anyone can read. Mandatory for every project. It always describes the system as it is now; every CR updates it before its tasks are assigned; its version equals the release version.
+Save as `docs/tech/srs.md`. Structure follows ISO/IEC/IEEE 29148 (software requirements), cut down to what one owner needs. The Lead writes sections 1-3 (the functional part: one `FR-xxx` per requirement, with its origin and acceptance) at G2, then adds the NFR targets, the architecture and the traceability at G3 and keeps the SRS current after that through CRs. Sections 1-3 are in plain words, like the PRD; the NFRs and the architecture may be technical but each section opens with a sentence anyone can read. Mandatory for every project. It always describes the system as it is now; every CR updates it before its tasks are assigned; its version equals the release version.
 
 **Version:** 0.0.0 · **Status:** Functional draft (G2) / Baseline draft (G3) · **Last updated:** YYYY-MM-DD
 

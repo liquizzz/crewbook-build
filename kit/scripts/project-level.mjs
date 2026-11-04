@@ -6,27 +6,30 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
-// worktrees: the role worktrees the level uses once /setup is done. init creates only the Lead's;
-// /setup creates the others (setup comes first; the session-start hook enforces it).
+// worktrees: the role worktrees the level uses once /cb-setup is done. init creates only the Lead's;
+// /cb-setup creates the others (setup comes first; the session-start hook enforces it).
 export const LEVELS = {
   lite: {
     title: "Lite",
     branches: ["dev", "staging"],
-    worktrees: ["po", "lead", "dev1"],
-    help: "PO, Lead and one Dev, each in its own session. The starting level for any client project or product.",
-    line: "Lite (PO, Lead and Dev1 sessions; book chapter 8)",
+    worktrees: ["lead", "dev1"],
+    help: "Lead and one Dev, each in its own session. The starting level for any client project or product.",
+    line: "Lite (Lead and Dev1 sessions; book chapter 8)",
   },
   full: {
     title: "Full",
     branches: ["dev", "staging"],
-    worktrees: ["po", "lead"],
+    worktrees: ["lead"],
     help: "Adds Test, UI/UX and DevOps sessions. Money, security, personal data, or a client who signs off each release.",
-    line: "Full process (PO and Lead, then Dev, Test, UI/UX and DevOps as needed; book chapter 2)",
+    line: "Full process (the Lead, then Dev1, Test, UI/UX and DevOps as needed, Dev2 on /cb-add-dev; book chapter 2)",
   },
 };
 export const LEVEL_ORDER = ["lite", "full"];
 // Removed levels and the level to use instead.
 export const REMOVED_LEVELS = { starter: "lite" };
+// The roles a project can have, and roles the kit no longer has (their worktrees are kept until the owner removes them).
+export const ROLES = ["lead", "dev1", "dev2", "test", "uiux", "devops"];
+export const RETIRED_ROLES = { po: "the Lead (DEC-074)", dev3: "Dev1 or Dev2 (DEC-075)", dev4: "Dev1 or Dev2 (DEC-075)" };
 
 export function parseLevel(value) {
   const v = String(value || "").trim().toLowerCase();
@@ -97,7 +100,6 @@ export function renderStartHere(dir, project, root = dir) {
     owner,
     image: `ghcr.io/${owner}/${repoName}-app`,
     main: root,
-    po: worktreePath(root, "po"),
     lead: worktreePath(root, "lead"),
     dev1: worktreePath(root, "dev1"),
   };

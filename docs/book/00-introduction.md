@@ -18,24 +18,24 @@ Anyone can build high-quality software from zero with this book, whether you cod
 ## What this book does not do
 
 - It does not ask you to program. It teaches how to direct Claude Code to build, test and release software.
-- It does not replace your judgement. Several AI roles do not make an independent check: if the PO misunderstands you, the Lead, Dev and Test can follow the same mistake. The process makes misunderstandings visible early (every role writes down what it understood), and you try the product yourself before each release ([chapter 5](05-releases.md)).
+- It does not replace your judgement. Several AI roles do not make an independent check: if the Lead misunderstands you, Dev and Test can follow the same mistake. The process makes misunderstandings visible early (every role writes down what it understood), and you try the product yourself before each release ([chapter 5](05-releases.md)).
 - It does not guarantee a correct, secure or stable product if gates, tests or your acceptance are skipped.
 - It does not run your servers. Everything runs in Docker and each release is a versioned image. Before go-live the Lead suggests hosting options; you choose one and run it ([chapter 5](05-releases.md#2-go-live-first-production-release)).
 - It does not run by itself. You open the sessions; they pick up work from issues ([chapter 2](02-the-team.md#5-how-automatic-it-is)).
 
 ## Quick start: from idea to demo
 
-Lite ([chapter 8](08-lite-mode.md)) is the starting level: three sessions, PO, Lead and Dev1, that you direct like a small team. You run one command, then each step is one slash command the kit installs; Claude drafts the whole step at once and you correct it. When work moves to another session, the report ends with the session to open and a prompt in a box you copy with one click. The project gets the same steps in its own `START-HERE.md` ([How to run](../../HOW-TO-RUN.md)).
+Lite ([chapter 8](08-lite-mode.md)) is the starting level: two sessions, the Lead and Dev1, that you direct like a small team. You talk to the Lead from the idea to each release; it runs Dev1. You run one command, then each step is one slash command the kit installs (each starts with `cb`, short for Crewbook, so it stands apart from other plugins' commands: `/cb-setup`, `/cb-next`, `/cb-build`); Claude drafts the whole step at once and you correct it. When work moves to another session, the report ends with the session to open and a prompt in a box you copy with one click. The project gets the same steps in its own `START-HERE.md` ([How to run](../../HOW-TO-RUN.md)).
 
 | # | Session | Type | You get |
 |---|---|---|---|
-| 1 | Terminal, then Lead | Run `node crewbook-build/kit/init.mjs`, then open Claude Code in the `lead` folder init created (`<project>-wt/lead`) and type `/setup` | Repo, kit, branches, the gate issues, and the PO's and Dev1's folders ([ch. 1](01-setup.md)) |
-| 2 | PO | `/next <your idea>` | A one-page proposal and sketches of the main screens you approve once (G1 and G2); then the PRD, the stories and the functional part of the SRS, written without asking you again ([ch. 3](03-foundation.md)) |
-| 3 | Lead | `/next` | One solution design with the look and feel that you approve once (G3); then the ADRs, the completed SRS and the v0.1.0 tasks; from here on the Lead is your one contact ([ch. 3](03-foundation.md)) |
-| 4 | Dev1 | `/build try #<n>` while you look, `/build done #<n>` per finished task | Code you can try at once; then tests at each task's level and a PR the Lead merges ([ch. 4](04-delivery-loop.md)) |
-| 5 | Lead | `/release` | The milestone on `staging`: Dev1's regression, the PO's acceptance and the handover, scenarios you try, then tagged v0.1.0 and its Docker image ([ch. 5](05-releases.md)) |
+| 1 | Terminal, then Lead | Run `node crewbook-build/kit/init.mjs`, then open Claude Code in the `lead` folder init created (`<project>-wt/lead`) and type `/cb-setup` | Repo, kit, branches, the gate issues, Dev1's folder and the model each role runs on ([ch. 1](01-setup.md)) |
+| 2 | Lead | `/cb-next <your idea>` | A one-page proposal and sketches of the main screens you approve once (G1 and G2); then the PRD, the stories and the functional part of the SRS, written without asking you again ([ch. 3](03-foundation.md)) |
+| 3 | Lead | `/cb-next` | One solution design with the look and feel that you approve once (G3); then the ADRs, the completed SRS and the v0.1.0 tasks ([ch. 3](03-foundation.md)) |
+| 4 | Dev1 | `/cb-build try #<n>` while you look, `/cb-build done #<n>` per finished task | Code you can try at once; then tests at each task's level and a PR the Lead merges ([ch. 4](04-delivery-loop.md)) |
+| 5 | Lead | `/cb-release` | The milestone on `staging`: Dev1's regression, the Lead's acceptance and the handover, scenarios you try, then tagged v0.1.0 and its Docker image ([ch. 5](05-releases.md)) |
 | 6 | Terminal | The commands in the "Run the release in Docker" step of `START-HERE.md` | v0.1.0 running in Docker on your machine |
-| 7 | Lead, then Dev1 | Prove the loop: close the sessions, open new ones, `/change <one small feature>` | The change as CR, task and v0.1.1, picked up from the record alone |
+| 7 | Lead, then Dev1 | Prove the loop: close the sessions, open new ones, `/cb-change <one small feature>` | The change as CR, task and v0.1.1, picked up from the record alone |
 
 If the new sessions in step 7 pick up the fix without you explaining anything, keep building. Move to Full when money, security or personal data comes in, or when someone must sign off each release.
 
@@ -43,19 +43,16 @@ If the new sessions in step 7 pick up the fix without you explaining anything, k
 
 ```mermaid
 flowchart LR
-  O(["Owner<br/>(you)"]) <-- "G1-G2" --> PO["PO session"]
-  O <-- "from G3" --> Lead["Lead session"]
-  PO -- "SRS (functional part)" --> Lead
+  O(["Owner<br/>(you)"]) <-- "idea, gates, releases" --> Lead["Lead session"]
   Lead --> Dev["Dev session"]
-  Lead -. "acceptance on staging, handover" .-> PO
   Lead -.-> Test["Test session"]
   Lead -.-> DevOps["DevOps session"]
   Lead -.-> UX["UI/UX session"]
 ```
 
-Solid lines are the three sessions most projects run (Lite). Test, DevOps and UI/UX join at Full, only when there is work for them; the PO comes back at the end of each milestone.
+Solid lines are the two sessions most projects run (Lite). Test, DevOps and UI/UX join at Full, only when there is work for them.
 
-You are the owner. You give the PO your idea and approve the proposal and the screen sketches (G1-G2); from G3 on you work with the Lead, decide at a few gates and approve every release. The PO answers to the client: it checks each milestone on `staging` and writes the handover. Each role is a separate Claude Code session with its own git worktree and role file. The work is written down in GitHub issues, repo documents and git, so a skipped step shows up, and any change can be traced and fixed later.
+You are the owner, and the product owner. You work with one session, the Lead, from the idea to each release: you give it your idea, approve the proposal and the screen sketches (G1-G2) and the solution design (G3), and approve every release. The Lead writes the documents, plans the tasks, reviews the code and checks each milestone on `staging` (at Full the Test session does that check). Each role is a separate Claude Code session with its own git worktree and role file. The work is written down in GitHub issues, repo documents and git, so a skipped step shows up, and any change can be traced and fixed later.
 
 ## Principles
 
@@ -91,11 +88,13 @@ Pick the level by what is at stake: even a small project that handles money need
 
 | Level | Sessions | Use when |
 |---|---|---|
-| [Lite](08-lite-mode.md), the starting level | Three: PO, Lead, Dev | Most products, including ones other people use |
-| Full | PO, Lead, Dev, and Test, UI/UX or DevOps when there is work for them | Money, security, personal data, or someone who signs off each release, even for a short project |
+| [Lite](08-lite-mode.md), the starting level | Two: Lead, Dev1 | Most products, including ones other people use |
+| Full | Lead, Dev1, and Test, UI/UX or DevOps when there is work for them | Money, security, personal data, or someone who signs off each release, even for a short project |
 | No process needed | | A one-off script or a spike you will throw away |
 
-There is no single-session level: one session playing every role runs slower than three sessions working side by side, and it hides the hand-offs you need to see. One Dev session is the default at every level. At Full you can run up to four Devs (`dev1` to `dev4`), one per module of the milestone that no other Dev touches. Each Dev runs `code-review` on its own PR first, so the Lead's review keeps up; add a Dev only while PRs do not queue for review.
+There is no single-session level: one session playing every role runs slower than two sessions working side by side, and it hides the hand-offs you need to see. One Dev session (Dev1) is the default at every level. When the milestone has two parts that do not touch each other, you can ask for a second Dev with `/cb-add-dev`: the Lead splits the work into two workstreams, one per Dev (two Devs at most).
+
+The Lead does the thinking: the design, each task with its approach, files and tests, and the review. A Dev builds what the task says, so it can run on a smaller, cheaper model. You pick the models once at setup ([chapter 1](01-setup.md#2-finish-the-setup)) and can change them later with `/cb-model`.
 
 ## How each task is written in this book
 
@@ -130,7 +129,7 @@ Every session follows "AI does the work; the owner decides" from the kit's `CLAU
 | [5 Releases](05-releases.md) | Release, deploy, hotfix, roll back |
 | [6 Continuity](06-continuity.md) | Restart, compact, trace a change, switch machines |
 | [7 Front-end projects](07-frontend-projects.md) | Show design rounds while the product is built |
-| [8 Lite mode](08-lite-mode.md) | Run with three sessions; move to Full and back |
+| [8 Lite mode](08-lite-mode.md) | Run with two sessions; move to Full and back |
 | [9 Token budget](09-token-budget.md) | Keep cost under control |
 | Appendices | [A Templates](appendix-a-templates.md) · [B Kit](appendix-b-kit.md) · [C FAQ](appendix-c-faq.md) · [D Process checklist](appendix-d-checklist.md) · [E Standards map](appendix-e-standards.md) |
 
@@ -139,10 +138,10 @@ Every session follows "AI does the work; the owner decides" from the kit's `CLAU
 | Term | Meaning |
 |---|---|
 | Owner | You: the human who decides scope, priorities and releases |
-| Session | One Claude Code desktop conversation playing one role (PO, Lead, Dev, Test, UI/UX, DevOps) |
-| PO | Product owner: answers to the client. Turns your idea into the proposal and the screen sketches, then the PRD, the stories and the functional part of the SRS (G1-G2); at the end of each milestone checks it on `staging` against the acceptance criteria and writes the handover |
-| Lead | Tech lead and your one contact from G3: the solution design, task plan, every change (CR or ADR), review, releases |
-| Lite / Full | The two levels of process. Lite runs PO, Lead and Dev; Full adds Test, UI/UX and DevOps. Both test each milestone on `staging` |
+| Session | One Claude Code desktop conversation playing one role (Lead, Dev, Test, UI/UX, DevOps) |
+| Lead | Your one contact from the idea to each release: the proposal, the screen sketches and the requirements (G1-G2), the solution design (G3), the task plan, every change (CR or ADR), the review, the acceptance on `staging` (at Lite) and the handover for the client, the releases |
+| Lite / Full | The two levels of process. Lite runs the Lead and Dev1; Full adds Test, UI/UX and DevOps. Both test each milestone on `staging` |
+| Model mode | Which AI models the roles run on, chosen at setup: `claude`, `deepseek` or `mix` ([chapter 1](01-setup.md#2-finish-the-setup)) |
 | Phase | One of the seven stages of the life cycle, from 1 Planning to 7 Maintenance |
 | Worktree | A separate folder of the same git repo, one per role, so sessions never edit the same files |
 | Branch | A line of work in git. `role/<role>` per role; `dev` (integration) → `staging` (release candidate) → `main` (released) → `production` (live) |
@@ -171,7 +170,7 @@ Every session follows "AI does the work; the owner decides" from the kit's `CLAU
 | Tag | A fixed name for one version in git; every release on `main` has one |
 | Docker image | A packaged, runnable copy of one part of the product (`app`, `design`), built per folder and tagged with the version, e.g. `app:v1.4.0` |
 | Registry | Where the images are stored; the kit uses GitHub's (`ghcr.io`) |
-| Gate | A checklist you pass at the end of a phase (G1-G6); `/gate` checks it first |
+| Gate | A checklist you pass at the end of a phase (G1-G6); `/cb-gate` checks it first |
 | Hotfix / Rollback | An urgent fix to production / putting the previous version back live |
 | Compact | Shrinking a session's context (`/compact`) so it stays fast and cheap |
 | Token | The unit Claude usage is measured and paid in |

@@ -3,7 +3,7 @@
 // Crewbook by Hai Nguyen (github.com/liquizzz/crewbook-build)
 // role-guard: Claude Code PreToolUse hook for Bash, PowerShell and file edits.
 // Enforces Crewbook rules per role. The role is read from .claude/role in the
-// worktree (one word: po, lead, dev1 to dev4, test, uiux, devops), written by scripts/new-role-worktree.mjs.
+// worktree (one word: lead, dev1, dev2, test, uiux, devops), written by scripts/new-role-worktree.mjs.
 //
 //   Push    every role except the Lead pushes only role/<role>; nobody force-pushes dev, staging, main;
 //           nobody uses --no-verify; only the Lead merges PRs.
@@ -24,7 +24,6 @@ const OWNER_GATED_BRANCHES = ["main", "production"];
 // Paths each role may edit, relative to the worktree root. "*" means everything.
 const DEFAULT_OWNERSHIP = {
   lead: ["*"],
-  po: ["docs/product/", "docs/reports/", "docs/tech/srs.md"],
   dev: ["app/", "src/", "packages/", "tests/unit/", "CHANGELOG.md", "package.json", "pnpm-lock.yaml", ".env.example"],
   test: ["tests/", "docs/tech/test-cases/", "docs/tech/test-reports/"],
   uiux: ["design/", "packages/tokens/"],

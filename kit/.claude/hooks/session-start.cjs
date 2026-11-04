@@ -4,7 +4,7 @@
 //
 // SessionStart hook: when a session starts, resumes, is cleared or compacted, it reminds Claude of its role,
 // the skills it must use, how to ask the owner and how to recover its state, so the owner never has to type it.
-// Until the Lead's /setup is done (.claude/project.json "setup": false), every other role is told to wait.
+// Until the Lead's /cb-setup is done (.claude/project.json "setup": false), every other role is told to wait.
 // It reads .claude/role, .claude/project.json and the role file's Skills line. It never blocks: any error prints nothing.
 const fs = require("fs");
 const path = require("path");
@@ -50,9 +50,14 @@ function reminder(cwd) {
   if (project.setup === false && role !== "lead") {
     return [
       `Crewbook: you are the ${role} session, but the project's setup is not done yet.`,
-      `Do no project work and run no command except the read-only /progress. To anything else, answer only, in the owner's language:`,
-      `"Setup is not done. Open the session "${name} - Lead" and type /setup; it tells you when to come back here."`,
+      `Do no project work and run no command except the read-only /cb-progress. To anything else, answer only, in the owner's language:`,
+      `"Setup is not done. Open the session "${name} - Lead" and type /cb-setup; it tells you when to come back here."`,
     ].join(" ");
+  }
+  // Roles the kit no longer has: their open work goes to another session.
+  const retired = { po: "the Lead", dev3: "Dev1 or Dev2", dev4: "Dev1 or Dev2" }[role];
+  if (retired) {
+    return `Crewbook: the kit no longer has a ${role} role; its work goes to ${retired}. Do no new work here. Tell the owner, in the owner's language, to finish or hand over what is open, close this session, and remove the worktree when its work is merged.`;
   }
   const family = role.replace(/\d+$/, "");
   const roleDoc = `.claude/roles/${family}.md`;

@@ -12,7 +12,7 @@
 //
 // It creates the folder and a git repo, copies the kit, fills in the project name, level and description,
 // writes START-HERE.md (the owner's steps for that level), creates the branches and the Lead's worktree
-// (the Lead's /setup creates the other roles' worktrees) and, only if you choose it, creates the GitHub repo,
+// (the Lead's /cb-setup creates the other roles' worktrees) and, only if you choose it, creates the GitHub repo,
 // pushes the branches and sets up the labels and the board.
 // Existing files are kept unless --force is given. It never writes secrets.
 // To bring a project that already runs up to a newer kit, use update.mjs instead.
@@ -259,7 +259,7 @@ fill(".claude/settings.json", (t) => {
   if (!humanize) delete s.enabledPlugins["humanizer@humanizer"];
   return JSON.stringify(s, null, 2) + "\n";
 });
-// setup: false until the Lead's /setup is done; the session-start hook keeps other roles waiting until then.
+// setup: false until the Lead's /cb-setup is done; the session-start hook keeps other roles waiting until then.
 // kitVersion: the playbook commit the kit came from; update.mjs starts from it.
 // ci: where CI runs. A public repo has free Actions minutes; a private one (or none) runs CI on this machine.
 const ci = github === "public" ? "github" : "local";
@@ -371,7 +371,7 @@ if (repo) {
   else warnings.push(`CI runs on this machine (private repo, no Actions minutes used): node scripts/ci-local.mjs <branch>. To use GitHub Actions instead: node scripts/ci-mode.mjs github`);
 }
 
-// 2i. The Lead's worktree (it starts from the committed kit, so only in a fresh repo). /setup creates the others.
+// 2i. The Lead's worktree (it starts from the committed kit, so only in a fresh repo). /cb-setup creates the others.
 if (!fresh) warnings.push(`Existing repo: commit the kit files, then run node scripts/new-role-worktree.mjs lead to create the Lead's worktree.`);
 for (const role of fresh ? ["lead"] : []) {
   if (fs.existsSync(worktreePath(dest, role))) {
@@ -394,7 +394,7 @@ if (installPlugins) {
     if (out.includes("/plugin install")) warnings.push(`Claude Code plugins: ${lines.join("\n    ")}`);
     else created.push(`(${lines[0].replace(/\.$/, "")})`);
   } catch (e) {
-    warnings.push(`Plugins not installed: ${String(e.stderr || e.message).trim().split(/\r?\n/)[0]}. The Lead's /setup checks them first.`);
+    warnings.push(`Plugins not installed: ${String(e.stderr || e.message).trim().split(/\r?\n/)[0]}. The Lead's /cb-setup checks them first.`);
   }
 }
 
@@ -406,6 +406,6 @@ if (kept.length) console.log(`\nKept existing (${kept.length}, use --force to ov
 if (warnings.length) console.log(`\nPlease check:\n  ${warnings.join("\n  ")}`);
 console.log(`
 Next: open ${path.join(dest, "START-HERE.md")} and follow it step by step.
-Step 1: open Claude Code desktop in this folder, name the session "${name} - Lead", and type /setup:
+Step 1: open Claude Code desktop in this folder, name the session "${name} - Lead", and type /cb-setup:
   ${lead}
 Setup comes first: it creates the other sessions' folders and tells you which to open next.`);

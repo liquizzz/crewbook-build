@@ -8,7 +8,7 @@ Crewbook aims at software one owner can trust and maintain, with no lost documen
 
 | Crewbook part | Standard or practice | Where |
 |---|---|---|
-| Phases 1-7 with gates G1-G6, approved by the owner | Stage-Gate (phase reviews in PMI and PRINCE2) | Chapter 3, `/gate`, Appendix D |
+| Phases 1-7 with gates G1-G6, approved by the owner | Stage-Gate (phase reviews in PMI and PRINCE2) | Chapter 3, `/cb-gate`, Appendix D |
 | SRS with `FR-xxx` and `NFR-xxx` IDs, revision history, traceability matrix | ISO/IEC/IEEE 29148 (requirements), short form | `templates/srs.md` |
 | NFR rows | ISO/IEC 25010 quality characteristics | SRS section 6 |
 | Test strategy, exit criteria, product risks | ISO/IEC/IEEE 29119-3 (test plan), short form | `templates/test-strategy.md` |

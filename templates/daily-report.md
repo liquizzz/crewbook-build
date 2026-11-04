@@ -1,6 +1,6 @@
 # Report YYYY-MM-DD
 
-Save as `docs/reports/YYYY-MM-DD.md`. Written only when the owner asks for a saved report (`/progress report` in the PO or the Lead): the same live state `/progress` shows, kept as a file. Push the session's branch and send the owner the GitHub link.
+Save as `docs/reports/YYYY-MM-DD.md`. Written only when the owner asks for a saved report (`/cb-progress report` in the Lead): the same live state `/cb-progress` shows, kept as a file. Push the session's branch and send the owner the GitHub link.
 
 **Stage:** <foundation: next gate / build: milestone vX.Y.Z> · buffer left <1 h> · release <on track / at risk>
 
