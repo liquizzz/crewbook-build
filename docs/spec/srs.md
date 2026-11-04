@@ -2,14 +2,15 @@
 
 The requirements of the playbook itself: what `kit/init.mjs` and the kit it installs must do, and what the book promises. Structure follows the playbook's own [SRS template](../../templates/srs.md). The reasons behind each requirement are in [decisions.md](decisions.md) (DEC-0NN).
 
-**Version:** 0.30 · **Status:** Describes `main` after the PO was removed and the models per role added (2026-11-04) · **Last updated:** 2026-11-05
+**Version:** 0.31 · **Status:** Describes `main` after the PO was removed and the models per role added (2026-11-04) · **Last updated:** 2026-11-05
 
 ## Revision history
 Newest first. A change to the kit or the book that changes behaviour adds a row here in the same commit.
 
 | SRS version | Commit | Date | Decisions | Sections changed | Summary |
 |---|---|---|---|---|---|
-| 0.30 | (this commit) | 2026-11-05 | DEC-079 | §3, §8 | Build nothing twice: one image per source tree, `CI_CHANGED_FILES`, `ci-local --full` once per milestone, the Lead's CI guide (FR-094) |
+| 0.31 | (this commit) | 2026-11-05 | DEC-080 | §3, §8 | `/cb-review`: a manual command that forces a Codex review (FR-095) |
+| 0.30 | a5f4181 | 2026-11-05 | DEC-079 | §3, §8 | Build nothing twice: one image per source tree, `CI_CHANGED_FILES`, `ci-local --full` once per milestone, the Lead's CI guide (FR-094) |
 | 0.29 | 8430ee7 | 2026-11-04 | DEC-074 to DEC-078 | §2, §3, §7, §8 | No PO (the Lead from the idea to each release, acceptance by Test or the Lead); two Devs at most with `/cb-add-dev`; model modes and `/cb-model`; every command with the `cb-` prefix; a fresh context per task; safer kit updates (FR-089 to FR-093) |
 | 0.28 | 996dc4c | 2026-10-30 | DEC-073 | §3, §8 | Faster CI on the machine: PASS reused for the same branch and `dev`, one run at a time, steps by changed paths, times per step and in total (FR-088) |
 | 0.27 | c8b06d9 | 2026-10-28 | DEC-072 | §3, §8 | CI on GitHub or on the machine (`ci-mode.mjs`, `ci-local.mjs`), local by default for a private repo; fewer Actions minutes in github mode (FR-087) |
@@ -174,6 +175,7 @@ n/a: the playbook has no screens. Products made with it get a look-and-feel roun
 | FR-092 | Every kit command shall start with `cb-`; `update.mjs` shall remove the old command files and `roles/po.md` (reporting changed ones), keep a project's own `scripts/ci-local.mjs` without adding `ci-steps.json` until the project has its steps there, and report retired roles' worktrees and a missing model mode | DEC-077 | `kit/commands/cb-*.md`, `kit/update.mjs`, `commands/cb-update.md` |
 | FR-093 | The Lead shall clear a Dev's context after each merged task when the Dev has no other open PR, and its own after G2 and after each release; a Dev shall stop after two red tries and hand the task back to the Lead, who writes tasks with their approach, files and tests | DEC-078 | `CLAUDE.md` rules "Fresh context" and "Models", `roles/lead.md`, `dev.md`, `commands/cb-build.md`, `cb-next.md`, `cb-release.md` |
 | FR-094 | With CI on this machine the kit shall build an image once per set of files (`run.mjs` shall tag an image built from the same source tree instead of building it again, never using the dev image as a source); `ci-local.mjs` shall give each step `CI_CHANGED_FILES` and run every step with `--full`, which the Lead runs once per milestone on `staging` before the image is built | DEC-079 | `scripts/run.mjs`, `project-level.mjs` (`imageRecord`, `sameTreeTag`), `ci-local.mjs`, `CLAUDE.md` rule "Where CI runs", `roles/lead.md`, `test.md`, `commands/cb-release.md` |
+| FR-095 | `/cb-review` (Lead) shall run a Codex review of a PR on the owner's command only: `scripts/codex-review.mjs` shall run the Codex plugin's review or adversarial review on the PR's diff against its base in a throw-away worktree; the Lead shall label the PR `codex-review`, post the findings, send accepted findings to the author and give a reason for each rejected one; a missing plugin, a quota error or a failed run shall be reported as no review, never as a pass, and not replaced by another reviewer | DEC-080 | `commands/cb-review.md`, `scripts/codex-review.mjs`, `roles/lead.md`, `CLAUDE.md` rule "PR review" |
 | FR-040 | `/cb-build try [#n]` shall code and run the task with no tests and no merge, commit `<type>(<module>): <summary> (#n)`, push the role branch and keep the issue In progress | DEC-030 | `build.md` |
 | FR-041 | `/cb-build done [#n]` shall confirm the change level against the diff (raise, never lower), make the tests for that level green, run verification, open a PR into `dev` with `Closes #n` and the level, and move the issue to In review | DEC-004, DEC-030 | PR template fields |
 | FR-042 | The Lead shall review every PR (`code-review`, plus `security-review` for L3), merge into `dev`, and when CI on `dev` is green close the issue and move it to Done | DEC-031 | Closed issue in Done |
@@ -314,6 +316,7 @@ n/a: the playbook has no screens. Products made with it get a look-and-feel roun
 | FR-090 | DEC-075 | `commands/cb-add-dev.md`, `kit/CLAUDE.md`, `.claude/hooks/role-guard.cjs` | `kit/init.test.mjs` (dev2 worktree, port, rules), `role-guard.test.cjs` (two workstreams) | Delivered |
 | FR-091 | DEC-076 | `scripts/model.mjs`, `scripts/set-secret.mjs`, `scripts/new-role-worktree.mjs`, `commands/cb-model.md`, `commands/cb-setup.md` | `kit/init.test.mjs` (models: modes, key refused and never printed, one role changed, deepseek-pro refused for UI/UX) | Delivered |
 | FR-092 | DEC-077 | `kit/commands/`, `kit/update.mjs` | `kit/init.test.mjs` (cb- commands, old names gone), `kit/update.test.mjs` (renames, own ci-local kept, retired roles reported) | Delivered |
+| FR-095 | DEC-080 | `kit/commands/cb-review.md`, `kit/scripts/codex-review.mjs`, `kit/.claude/roles/lead.md`, `kit/CLAUDE.md` | `kit/init.test.mjs` (codex-review: plugin missing, review run in a worktree at the PR head, adversarial focus, failure not a pass) | Delivered; to confirm with the real plugin |
 | FR-094 | DEC-079 | `scripts/run.mjs`, `scripts/project-level.mjs`, `scripts/ci-local.mjs`, `kit/CLAUDE.md`, `.claude/roles/lead.md`, `test.md`, `commands/cb-release.md` | `kit/init.test.mjs` (CI_CHANGED_FILES, --full, same-tree image reuse, guide text) | Delivered; docker tag path to confirm in a release |
 | FR-093 | DEC-078 | `kit/CLAUDE.md`, `.claude/roles/lead.md`, `dev.md`, `commands/cb-build.md` | Trials | Delivered; to confirm in a trial |
 | FR-088 | DEC-073 | `scripts/ci-local.mjs`, `scripts/ci-steps.json`, `kit/CLAUDE.md`, `.claude/roles/lead.md` | `kit/init.test.mjs` (changed-only step skipped, total time, stale lock cleared, PASS reused) | Delivered |

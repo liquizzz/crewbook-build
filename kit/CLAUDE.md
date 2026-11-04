@@ -101,7 +101,7 @@ Use the skill named for each task, every time; do not swap it for another. For w
 | Library, framework or tool syntax | `context7` |
 | Bug, defect, red CI, hotfix | `superpowers:systematic-debugging` |
 | Before saying done, opening a PR, merging or releasing | `superpowers:verification-before-completion` |
-| PR review | Dev, before the PR: `code-review` on its own diff (L2-L3), findings fixed, noted in the PR. Lead, by level: L0-L1 read the diff; L2 read the diff and the Dev's self-review, `code-review` again when the self-review is missing or the PR touches a shared file; L3 `code-review` and `security-review` |
+| PR review | Dev, before the PR: `code-review` on its own diff (L2-L3), findings fixed, noted in the PR. Lead, by level: L0-L1 read the diff; L2 read the diff and the Dev's self-review, `code-review` again when the self-review is missing or the PR touches a shared file; L3 `code-review` and `security-review` An independent Codex review is forced by the owner with `/cb-review` (manual, never automatic). |
 | Check that the app runs | `run` |
 | Long session or end of day | `claude-mem:handoff` |
 

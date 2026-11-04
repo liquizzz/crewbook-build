@@ -71,16 +71,18 @@ The minimum team is the Lead and Dev1 (Lite: the Lead also does the design, the 
 
 ## 3. Ask for an independent review
 
-**What it does:** gets a second opinion from another model on a risky change.
+**What it does:** gets a second opinion from Codex on a risky change. It runs only when you ask.
 
-**Ask the Lead.** It proposes a review (label `codex-review` or `claude-review`) for L3 changes, anything touching money, security or user data, and before a release. You can also ask for one at any time:
-> Run the review you proposed on PR #42.
+**Ask the Lead.** It proposes a review (label `codex-review` or `claude-review`) for L3 changes, anything touching money, security or user data, and before a release. To force the Codex review yourself, type in the Lead:
+> /cb-review #42
 
-**Claude asks you:** Codex adversarial review, Codex standard review or Claude `/code-review`? (proposed: adversarial for L3)
+Add `adversarial` to challenge the approach and design (with a focus if you like: `/cb-review #42 adversarial the payment flow`), or `standard` for a normal review. Without one, the Lead picks adversarial for L3 and `standard` otherwise.
 
-**Claude does:** runs the review, posts the findings on the PR, fixes or rejects each with a reason, reports the counts.
+**Claude asks you:** which PR, when more than one is waiting.
 
-**You check:** the summary. If Codex is out of quota, Claude says so and offers `/code-review`. A missing review never blocks a PR.
+**Claude does:** runs Codex on the PR's diff against `dev` in a throw-away folder, labels the PR `codex-review`, posts Codex's findings on it unchanged, sends each finding it accepts to the author as changes to make, writes the reason on each one it rejects, and reports the counts.
+
+**You check:** the summary. If the Codex plugin is missing or out of quota, Claude says so and stops: that is not a pass, and it does not switch reviewers. Claude's own `/code-review` runs only if you ask for it. A missing review never blocks a PR.
 
 ## 4. Guardrails (always on)
 

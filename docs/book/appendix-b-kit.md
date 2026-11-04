@@ -28,6 +28,7 @@
 | `scripts/ci-local.mjs` | CI on this machine: the steps of `scripts/ci-steps.json` on a branch merged with `dev`, in a throw-away worktree, one run at a time; skips a step whose `"changed"` paths the branch did not touch, reuses a PASS for the same branch and `dev`; prints PASS or FAIL and the time per step and in total; `--again` runs it again, `--full` runs every step (once per milestone on `staging`); steps get `CI_CHANGED_FILES`, a text file of the changed files |
 | `scripts/new-role-worktree.mjs` | Creates a role's worktree, branch, role file, local port (Dev1 5201, Dev2 5202) and the role's model settings |
 | `scripts/model.mjs` | Shows or sets each role's provider and model (`/cb-model`): `mode <claude\|deepseek\|mix>` for the project, `<role> <model\|default>` for one role; writes each worktree's git-ignored `.claude/settings.local.json` and reads the DeepSeek key from `.env.local` without printing it |
+| `scripts/codex-review.mjs` | Runs the Codex plugin's reviewer on a PR or branch against `dev`, in a throw-away worktree (`/cb-review`); never falls back to another reviewer |
 | `scripts/setup-labels.mjs` | Creates the labels |
 | `scripts/setup-board.mjs` | Creates the kanban board: a GitHub Project linked to the repo, with columns Backlog · Approved · Ready · In progress · In review · Testing (Full, with `/cb-auto testing on`) · Done and fields Role, Module, Level, Priority |
 | `scripts/crew-settings.mjs` | Settings shared by every session, kept in the repo's git folder (nothing to commit): messages between sessions and auto-merge (both on until `/cb-auto` turns them off), per-task testing (off), and the hand-off tips, shown three times at most while messages are off |
@@ -54,6 +55,7 @@
 | `/cb-send` | Sends the prompt of the last hand-off block to the session it names |
 | `/cb-update [path]` | Lead only: brings the project up to the newest kit through a PR you approve ([chapter 6](06-continuity.md#7-get-the-newest-kit)) |
 | `/cb-model` | Shows each role's provider and model; `/cb-model mode <claude\|deepseek\|mix>` changes the project, `/cb-model <role> <opus\|sonnet\|deepseek-pro\|deepseek-flash\|default>` one role ([chapter 9](09-token-budget.md#choose-the-models)) |
+| `/cb-review` | Lead: forces a Codex review of a PR (`/cb-review #42 [standard\|adversarial] [focus]`): runs it, labels the PR `codex-review`, posts the findings, sends accepted ones to the author and gives a reason for each rejected one; manual only |
 | `/cb-add-dev [workstream]` | Lead only: adds Dev2 with its own workstream, after you approve the split ([chapter 4](04-delivery-loop.md#9-add-a-second-dev)) |
 | `/cb-auto` | Shows or switches what runs without you, shared by every session: `/cb-auto relay on|off` (sessions pass prompts to each other) `/cb-auto merge on|off` (the Lead merges every PR after its review by level and green CI), both on at the start, and `/cb-auto testing on|off` (Full: Test checks each merged task; off at the start) |
 

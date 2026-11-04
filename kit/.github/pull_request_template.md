@@ -31,7 +31,7 @@ Closes #
 - [ ] Permissions correct; no access opened by accident
 - [ ] Deletes and overwrites are confirmed or reversible
 - [ ] Money and order logic checked at the edges
-- [ ] Extra review proposed? (`codex-review` / `claude-review`, the owner decides)
+- [ ] Extra review proposed? (`codex-review` / `claude-review`, the owner decides; `/cb-review` runs the Codex one)
 
 ## Hand-off
 - Commit: `role/<role>` @ `<sha>`

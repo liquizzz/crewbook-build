@@ -197,6 +197,31 @@ try {
   const { sameTreeTag } = await import(pathToFileURL(path.join(kit, "scripts", "project-level.mjs")).href);
   check("run.mjs: an image of the same files is reused (staging for the release tag), dev never is", sameTreeTag({ staging: "t1" }, "v0.1.0", "t1") === "staging" && sameTreeTag({ staging: "t1" }, "v0.1.0", "t2") === null && sameTreeTag({ dev: "t1" }, "staging", "t1") === null && sameTreeTag({ staging: "t1" }, "staging", "t1") === null);
   check("faster CI: the Lead's guide, the rule and the release name the full run, one image per tree and the Dockerfile order", ["staging --full", "CI_CHANGED_FILES", "dependency files first", "one image per source tree"].every((t) => read(a, ".claude", "roles", "lead.md").includes(t)) && read(a, "CLAUDE.md").includes("ci-local.mjs staging --full") && read(a, ".claude", "commands", "cb-release.md").includes("ci-local.mjs staging --full") && read(a, "docker", "app.Dockerfile").includes("dependency files first"));
+  // /cb-review: the script runs the Codex plugin's companion in a throw-away worktree at the branch head; a missing
+  // plugin or a failed run is reported, never a pass. A fake plugin stands in for Codex.
+  fs.copyFileSync(path.join(kit, "scripts", "codex-review.mjs"), path.join(cr, "scripts", "codex-review.mjs"));
+  const fakeCodex = path.join(tmp, "fake-codex");
+  fs.mkdirSync(path.join(fakeCodex, "scripts"), { recursive: true });
+  fs.writeFileSync(path.join(fakeCodex, "scripts", "codex-companion.mjs"), [
+    'import fs from "node:fs";',
+    'import { execFileSync } from "node:child_process";',
+    'fs.writeFileSync(process.env.FAKE_OUT, JSON.stringify({ args: process.argv.slice(2), cwd: process.cwd(), head: execFileSync("git", ["rev-parse", "HEAD"]).toString().trim() }));',
+    'console.log("FAKE CODEX FINDINGS");',
+    'process.exit(Number(process.env.FAKE_EXIT || 0));',
+  ].join("\n"));
+  const out = path.join(tmp, "fake-out.json");
+  const review = (env, ...a) => spawnSync("node", [path.join("scripts", "codex-review.mjs"), ...a, "--no-fetch"], { cwd: cr, encoding: "utf8", env: { ...process.env, ...env } });
+  const worktreesBefore = git(cr, "worktree", "list").split("\n").length;
+  const adv = review({ CODEX_PLUGIN_ROOT: fakeCodex, FAKE_OUT: out }, "feature", "adversarial", "the", "payment", "flow");
+  const seen = JSON.parse(fs.readFileSync(out, "utf8"));
+  const std = review({ CODEX_PLUGIN_ROOT: fakeCodex, FAKE_OUT: out }, "feature");
+  const seenStd = JSON.parse(fs.readFileSync(out, "utf8"));
+  const failed = review({ CODEX_PLUGIN_ROOT: fakeCodex, FAKE_OUT: out, FAKE_EXIT: "2" }, "feature");
+  const none = review({ CODEX_PLUGIN_ROOT: "", HOME: path.join(tmp, "no-home"), USERPROFILE: path.join(tmp, "no-home") }, "feature");
+  check("codex-review: adversarial runs the plugin on the branch against dev with the focus, in a worktree at the head", adv.status === 0 && adv.stdout.includes("FAKE CODEX FINDINGS") && ["adversarial-review", "--wait", "--base", "dev", "--scope", "branch", "the payment flow"].every((x) => seen.args.includes(x)) && seen.head === git(cr, "rev-parse", "feature") && path.resolve(seen.cwd) !== path.resolve(cr));
+  check("codex-review: standard review takes no focus; the worktree is removed afterwards", std.status === 0 && seenStd.args[0] === "review" && !seenStd.args.includes("adversarial-review") && git(cr, "worktree", "list").split("\n").length === worktreesBefore);
+  check("codex-review: a failed run is not a pass and has no fallback; a missing plugin says how to install it", failed.status === 2 && failed.stderr.includes("not a pass") && none.status === 3 && none.stderr.includes("/plugin install codex@openai-codex") && !none.stdout.includes("FAKE CODEX"));
+  check("codex-review: /cb-review is manual, forces Codex, labels the PR and never falls back", ["manual step", "always uses Codex", "codex-review", "not a pass"].every((t) => read(a, ".claude", "commands", "cb-review.md").includes(t)) && read(a, ".claude", "roles", "lead.md").includes("starts `/cb-review`"));
   check("Full: Test opens after G3 to write test cases", read(a, ".claude", "roles", "test.md").includes("**Test cases first**") && read(a, ".claude", "roles", "lead.md").includes("`Write the test cases for v<X.Y.Z>.`") && read(a, ".claude", "commands", "cb-build.md").includes("`Write the test cases for v<X.Y.Z>.`") && read(a, ".claude", "commands", "cb-gate.md").includes("`docs/tech/test-cases/` covers every requirement"));
   let badName = false;
   try {

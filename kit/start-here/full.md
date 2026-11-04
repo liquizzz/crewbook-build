@@ -64,6 +64,7 @@ It checks that Docker is running and port 3000 is free, downloads the release im
 | Send a hand-off prompt without switching | `/cb-send` in the session that gave it |
 | What runs without you | `/cb-auto` (any session): `/cb-auto relay on|off` (sessions pass prompts), `/cb-auto merge on|off` (the Lead merges PRs), `/cb-auto testing on|off` (Test checks each task after its merge; off by default) |
 | Where CI runs | `node scripts/ci-mode.mjs`. A private repo runs CI on this machine (`node scripts/ci-local.mjs`), so it uses none of your GitHub Actions minutes; a public repo runs it on GitHub for free. `node scripts/ci-mode.mjs github` or `local` switches it |
+| A second opinion on a PR | `/cb-review #<PR>` in the Lead forces a Codex review (add `adversarial` to challenge the design). It needs the Codex plugin, installed once per machine (book chapter 1); it runs only when you type it |
 | Is a gate ready? | `/cb-gate <G1-G6>` |
 | A secret (an API key, a password) | `node scripts/set-secret.mjs <NAME>` in `{{main}}`: paste the value when asked; it is not shown and never goes in the chat |
 | Restart after closing a session | Open a new session in the same folder; it knows its role and finds where it stopped |
