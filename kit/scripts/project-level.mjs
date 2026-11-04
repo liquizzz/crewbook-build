@@ -69,6 +69,27 @@ export function languageLine(language, docsLanguage) {
   return `- Language: talk to the owner in ${language}; write documents in ${docsLanguage}. Everything the owner reads is in that language: replies, questions, options and button labels, the For you block, the end-of-turn recap and next-step box, and the words around a hand-off prompt. Code, commits, identifiers and file paths stay in English; so do commands and slash commands, each with a few words in the owner's language on what it does.`;
 }
 
+// Images built on this machine (CI local): which source tree each tag was built from, kept in the shared .git folder.
+// A tag whose tree equals the tree of an image already built is tagged, not built again (scripts/run.mjs).
+export function imageRecord(root) {
+  const file = path.join(path.resolve(root, execFileSync("git", ["rev-parse", "--git-common-dir"], { cwd: root, stdio: ["ignore", "pipe", "ignore"] }).toString().trim()), "crewbook-images.json");
+  const read = () => {
+    try {
+      return JSON.parse(fs.readFileSync(file, "utf8"));
+    } catch {
+      return {};
+    }
+  };
+  return {
+    get: read,
+    set: (tag, tree) => fs.writeFileSync(file, JSON.stringify({ ...read(), [tag]: tree }, null, 1) + "\n"),
+  };
+}
+// The other tag built from the same tree, if any. The dev image is never a source: it is rebuilt every time.
+export function sameTreeTag(built, ref, tree) {
+  return Object.entries(built).find(([t, x]) => x === tree && t !== ref && t !== "dev")?.[0] || null;
+}
+
 // The kit's version: the playbook commit it was taken from, or null without git.
 export function kitVersion(playbook) {
   try {

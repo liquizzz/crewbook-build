@@ -6,10 +6,13 @@
 //   node scripts/ci-local.mjs [branch]   the branch defaults to the current one; dev itself is checked as it is
 //   --no-fetch                           use the local branches only
 //   --again                              run even when this branch and dev already passed
+//   --full                               run every step, ignoring "changed" (the Lead, once per milestone, on staging)
 // Each step is {"name", "run"} and may have:
 //   "if": a path that must exist for the step to run;
 //   "changed": paths or globs (src/Editor/**, package-lock.json); the step runs only when the branch changed one of
 //   them since it left dev. On dev itself, or when the branch changed ci-steps.json, every step runs.
+//   Every step also gets the environment variable CI_CHANGED_FILES: the path of a text file listing the files the branch
+//   changed (empty text when every file counts), for a step that checks only those, for example a linter's --include.
 // A PASS is kept per pair of commits (branch + dev): run again on the same pair, it is reused at once, so the
 // Lead's check right after the Dev's costs nothing. One run at a time on this machine (a lock in .git): the others wait.
 // Prints PASS or FAIL per step and the total time, and exits 0 only when every step passed. It never pushes.
@@ -47,12 +50,13 @@ const head = ref(branch);
 const base = ref("dev");
 const headSha = sh(`git rev-parse ${head}`);
 const baseSha = sh(`git rev-parse ${base}`);
-const summary = (result) => `ci-local ${branch} (${headSha.slice(0, 7)} + dev ${baseSha.slice(0, 7)}): ${result}`;
+const summary = (result) => `ci-local ${branch}${args.includes("--full") ? " --full" : ""} (${headSha.slice(0, 7)} + dev ${baseSha.slice(0, 7)}): ${result}`;
 
 // Results and the lock live in the shared .git folder, so every worktree sees them.
 const common = path.resolve(sh("git rev-parse --git-common-dir"));
 const store = path.join(common, "ci-local-results.json");
-const key = `${headSha}+${baseSha}`;
+const full = args.includes("--full");
+const key = `${headSha}+${baseSha}${full ? "+full" : ""}`;
 const readStore = () => {
   try {
     return JSON.parse(fs.readFileSync(store, "utf8"));
@@ -108,7 +112,7 @@ if (reuse()) process.exit(0); // the run we waited for may have checked the same
 
 // Files the branch changed since it left dev; null means "run every step".
 const changedFiles = (() => {
-  if (headSha === baseSha) return null;
+  if (full || headSha === baseSha) return null;
   const files = sh(`git diff --name-only ${base}...${head}`).split("\n").filter(Boolean);
   return files.includes("scripts/ci-steps.json") ? null : files;
 })();
@@ -132,13 +136,20 @@ const touched = (patterns) => !changedFiles || patterns.some((p) => changedFiles
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "crewbook-ci-"));
 const work = path.join(dir, "src");
+// CI_CHANGED_FILES: a text file with the changed files, one per line, for steps that check only those (a linter);
+// empty when every file counts (dev itself, or the branch changed ci-steps.json).
+let changedList = "";
+if (changedFiles) {
+  changedList = path.join(dir, "changed-files.txt");
+  fs.writeFileSync(changedList, `${changedFiles.join("\n")}\n`);
+}
 const results = [];
 let ok = true;
 const step = (name, cmd) => {
   if (!ok) return results.push([name, "SKIP"]);
   process.stdout.write(`- ${name}... `);
   const t = Date.now();
-  const r = spawnSync(cmd, { cwd: work, shell: true, encoding: "utf8", maxBuffer: 1 << 28 });
+  const r = spawnSync(cmd, { cwd: work, shell: true, encoding: "utf8", maxBuffer: 1 << 28, env: { ...process.env, CI_CHANGED_FILES: changedList } });
   const pass = r.status === 0;
   console.log(`${pass ? "PASS" : "FAIL"} (${took(Date.now() - t)})`);
   if (!pass) {

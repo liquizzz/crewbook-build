@@ -101,7 +101,7 @@ for (const [from, to, owner] of FOLDERS) {
     const rel = `${to}/${name}`;
     if (rel === "scripts/ci-local.mjs" && ownCiLocal) {
       out.kept.push(`${rel} (this project's own; the kit's runs the steps of scripts/ci-steps.json)`);
-      out.notes.push("CI on this machine: move the steps of your scripts/ci-local.mjs into scripts/ci-steps.json (the kit's ci-local.mjs runs them, reuses a PASS and skips steps by changed paths), then run the update again to take the kit's script.");
+      out.notes.push("CI on this machine: move the steps of your scripts/ci-local.mjs into scripts/ci-steps.json (the kit's ci-local.mjs runs them, reuses a PASS and skips steps by changed paths), then run the update again to take the kit's script. If your script does more than the kit's (several runs at once, a build-only check, a fallback for dev), keep it and add to it the kit's reuse of a PASS, the changed-paths steps, CI_CHANGED_FILES and --full instead.");
       continue;
     }
     if (rel === "scripts/ci-steps.json" && ownCiLocal) continue; // added with the kit's ci-local.mjs, not before

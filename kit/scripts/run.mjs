@@ -8,6 +8,8 @@
 //   node scripts/run.mjs dev        the work in progress on dev, built on this machine
 // With CI on this machine ("ci": "local" in .claude/project.json, scripts/ci-mode.mjs) GitHub builds no image:
 // staging and every tag are built here too, from that branch or tag, in a throw-away worktree.
+// An image is built once per source tree: a tag whose files equal those of an image already built here (the release
+// tag of the accepted staging commit) is tagged with docker tag, not built again.
 //   node scripts/run.mjs --source   build what is checked out here instead of pulling an image
 //   node scripts/run.mjs --stop     stop it
 //   --dry-run                       print the steps without running Docker
@@ -18,7 +20,7 @@ import fs from "node:fs";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
-import { mainCheckout, readProject } from "./project-level.mjs";
+import { imageRecord, mainCheckout, readProject, sameTreeTag } from "./project-level.mjs";
 
 const args = process.argv.slice(2);
 const flag = (f) => args.includes(f);
@@ -82,16 +84,28 @@ step(busy && ours ? `port ${PORT}: the running app is replaced` : `port ${PORT} 
 // dev is always built here; with CI on this machine, staging and tags too (GitHub builds no image then).
 const buildHere = !source && (tag === "dev" || project.ci === "local");
 const buildFrom = (ref) => {
-  if (dry) return step(`build app from ${ref} in a temporary worktree   (IMAGE_TAG=${ref})`);
+  if (dry) return step(`build app from ${ref} in a temporary worktree, or tag the image already built from the same files   (IMAGE_TAG=${ref})`);
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "crewbook-run-"));
   const work = path.join(dir, "src");
   const commit = quiet("git", ["rev-parse", "--verify", "-q", `${ref}^{commit}`]) || quiet("git", ["rev-parse", "--verify", "-q", `origin/${ref}^{commit}`]);
   if (!commit) stop(`There is no branch or tag ${ref}. Check the tags with  git tag`);
   quiet("git", ["worktree", "add", "--detach", work, commit]);
-  const r = spawnSync("docker", ["compose", "-f", path.join(work, "docker-compose.yml"), "build", "app"], { cwd: work, stdio: "inherit", env: { ...process.env, IMAGE_TAG: ref } });
+  const composeFile = path.join(work, "docker-compose.yml");
+  // The app image of a tag: the image line of the compose file that ends with the tag.
+  const imageOf = (t) => (quiet("docker", ["compose", "-f", composeFile, "config", "--images"], { cwd: work, env: { ...process.env, IMAGE_TAG: t } }) || "").split(/\r?\n/).find((l) => l.endsWith(`:${t}`));
+  const tree = quiet("git", ["rev-parse", `${commit}^{tree}`]);
+  const record = imageRecord(root);
+  const twin = ref === "dev" ? null : sameTreeTag(record.get(), ref, tree);
+  let ok;
+  if (twin && imageOf(twin) && quiet("docker", ["image", "inspect", imageOf(twin)]) !== null && imageOf(ref)) {
+    ok = spawnSync("docker", ["tag", imageOf(twin), imageOf(ref)], { stdio: "inherit" }).status === 0;
+    if (ok) step(`image ${ref}: the same files as ${twin}, tagged, not built again`);
+  }
+  if (!ok) ok = spawnSync("docker", ["compose", "-f", composeFile, "build", "app"], { cwd: work, stdio: "inherit", env: { ...process.env, IMAGE_TAG: ref } }).status === 0;
+  if (ok && tree) record.set(ref, tree);
   quiet("git", ["worktree", "remove", "--force", work]);
   fs.rmSync(dir, { recursive: true, force: true });
-  return r.status === 0;
+  return ok;
 };
 if (source) {
   if (compose(["build", "app"], tag) === false) stop("The build failed. Send the lines above to the Lead.");

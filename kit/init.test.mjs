@@ -7,7 +7,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const kit = path.dirname(fileURLToPath(import.meta.url));
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "playbook-init-"));
@@ -61,7 +61,7 @@ try {
   const runDry = node([path.join("scripts", "run.mjs"), "v0.1.0", "--dry-run"], { cwd: a });
   fs.writeFileSync(projectFile, projectText);
   check("run.mjs: one command pulls, waits for the healthcheck and opens the app", runDry.includes("docker compose pull app   (IMAGE_TAG=v0.1.0)") && runDry.includes("--wait") && runDry.includes("http://localhost:3000"));
-  check("run.mjs: with CI on this machine it builds the tag here", runLocal.includes("build app from v0.1.0 in a temporary worktree") && !runLocal.includes("docker compose pull app"));
+  check("run.mjs: with CI on this machine it builds the tag here", runLocal.includes("build app from v0.1.0 in a temporary worktree, or tag the image already built from the same files") && !runLocal.includes("docker compose pull app"));
   check("workflows: every job skips when CI_MODE is local; CI only on PRs, no dev image", ["ci.yml", "codeql.yml", "docs-check.yml", "image-app.yml"].every((f) => read(a, ".github", "workflows", f).includes("vars.CI_MODE != 'local'")) && !read(a, ".github", "workflows", "ci.yml").includes("branches: [dev]") && read(a, ".github", "workflows", "image-app.yml").includes("branches: [staging]"));
   check("docker: healthcheck on the app, START-HERE runs run.mjs", read(a, "docker-compose.yml").includes("healthcheck:") && read(a, "START-HERE.md").includes("node scripts/run.mjs v0.1.0") && !read(a, "START-HERE.md").includes("docker login"));
   check("G3: small image and a working healthcheck", read(a, ".claude", "commands", "cb-next.md").includes("Keep the image small") && read(a, ".claude", "commands", "cb-release.md").includes("node scripts/run.mjs staging"));
@@ -173,7 +173,7 @@ try {
   const cr = path.join(tmp, "ci-repo");
   fs.mkdirSync(path.join(cr, "scripts"), { recursive: true });
   fs.copyFileSync(path.join(kit, "scripts", "ci-local.mjs"), path.join(cr, "scripts", "ci-local.mjs"));
-  fs.writeFileSync(path.join(cr, "scripts", "ci-steps.json"), JSON.stringify({ steps: [{ name: "Bundle", changed: ["web/**"], run: "node -e \"process.exit(3)\"" }, { name: "Unit", changed: ["src/**"], run: "node -e \"0\"" }] }));
+  fs.writeFileSync(path.join(cr, "scripts", "ci-steps.json"), JSON.stringify({ steps: [{ name: "Bundle", changed: ["web/**"], run: "node -e \"process.exit(3)\"" }, { name: "Unit", changed: ["src/**"], run: "node -e \"0\"" }, { name: "Files", run: "node -e \"const f=process.env.CI_CHANGED_FILES;process.exit(f&&require('fs').readFileSync(f,'utf8').split('\\n').includes('src/a.txt')?0:4)\"" }] }));
   const cg = (...a) => git(cr, "-c", "user.name=t", "-c", "user.email=t@t", ...a);
   cg("init", "-q", "-b", "dev");
   cg("add", ".");
@@ -190,7 +190,13 @@ try {
   const ciFirst = ciRun();
   const ciSecond = ciRun();
   check("ci-local: changed-only step skipped, total time, stale lock cleared", ciFirst.status === 0 && ciFirst.stdout.includes("SKIP (no change) Bundle") && ciFirst.stdout.includes("PASS Unit") && /: PASS in \d+ s/.test(ciFirst.stdout) && !fs.existsSync(lockFile));
+  const ciFull = spawnSync("node", [path.join("scripts", "ci-local.mjs"), "feature", "--no-fetch", "--full"], { cwd: cr, encoding: "utf8" });
+  check("ci-local: CI_CHANGED_FILES lists the changed files; --full runs every step and is kept apart from the usual PASS", ciFirst.stdout.includes("PASS Files") && ciFull.stdout.includes("FAIL Bundle") && ciFull.stdout.includes("ci-local feature --full") && ciFull.status === 1);
   check("ci-local: a PASS for the same branch and dev is reused", ciSecond.status === 0 && ciSecond.stdout.includes("(reused: passed") && !ciSecond.stdout.includes("- Unit"));
+  // run.mjs builds an image once per source tree: a tag of the same files is tagged, never built again; dev is no source.
+  const { sameTreeTag } = await import(pathToFileURL(path.join(kit, "scripts", "project-level.mjs")).href);
+  check("run.mjs: an image of the same files is reused (staging for the release tag), dev never is", sameTreeTag({ staging: "t1" }, "v0.1.0", "t1") === "staging" && sameTreeTag({ staging: "t1" }, "v0.1.0", "t2") === null && sameTreeTag({ dev: "t1" }, "staging", "t1") === null && sameTreeTag({ staging: "t1" }, "staging", "t1") === null);
+  check("faster CI: the Lead's guide, the rule and the release name the full run, one image per tree and the Dockerfile order", ["staging --full", "CI_CHANGED_FILES", "dependency files first", "one image per source tree"].every((t) => read(a, ".claude", "roles", "lead.md").includes(t)) && read(a, "CLAUDE.md").includes("ci-local.mjs staging --full") && read(a, ".claude", "commands", "cb-release.md").includes("ci-local.mjs staging --full") && read(a, "docker", "app.Dockerfile").includes("dependency files first"));
   check("Full: Test opens after G3 to write test cases", read(a, ".claude", "roles", "test.md").includes("**Test cases first**") && read(a, ".claude", "roles", "lead.md").includes("`Write the test cases for v<X.Y.Z>.`") && read(a, ".claude", "commands", "cb-build.md").includes("`Write the test cases for v<X.Y.Z>.`") && read(a, ".claude", "commands", "cb-gate.md").includes("`docs/tech/test-cases/` covers every requirement"));
   let badName = false;
   try {

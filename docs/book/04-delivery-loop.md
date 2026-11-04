@@ -129,7 +129,7 @@ Only `/cb-build done` puts code into `dev`, so `dev` always holds tested work. T
 
 **Claude does:** runs `node scripts/ci-mode.mjs github` (or `local`), which sets `"ci"` in `.claude/project.json` and the repo variable `CI_MODE`, and commits. At G3 it writes the same steps in `.github/workflows/ci.yml` and `scripts/ci-steps.json`, so you can switch at any time.
 
-**You check:** `ci-local` prints the time of each step and the total. When a run takes more than about 5 minutes, ask the Lead `Make CI faster.`; it starts with the slowest step. In local mode your machine builds and tests more (Docker must be running for the image and for tests that use containers). CodeQL does not run on a private repo either way; L3 work keeps its `security-review`.
+**You check:** `ci-local` prints the time of each step and the total. When a run takes more than about 5 minutes, ask the Lead `Make CI faster.`; it starts with the slowest step. The kit already avoids repeated work: a PASS for the same branch and `dev` is reused, a step with `"changed"` paths runs only when the branch touched them, a linter can check only the changed files (`CI_CHANGED_FILES`), and an image is built once per set of files, so the release tag reuses the image of the accepted `staging` commit. Once per milestone the Lead runs `node scripts/ci-local.mjs staging --full`, which runs every step, and Test does not repeat those automated tests. In local mode your machine builds and tests more (Docker must be running for the image and for tests that use containers). CodeQL does not run on a private repo either way; L3 work keeps its `security-review`.
 
 ## 9. Add a second Dev
 
