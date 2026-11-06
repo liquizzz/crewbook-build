@@ -8,7 +8,8 @@
 // the diff, commits it and opens a PR into dev (/cb-update). --dry-run prints the plan and writes nothing.
 //
 // What it does with each kind of file:
-// - Kit files (.claude/roles, hooks, commands, start-here, scripts, docs/templates): replaced by the new version.
+// - Kit files (.claude/roles, hooks, commands, start-here.md, scripts, docs/templates): replaced by the new version.
+// A project on the roles before DEC-081 (a "level", Dev1, Dev2, DevOps) is not updated: it stays on its kit version.
 //   A file the kit no longer ships is deleted when the project never changed it.
 // - .github files: replaced only when the project never changed them; new ones are added.
 // - CLAUDE.md: the kit's sections and rules are replaced. The project's title, description, Stage and Documents
@@ -20,7 +21,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { LEVELS, REMOVED_LEVELS, RETIRED_ROLES, kitVersion, languageLine, mainCheckout, readProject, renderStartHere, worktreePath, writeProject } from "./scripts/project-level.mjs";
+import { RETIRED_ROLES, kitVersion, rolesLine, languageLine, mainCheckout, readProject, renderStartHere, worktreePath, writeProject } from "./scripts/project-level.mjs";
 
 const argv = process.argv.slice(2);
 const dry = argv.includes("--dry-run");
@@ -51,7 +52,11 @@ if (!branch || ["main", "dev", "staging"].includes(branch)) {
   stop(`This checkout is on ${branch || "a detached HEAD"}. Run the update in the Lead's worktree (branch role/lead), so it reaches dev through a PR.`);
 }
 if (git(root, ["status", "--porcelain"])?.trim()) stop("The working tree has uncommitted changes. Commit or remove them first, then run the update again.");
-const level = LEVELS[project.level] ? project.level : REMOVED_LEVELS[project.level];
+// The roles changed in DEC-081 (chosen at setup, split by layer; no levels, Dev1, Dev2 or DevOps). A project set up
+// before that keeps its kit version: moving its sessions, branches and open work is not something to do by accident.
+if (project.level || (!Array.isArray(project.roles) && project.setup !== false)) {
+  stop(`This project uses the roles from before DEC-081 (${project.level ? `the "${project.level}" level, ` : ""}Dev1, Dev2, DevOps). This kit version changed them, so it is not applied here: the project stays on its kit version. Start new projects with the new kit.`);
+}
 
 // 2. The kit's history: every file version the kit ever shipped, to tell untouched kit files from the project's changes.
 const version = kitVersion(playbook);
@@ -87,7 +92,6 @@ const FOLDERS = [
   ["kit/.claude/roles", ".claude/roles", "kit"],
   ["kit/.claude/hooks", ".claude/hooks", "kit"],
   ["kit/commands", ".claude/commands", "kit"],
-  ["kit/start-here", ".claude/start-here", "kit"],
   ["kit/scripts", "scripts", "kit"],
   ["templates", "docs/templates", "kit"],
   ["kit/.github", ".github", "shared"],
@@ -97,7 +101,6 @@ const ownCiLocal = exists("scripts/ci-local.mjs") && !exists("scripts/ci-steps.j
 for (const [from, to, owner] of FOLDERS) {
   const now = files(path.join(playbook, from));
   for (const name of now) {
-    if (!project.design && name === "workflows/image-design.yml") continue;
     const rel = `${to}/${name}`;
     if (rel === "scripts/ci-local.mjs" && ownCiLocal) {
       out.kept.push(`${rel} (this project's own; the kit's runs the steps of scripts/ci-steps.json)`);
@@ -176,13 +179,13 @@ const items = (lines) => {
 function keyOf(line) {
   const bold = line.match(/^- \*\*(.+?)\*\*/);
   if (bold) return `b:${bold[1].replace(/[.:]+$/, "").toLowerCase()}`;
-  const field = line.match(/^- (Level|Language|Documents|Stage|Stack):/);
+  const field = line.match(/^- (Level|Roles|Language|Documents|Stage|Stack):/);
   if (field) return `f:${field[1].toLowerCase()}`;
   return `t:${line.slice(2, 42).toLowerCase().replace(/\s+/g, " ")}`;
 }
 // A bullet the project fills in (the kit ships it as a placeholder).
 const PLACEHOLDER = /^- (<[^>]*>\.?$|Stack: <|Install `<install>`)/;
-const FILLED = ["f:documents", "f:stage"];
+const FILLED = ["f:documents", "f:stage", "f:roles"];
 
 function mergeClaude(mine, kitText, history) {
   const ours = parse(mine);
@@ -220,7 +223,7 @@ function mergeClaude(mine, kitText, history) {
   };
   let text = result.map((s) => trim(s.title ? [`## ${s.title}`, ...s.lines] : s.lines).join("\n")).join("\n\n") + "\n";
   text = text.replace(/^- Language: .*$/m, languageLine(project.language || "English", project.docsLanguage || "English"));
-  if (level) text = text.replace(/^- Level: .*$/m, `- Level: ${LEVELS[level].line}. Change it with \`node scripts/set-level.mjs <lite|full>\`.`);
+  text = text.replace(/^- Roles: .*$/m, rolesLine(project.roles));
   return text;
 }
 
@@ -369,13 +372,19 @@ for (const f of ["docker-compose.yml", "docker/app.Dockerfile", ".dockerignore"]
 const main = mainCheckout(root);
 const retired = Object.keys(RETIRED_ROLES).filter((r) => fs.existsSync(worktreePath(main, r)));
 if (retired.length) out.notes.push(`Retired roles: ${retired.map((r) => `${r} (its work goes to ${RETIRED_ROLES[r]})`).join(", ")}. The Lead moves their open work, the owner closes their sessions, then removes each worktree: git worktree remove "${worktreePath(main, retired[0])}".`);
-if (!project.models) out.notes.push("Models: choose the project's mode with /cb-model mode <claude|deepseek|mix> (claude: Lead, UI/UX and DevOps on Opus, Dev and Test on Sonnet). Until then every session keeps the model it has.");
-if (!level) out.notes.push(`The level "${project.level}" no longer exists: run node scripts/set-level.mjs lite (or full).`);
-else if (out.added.concat(out.replaced, out.yoursReplaced).some((f) => f.startsWith(".claude/start-here/"))) {
-  if (/^english$/i.test(project.language || "English")) {
-    if (!dry) renderStartHere(root, { ...project, level }, mainCheckout(root));
-    out.merged.push("START-HERE.md (rendered again from the new template)");
-  } else out.notes.push(`START-HERE.md: the template changed. The Lead rewrites START-HERE.md in ${project.language} from .claude/start-here/${level}.md.`);
+if (!project.models) out.notes.push("Models: chosen per task now (rule \"Models\"); the project runs the claude mode. For DeepSeek on the Dev, Frontend and Test: /cb-model mode deepseek.");
+// START-HERE: one template, kit-owned.
+{
+  const rel = ".claude/start-here.md";
+  const text = fs.readFileSync(path.join(kit, "start-here.md"));
+  if (!exists(rel) || readText(rel) !== lf(text.toString())) {
+    write(rel, text);
+    (exists(rel) ? out.replaced : out.added).push(rel);
+    if (/^english$/i.test(project.language || "English")) {
+      if (!dry) renderStartHere(root, project, mainCheckout(root));
+      out.merged.push("START-HERE.md (rendered again from the new template)");
+    } else out.notes.push(`START-HERE.md: the template changed. The Lead rewrites START-HERE.md in ${project.language} from .claude/start-here.md.`);
+  }
 }
 
 // What changed in the kit since the project's version (estimated from its first commit when it has none).
@@ -398,7 +407,7 @@ if (from) {
     .sort((x, y) => x[1].localeCompare(y[1]))
     .map((m) => `${m[1]}: ${m[3].trim().split(/(?<=\.)\s/)[0].slice(0, 120)}`);
 }
-if (version && !dry) writeProject(root, { ...readProject(root), ...(level && level !== project.level ? { level } : {}), kitVersion: version });
+if (version && !dry) writeProject(root, { ...readProject(root), kitVersion: version });
 
 // 7. Report
 const short = (v) => (v ? v.slice(0, 7) : "unknown");

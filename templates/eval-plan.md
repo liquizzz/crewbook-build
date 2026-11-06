@@ -4,7 +4,7 @@
 |---|---|
 | Feature | <e.g. article search, answer drafting, classification> |
 | Model / pipeline version | <...> |
-| Status | Draft / Approved (G3) |
+| Status | Draft / Approved with the plan |
 | SRS | `docs/tech/srs.md` (NFR IDs for each metric) |
 | Last updated | YYYY-MM-DD |
 
@@ -37,4 +37,4 @@ Each row: `id, question, category, expected (ids or behaviour), notes`.
 
 ## 5. When to re-run
 - Any change to the model, prompts, chunking, ranking or thresholds
-- On `staging`, as part of the regression before the acceptance (G5); the release (G6) adds no new run
+- On `staging`, as part of the regression before the milestone approval; the release adds no new run

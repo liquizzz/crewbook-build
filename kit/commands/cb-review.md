@@ -1,13 +1,13 @@
 ---
-description: Force a Codex review of a PR (Lead only): runs it, posts the findings on the PR, fixes or rejects each
-argument-hint: "[#PR] [standard|adversarial] [focus]"
+description: A second opinion on a PR from Codex (Lead only): its review and a security pass, findings posted on the PR, each one accepted or rejected
+argument-hint: "[#PR] [standard | adversarial [focus]]"
 ---
 
-Codex review: **$ARGUMENTS**. A manual step: it runs when the owner types this, never by itself, and it always uses Codex. You are the Lead; in another session, end with the hand-off block for the Lead (prompt: `/cb-review <arguments>`) and stop.
+Codex review: **$ARGUMENTS**. The Claude reviews are the role's own (`code-review` at L2, also `security-review` at L3), run once before the PR; this is a second opinion from another tool. It runs when the owner types it, or when you proposed it and the owner agreed; never by itself. You are the Lead; in another session, end with the hand-off block for the Lead (prompt: `/cb-review <arguments>`) and stop.
 
-1. **Find the PR.** The number in the arguments, else the one PR in review (`gh pr list --state open`); with several, ask which, once. Read its task issue for the change level and what it touches.
-2. **Choose the kind.** `adversarial` (challenges the approach and design; a focus text may follow it) for an L3 change, anything touching money, security or user data, and before a release; otherwise `standard`. The arguments win over this rule.
-3. **Run it.** `node scripts/codex-review.mjs <#PR> <kind> [focus]`, as a background command (Codex can take several minutes); tell the owner in one line that it started. It reviews the PR's diff against `dev` in a throw-away worktree and prints Codex's output. If the plugin is missing, the script says how the owner installs it (once per machine); if Codex fails or is out of quota, say so plainly and stop: this is not a pass, and you do not switch to another reviewer. Offer Claude's `/code-review` only as a separate step, and only if the owner wants it.
-4. **Post it.** Add the label `codex-review` to the PR (`gh pr edit <n> --add-label codex-review`) and comment Codex's findings on it, unchanged, with the kind and the commit reviewed (`gh pr comment <n> --body-file <file>`).
-5. **Decide each finding.** Group them by severity. A finding you accept: send it to the PR's author as "Needs changes" (rule "PR review" in `CLAUDE.md`: the issue goes back to In progress, the points go to the Dev). A finding you reject: one line on the PR with the reason. Never fix code yourself in the Dev's branch.
-6. **Report** in three lines: the kind and the commit, the counts (accepted, rejected, open), and whether the PR can go on to merge. A Codex review that found something serious is the owner's decision to merge past, as with any review the Lead cannot settle.
+1. **Find the PR.** The number in the arguments, else the one PR in review (`gh pr list --state open`); with several, ask which, once. Read its task issue for the level and what it touches.
+2. **Run it.** `node scripts/codex-review.mjs <#PR> [standard | adversarial <focus>]` as a background command (Codex takes several minutes); tell the owner in one line that it started. With no kind it runs Codex's review, then an adversarial pass on security (permissions, input, secrets, personal data, deletes and money); `standard` is the review alone; `adversarial <focus>` is one pass with the owner's focus. It reviews the PR's diff against `dev` in a throw-away worktree at the PR's head.
+3. **When it cannot run,** say so plainly and stop: the plugin not installed or not enabled (the script prints what the owner types to turn it on, then `/cb-review` again), Codex not signed in, no quota, or a failed run. That is never a pass, and no other reviewer runs instead.
+4. **Post it.** Add the label `codex-review` to the PR and comment Codex's findings on it unchanged, with the passes run and the commit reviewed (`gh pr comment <n> --body-file <file>`).
+5. **Decide each finding,** grouped by severity. Accepted: back to the PR's author as "Needs changes" (the issue goes back to In progress); after the fix, the author's own review runs again on what changed. Rejected: one line on the PR with the reason. Never fix code yourself in the author's branch.
+6. **Report** in three lines: the passes and the commit, the counts (accepted, rejected, open), and whether the PR can go on to merge. A serious finding you cannot settle is the owner's decision to merge past.

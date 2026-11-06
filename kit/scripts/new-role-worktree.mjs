@@ -5,15 +5,13 @@
 // Run it from your own worktree (the Lead's has dev's version of this script):  node scripts/new-role-worktree.mjs <role>
 // The new worktree gets .env.local with its port and the secrets already set in the main checkout's .env.local
 // (and in a git-ignored .env there, if the stack uses one).
-// Roles: lead, dev1, dev2 (only on /cb-add-dev: one workstream each), test, uiux, devops.
+// Roles: lead, dev, uiux, frontend, test (the project's roles are in .claude/project.json; scripts/roles.mjs creates them).
 // The worktree gets the model of its role (scripts/model.mjs), when the project has a model mode.
 import { execFileSync, execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { RETIRED_ROLES, ROLES } from "./project-level.mjs";
-
-const PORTS = { uiux: 5100, dev1: 5201, dev2: 5202, test: 5300 };
+import { PORTS, RETIRED_ROLES, ROLES, roleTitle } from "./project-level.mjs";
 
 const role = (process.argv[2] || "").toLowerCase();
 if (RETIRED_ROLES[role]) {
@@ -105,7 +103,7 @@ let name = "<Project>";
 try {
   name = JSON.parse(fs.readFileSync(path.join(wtDir, ".claude", "project.json"), "utf8")).name || name;
 } catch {}
-const title = { uiux: "UI/UX", devops: "DevOps" }[role] || role[0].toUpperCase() + role.slice(1);
+const title = roleTitle(role);
 console.log(`
 Worktree ready: ${wtDir}
 Branch: ${branch}${PORTS[role] ? ` · local port ${PORTS[role]}` : ""}

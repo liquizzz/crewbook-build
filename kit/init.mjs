@@ -3,17 +3,17 @@
 // Crewbook by Hai Nguyen (github.com/liquizzz/crewbook-build)
 //
 // Set up a project for Crewbook in one command.
-//   node <playbook>/kit/init.mjs                      asks: name, folder, level, language, design, documents, description, GitHub
+//   node <playbook>/kit/init.mjs                      asks: name, folder, GitHub
 //   node <playbook>/kit/init.mjs <folder> [options]   asks only what the options leave out
-// Options: --name "<name>"  --level lite|full  --language <lang>  --docs-language <lang>  --design yes|no
-//          --humanize yes|no  --description "<text>"
+// Options: --name "<name>"  --description "<text>"  --language <lang>  --docs-language <lang>
 //          --github private|public|none  --repo <owner/name>  --yes (no questions, defaults)  --force
 //          --no-plugins (skip installing the Claude Code plugins; also CREWBOOK_NO_PLUGINS=1)
 //
-// It creates the folder and a git repo, copies the kit, fills in the project name, level and description,
-// writes START-HERE.md (the owner's steps for that level), creates the branches and the Lead's worktree
-// (the Lead's /cb-setup creates the other roles' worktrees) and, only if you choose it, creates the GitHub repo,
-// pushes the branches and sets up the labels and the board.
+// It creates the folder and a git repo, copies the kit, fills in the project name, writes START-HERE.md,
+// creates the branches and the Lead's worktree and, unless you say none, creates the GitHub repo, pushes the
+// branches and sets up the labels and the board. Everything else is decided in the Lead's /cb-setup (five questions:
+// the roles, the autonomy, the requirements, the deployment model and stack, the environments), which also creates
+// the other roles' worktrees and sessions. The language follows the owner's first message to the Lead.
 // Existing files are kept unless --force is given. It never writes secrets.
 // To bring a project that already runs up to a newer kit, use update.mjs instead.
 import { execFileSync, execSync } from "node:child_process";
@@ -21,7 +21,7 @@ import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
 import { fileURLToPath } from "node:url";
-import { LEVELS, LEVEL_ORDER, REMOVED_LEVELS, kitVersion, languageLine, parseLevel, renderStartHere, setClaudeLevel, slugify, worktreePath, writeProject } from "./scripts/project-level.mjs";
+import { BRANCHES, kitVersion, languageLine, renderStartHere, setClaudeRoles, slugify, worktreePath, writeProject } from "./scripts/project-level.mjs";
 
 const argv = process.argv.slice(2);
 const flag = (name) => {
@@ -31,7 +31,7 @@ const flag = (name) => {
 const force = argv.includes("--force");
 const yes = argv.includes("--yes");
 const installPlugins = !argv.includes("--no-plugins") && !process.env.CREWBOOK_NO_PLUGINS;
-const valued = new Set(["--name", "--level", "--language", "--docs-language", "--design", "--humanize", "--description", "--github", "--repo"]);
+const valued = new Set(["--name", "--language", "--docs-language", "--description", "--github", "--repo"]);
 const target = argv.find((a, i) => !a.startsWith("--") && !valued.has(argv[i - 1]));
 
 // 0. Required tools. Docker is required: every part of the product runs in it.
@@ -104,46 +104,20 @@ const parent = path.resolve(process.cwd()) === playbook ? path.dirname(playbook)
 if (!target) topic("2. Where to create the project", "A new folder for its code and documents. The role worktrees go next to it, in <folder>-wt.");
 const dest = path.resolve(target || (await ask("   Folder", path.join(parent, slug))));
 
-let level = parseLevel(flag("level")) || REMOVED_LEVELS[String(flag("level") || "").toLowerCase()];
-if (!level) {
-  topic("3. Level of process", "How many Claude sessions work on it. Change it any time with: node scripts/set-level.mjs <level>");
-  if (interactive) LEVEL_ORDER.forEach((l, i) => console.log(`     ${i + 1}  ${l.padEnd(5)} ${LEVELS[l].help}`));
-  level = await ask("   Level (1 or 2)", "1", parseLevel);
-}
-
-topic("4. Your working language", "The sessions talk to you in it. For example English or Vietnamese.");
-const language = flag("language") || (await ask("   Language", "English"));
-let docsLanguage = flag("docs-language") || "English";
-if (!flag("docs-language") && !/^english$/i.test(language)) {
-  docsLanguage = await ask(`   Documents in English or ${language}`, "English");
-}
-
-let design = flag("design");
-if (!design) {
-  topic("5. Separate design prototype", "yes: a design/ folder and image the client reviews before the app is built (chapter 7). no: Claude designs inside the app.");
-  design = await ask("   Design prototype? yes or no", "no", (v) => (/^(y|yes|n|no)$/i.test(v) ? v.toLowerCase()[0] : null));
-}
-design = /^y/i.test(design);
-
-let humanize = flag("humanize");
-if (!humanize) {
-  topic("6. Polished documents", "yes: a humanizer pass on every document, for client reports (more tokens). no: plain documents. Change it later via the Lead.");
-  humanize = await ask("   Polish documents? yes or no", "no", (v) => (/^(y|yes|n|no)$/i.test(v) ? v.toLowerCase()[0] : null));
-}
-humanize = /^y/i.test(humanize);
-
-topic("7. One-line description (optional)", "Who it is for and what it does. Claude asks for the rest later.");
-const description = flag("description") ?? (await ask("   Description", "", (v) => v || " ")).trim();
+// Decided later, in the Lead's /cb-setup: the language from the owner's first message, the roles, the rest.
+const language = flag("language") || "English";
+const docsLanguage = flag("docs-language") || "English";
+const description = (flag("description") || "").trim();
 
 let github = flag("github");
 let repo = flag("repo");
 if (!github) {
   if (!ghUser) {
     if (interactive) console.log(`
-8. GitHub repo: skipped (${hasGh ? "run gh auth login first" : "gh is not installed"}). The Lead connects it later.`);
+3. GitHub repo: skipped (${hasGh ? "run gh auth login first" : "gh is not installed"}). The Lead connects it later.`);
     github = "none";
   } else {
-    topic("8. GitHub repo", "private (only you see it), public, or none to connect later. It pushes the branches and creates the labels.");
+    topic("3. GitHub repo", "private (only you see it), public, or none to connect later. It pushes the branches and creates the labels.");
     github = await ask("   Create it now? private, public or none", interactive ? "private" : "none",
       (v) => (["private", "public", "none"].includes(v.toLowerCase()) ? v.toLowerCase() : null));
   }
@@ -163,11 +137,8 @@ if (interactive) {
   console.log(`
 About to set up:
   ${name} in ${dest}
-  Level: ${LEVELS[level].title}
-  Language: ${language} (documents: ${docsLanguage})
-  Design prototype: ${design ? "yes" : "no"}
-  Polished documents (humanizer): ${humanize ? "yes" : "no"}
-  GitHub: ${repo ? `${repo} (${github}), branches pushed, labels created` : "none"}`);
+  GitHub: ${repo ? `${repo} (${github}), branches pushed, labels created` : "none"}
+  The rest (roles, autonomy, requirements, stack, environments) comes in the Lead's /cb-setup.`);
   const go = await ask("Go ahead? yes or no", "yes");
   if (!/^y/i.test(go)) {
     console.log("Stopped. Nothing was changed.");
@@ -221,50 +192,49 @@ copyDir(path.join(kit, ".claude", "roles"), path.join(".claude", "roles"));
 copyDir(path.join(kit, ".claude", "hooks"), path.join(".claude", "hooks"));
 copyFile(path.join(kit, ".claude", "settings.json"), path.join(".claude", "settings.json"));
 copyDir(path.join(kit, "commands"), path.join(".claude", "commands"));
-copyDir(path.join(kit, "start-here"), path.join(".claude", "start-here"));
+copyFile(path.join(kit, "start-here.md"), path.join(".claude", "start-here.md"));
 copyDir(path.join(kit, ".github"), ".github");
-if (!design && created.includes(".github/workflows/image-design.yml")) {
-  fs.rmSync(path.join(dest, ".github", "workflows", "image-design.yml"));
-  created.splice(created.indexOf(".github/workflows/image-design.yml"), 1);
-}
 copyDir(path.join(kit, "scripts"), "scripts");
 copyFile(path.join(playbook, "templates", "changelog.md"), "CHANGELOG.md");
 copyDir(path.join(playbook, "templates"), path.join("docs", "templates"));
 copyFile(path.join(kit, "docker", "docker-compose.yml"), "docker-compose.yml");
-if (design) copyFile(path.join(kit, "docker", "design.Dockerfile"), path.join("docker", "design.Dockerfile"));
+copyFile(path.join(kit, "docker", "design.Dockerfile"), path.join("docker", "design.Dockerfile"));
 copyFile(path.join(kit, "docker", "app.Dockerfile"), path.join("docker", "app.Dockerfile"));
+copyFile(path.join(kit, "docker", "web.Dockerfile"), path.join("docker", "web.Dockerfile"));
+copyFile(path.join(kit, "docker", "shared-compose.yml"), path.join("docker", "shared-compose.yml"));
 copyFile(path.join(kit, "docker", ".dockerignore"), ".dockerignore");
 
-// 2c. Name, description, level
+// 2c. Name and description
 const fill = (rel, edit) => {
   const file = path.join(dest, rel);
   if (!created.includes(rel)) return;
   fs.writeFileSync(file, edit(fs.readFileSync(file, "utf8")));
 };
 fill("CLAUDE.md", (t) => t.replace("# <Project name>", `# ${name}`)
-  .replace(/^- Documents: .*$/m, humanize ? "- Documents: polished (humanizer pass on each document)." : "- Documents: plain (no humanizer pass). To turn it on, the owner tells the Lead: \"Polish documents from now on.\"")
+  .replace(/^- Documents: .*$/m, "- Documents: plain (no humanizer pass). To turn it on, the owner tells the Lead: \"Polish documents from now on.\"")
   .replace(/^<One paragraph: what the product does.*$/m, (line) => description || line)
   .replace(/^- Language: .*$/m, languageLine(language, docsLanguage)));
-setClaudeLevel(dest, level);
+setClaudeRoles(dest, null);
 const owner = repo ? repo.split("/")[0].toLowerCase() : null;
 const project = repo ? repo.split("/")[1].toLowerCase() : slug;
 fill("docker-compose.yml", (t) => {
-  if (!design) t = t.replace(/ *# design:start[\s\S]*?# design:end\r?\n/, "");
   t = t.replaceAll("<project>", project);
   return owner ? t.replaceAll("<owner>", owner) : t;
 });
-// Plugins: humanizer only for polished documents; the Lead enables the design plugins at G3 when the product has screens.
+// Plugins: the humanizer only when the owner asks for polished documents; the Lead enables the design plugins at
+// /cb-setup when the product has screens.
 fill(".claude/settings.json", (t) => {
   const s = JSON.parse(t);
-  if (!humanize) delete s.enabledPlugins["humanizer@humanizer"];
+  delete s.enabledPlugins["humanizer@humanizer"];
   return JSON.stringify(s, null, 2) + "\n";
 });
 // setup: false until the Lead's /cb-setup is done; the session-start hook keeps other roles waiting until then.
+// roles: null until /cb-setup asks the owner (scripts/roles.mjs set).
 // kitVersion: the playbook commit the kit came from; update.mjs starts from it.
 // ci: where CI runs. A public repo has free Actions minutes; a private one (or none) runs CI on this machine.
 const ci = github === "public" ? "github" : "local";
-writeProject(dest, { name, level, repo: repo || null, language, docsLanguage, design, humanize, setup: false, ci, kitVersion: kitVersion(playbook) });
-renderStartHere(dest, { name, level, repo }, dest);
+writeProject(dest, { name, roles: null, repo: repo || null, language, docsLanguage, humanize: false, setup: false, ci, kitVersion: kitVersion(playbook) });
+renderStartHere(dest, { name, roles: null, repo }, dest);
 created.push(".claude/project.json", "START-HERE.md");
 
 // 2d. Docs folders
@@ -300,7 +270,7 @@ if (!fs.existsSync(envExample)) {
 // 2e. .gitignore
 const ignorePath = path.join(dest, ".gitignore");
 const ignore = fs.existsSync(ignorePath) ? fs.readFileSync(ignorePath, "utf8") : "";
-const needed = [".env", ".env.*", "!.env.example", ".claude/role", ".claude/settings.local.json", "node_modules/", "dist/"];
+const needed = [".env", ".env.*", "!.env.example", ".claude/role", ".claude/settings.local.json", ".claude/task.json", "node_modules/", "dist/"];
 const missing = needed.filter((l) => !ignore.split(/\r?\n/).includes(l));
 if (missing.length) {
   fs.writeFileSync(ignorePath, `${ignore}${ignore && !ignore.endsWith("\n") ? "\n" : ""}# Crewbook\n${missing.join("\n")}\n`);
@@ -315,14 +285,14 @@ if (!fs.existsSync(hookOut) || force) {
   created.push(".git/hooks/pre-commit");
 } else kept.push(".git/hooks/pre-commit");
 
-// 2g. First commit and the level's branches. An existing repo is not committed for you.
+// 2g. First commit and the branches. An existing repo is not committed for you.
 const fresh = !ok("git rev-parse --verify HEAD");
 if (fresh) {
   sh("git add -A");
-  run("git", ["commit", "-m", `Set up Crewbook kit (${LEVELS[level].title})`]);
+  run("git", ["commit", "-m", "Set up Crewbook kit"]);
   created.push("(first commit)");
 }
-for (const b of LEVELS[level].branches) {
+for (const b of BRANCHES) {
   if (!ok(`git show-ref --verify --quiet refs/heads/${b}`)) {
     sh(`git branch ${b}`);
     created.push(`(branch ${b})`);
@@ -337,8 +307,8 @@ if (repo) {
       run("gh", ["repo", "create", repo, `--${github}`, "--source", ".", "--remote", "origin", ...(description ? ["--description", description] : [])]);
       created.push(`(GitHub repo ${repo}, ${github})`);
     }
-    run("git", ["push", "-u", "origin", "main", ...LEVELS[level].branches]);
-    created.push(`(pushed main, ${LEVELS[level].branches.join(", ")})`);
+    run("git", ["push", "-u", "origin", "main", ...BRANCHES]);
+    created.push(`(pushed main, ${BRANCHES.join(", ")})`);
     run("node", [path.join("scripts", "setup-labels.mjs")]);
     created.push("(GitHub labels)");
   } catch (e) {
@@ -400,7 +370,7 @@ if (installPlugins) {
 
 // 3. Report
 const lead = worktreePath(dest, "lead");
-console.log(`\n${name} is set up in ${dest} (level ${LEVELS[level].title}).\n`);
+console.log(`\n${name} is set up in ${dest} .\n`);
 console.log(`Created (${created.length}):\n  ${created.join("\n  ")}`);
 if (kept.length) console.log(`\nKept existing (${kept.length}, use --force to overwrite):\n  ${kept.join("\n  ")}`);
 if (warnings.length) console.log(`\nPlease check:\n  ${warnings.join("\n  ")}`);
@@ -408,4 +378,4 @@ console.log(`
 Next: open ${path.join(dest, "START-HERE.md")} and follow it step by step.
 Step 1: open Claude Code desktop in this folder, name the session "${name} - Lead", and type /cb-setup:
   ${lead}
-Setup comes first: it creates the other sessions' folders and tells you which to open next.`);
+Setup asks five questions, each with a suggestion, then creates every other session for you.`);

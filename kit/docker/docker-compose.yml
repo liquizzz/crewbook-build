@@ -7,15 +7,20 @@
 #   A released version:        IMAGE_TAG=v1.4.0 docker compose up --no-build --wait
 #   Only the design prototype: docker compose up design
 # Each service has a healthcheck, so "--wait" (and run.mjs) return only when the app answers. The check uses wget,
-# which alpine and nginx images have; for an image without it, the Lead swaps in curl or the runtime itself at G3.
+# which alpine and nginx images have; for an image without it, the Lead swaps in curl or the runtime itself at setup.
+# One image per layer when the UI is its own app: rename app to api and add web (below); list them under "images" in
+# .claude/project.json. Databases, Redis and model servers are not here: they run once per machine (crewbook-shared,
+# node scripts/hosts.mjs) and each environment reaches them through its connection string in .env.local.
+# REGISTRY: where images are pushed and pulled ("registry" in .claude/project.json or ~/.crewbook/hosts.json).
 # Where and how you run it beyond your machine (servers, cloud, domains, TLS) is your own choice.
 name: <project>
 
 services:
-  # design:start (removed by init when the project has no separate design prototype)
+  # design:start (the UI/UX prototype; it starts only when named, "docker compose up design", or with --profile design)
   design:
     # UI/UX prototype shown to the client. Built only from design/ and packages/tokens/.
-    image: ghcr.io/<owner>/<project>-design:${DESIGN_TAG:-dev}
+    profiles: ["design"]
+    image: ${REGISTRY:-ghcr.io/<owner>}/<project>-design:${DESIGN_TAG:-dev}
     build:
       context: .
       dockerfile: docker/design.Dockerfile
@@ -31,7 +36,7 @@ services:
 
   app:
     # The product.
-    image: ghcr.io/<owner>/<project>-app:${IMAGE_TAG:-dev}
+    image: ${REGISTRY:-ghcr.io/<owner>}/<project>-app:${IMAGE_TAG:-dev}
     build:
       context: .
       dockerfile: docker/app.Dockerfile
@@ -49,6 +54,16 @@ services:
       start_period: 10s
     # depends_on: [db]
 
+  # web:
+  #   # The frontend, when it is its own app (static files behind nginx).
+  #   image: ${REGISTRY:-ghcr.io/<owner>}/<project>-web:${IMAGE_TAG:-dev}
+  #   build:
+  #     context: .
+  #     dockerfile: docker/web.Dockerfile
+  #   ports:
+  #     - "3001:80"
+
+  # A database for a project that cannot use the shared server (a client's rule):
   # db:
   #   image: postgres:16
   #   environment:

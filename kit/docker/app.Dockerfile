@@ -7,7 +7,8 @@
 FROM node:22-alpine
 WORKDIR /srv
 COPY app/package*.json ./
-RUN npm install --omit=dev
+# A cache mount keeps the downloaded packages between builds (BuildKit, the default in Docker).
+RUN --mount=type=cache,target=/root/.npm npm install --omit=dev
 COPY app/ ./
 ENV NODE_ENV=production PORT=3000
 EXPOSE 3000

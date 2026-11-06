@@ -4,7 +4,7 @@
 |---|---|
 | Client | <client, or "own product"> |
 | Prepared by | Lead, from the owner's idea |
-| Status | Draft / Approved (G1 and G2) |
+| Status | Draft / Approved with the plan |
 | Approved on | YYYY-MM-DD |
 | Screens | `docs/product/screens/index.html` |
 
@@ -30,7 +30,7 @@ Save as `docs/product/proposal.md`. One page, in plain words: someone who has ne
 <One thing anyone can check, with a target. Example: "a reporter writes and sends an article for review in under 5 minutes".>
 
 ## What we must respect
-<Systems it must work with, a platform the client requires, data that must stay inside, budget, deadline. The technical choices come in the solution design (G3).>
+<Systems it must work with, a platform the client requires, data that must stay inside, budget, deadline. The technical choices come in the solution design.>
 
 ## Existing system (only for a rewrite or a replacement)
 | Function | What it does today | Keep / drop / redo | When |

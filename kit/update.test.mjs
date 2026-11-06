@@ -66,7 +66,7 @@ const oldBuild = pastFile("kit/commands/build.md");
 try {
   check("kit history: an old command and an old rule are found", Boolean(oldRelay && oldRule));
   const p = path.join(tmp, "old-shop");
-  execFileSync("node", [path.join(kit, "init.mjs"), p, "--name", "Old Shop", "--level", "lite", "--github", "none", "--yes"], { stdio: "ignore" });
+  execFileSync("node", [path.join(kit, "init.mjs"), p, "--name", "Old Shop", "--github", "none", "--yes"], { stdio: "ignore" });
   const lead = path.join(tmp, "old-shop-wt", "lead");
 
   // 1. Where it runs
@@ -77,7 +77,7 @@ try {
   // 2. Age the project as if it came from an older kit and was then worked on.
   const project = JSON.parse(read(lead, ".claude/project.json"));
   delete project.kitVersion;
-  write(lead, ".claude/project.json", JSON.stringify({ ...project, setup: true }, null, 2) + "\n");
+  write(lead, ".claude/project.json", JSON.stringify({ ...project, roles: ["lead", "dev", "frontend"], setup: true }, null, 2) + "\n");
   write(lead, ".claude/commands/relay.md", oldRelay || "");
   fs.rmSync(path.join(lead, ".claude/commands/cb-auto.md"));
   write(lead, ".claude/roles/dev.md", read(lead, ".claude/roles/dev.md") + "\nA local note.\n");
@@ -120,12 +120,12 @@ try {
   check("the project's own script stays", fs.existsSync(path.join(lead, "scripts/own.mjs")));
   check("old command names removed, cb- names added", fs.existsSync(path.join(lead, ".claude/commands/cb-build.md")) && !fs.existsSync(path.join(lead, ".claude/commands/build.md")) && !fs.existsSync(path.join(lead, ".claude/commands/setup.md")) && run.out.includes(".claude/commands/setup.md removed: now .claude/commands/cb-setup.md"));
   check("the project's own ci-local.mjs kept until ci-steps.json has its steps", read(lead, "scripts/ci-local.mjs") === "// the project's own CI\n" && run.out.includes("move the steps of your scripts/ci-local.mjs into scripts/ci-steps.json"));
-  check("a retired PO worktree and a missing model mode are reported", run.out.includes("Retired roles: po (its work goes to the Lead") && run.out.includes("/cb-model mode"));
+  check("a retired PO worktree and a missing model mode are reported", run.out.includes("Retired roles: po (its work goes to the Lead") && run.out.includes("chosen per task now"));
   claude = read(lead, "CLAUDE.md");
   check("CLAUDE.md: title, Stage and Open decisions kept", claude.startsWith("# Old Shop") && claude.includes("- Stage: Delivery, milestone v0.2.0.") && claude.includes("- Payment provider: needed before v0.3.0. Issue #9."));
   check("CLAUDE.md: the project's rule kept, the old kit rule removed", claude.includes("- Prices are shown with VAT.") && !claude.includes(oldRule));
   check("CLAUDE.md: own section and table row kept", claude.includes("## Client notes\nThe client reviews on Fridays.") && claude.includes("| Deploy to the client's server |"));
-  check("CLAUDE.md: kit rules are the new ones", claude.includes("- **Opening sessions:**") && /^- Level: Lite /m.test(claude));
+  check("CLAUDE.md: kit rules are the new ones, the Roles line from the project", claude.includes("- **Opening sessions:**") && /^- Roles: Lead, Dev, Frontend\./m.test(claude));
   const merged = JSON.parse(read(lead, ".claude/settings.json"));
   check("settings: own plugin, permission and hook kept", merged.enabledPlugins["frontend-design@claude-plugins-official"] === true && merged.permissions.allow.includes("Bash(uv *)") && merged.hooks.PostToolUse?.[0].hooks[0].command === "node own-hook.cjs");
   check("settings: a plugin the kit turns off stays on when the project turned it on", merged.enabledPlugins["rampstack-seo@anthropic-plugin-directory"] === true);
@@ -133,8 +133,17 @@ try {
   check("version recorded", JSON.parse(read(lead, ".claude/project.json")).kitVersion === git(playbook, "rev-parse", "HEAD") && JSON.parse(read(lead, ".claude/project.json")).setup === true);
   check("next steps for the Lead", run.out.includes("open a PR into dev"));
 
-  // 5. A second run finds nothing; uncommitted work stops it.
+  // 4b. A project on the roles from before DEC-081 (a level, Dev1, Dev2, DevOps) is not updated.
   commit(lead, "chore(kit): update Crewbook kit");
+  const newProject = read(lead, ".claude/project.json");
+  write(lead, ".claude/project.json", JSON.stringify({ ...JSON.parse(newProject), roles: undefined, level: "full" }, null, 2) + "\n");
+  commit(lead, "chore: an old layout");
+  const oldLayout = update(lead);
+  check("old roles: refused, the project stays on its kit version", !oldLayout.ok && oldLayout.out.includes("before DEC-081") && oldLayout.out.includes("stays on its kit version"));
+  write(lead, ".claude/project.json", newProject);
+  commit(lead, "chore: back to the new layout");
+
+  // 5. A second run finds nothing; uncommitted work stops it.
   const again = update(lead);
   check("second run: nothing to do", again.out.includes("already has this kit version") && git(lead, "status", "--porcelain") === "");
   if (process.env.DEBUG) console.log(again.out, git(lead, "diff"));

@@ -6,15 +6,20 @@
 //   node scripts/ci-local.mjs [branch]   the branch defaults to the current one; dev itself is checked as it is
 //   --no-fetch                           use the local branches only
 //   --again                              run even when this branch and dev already passed
-//   --full                               run every step, ignoring "changed" (the Lead, once per milestone, on staging)
+//   --full                               run every step, ignoring "changed" (the Dev, once per milestone, on staging)
+//   --here                               run on this machine even when the project has a build host ("buildHost")
 // Each step is {"name", "run"} and may have:
 //   "if": a path that must exist for the step to run;
 //   "changed": paths or globs (src/Editor/**, package-lock.json); the step runs only when the branch changed one of
-//   them since it left dev. On dev itself, or when the branch changed ci-steps.json, every step runs.
-//   Every step also gets the environment variable CI_CHANGED_FILES: the path of a text file listing the files the branch
+//   them since it left dev. On dev itself, or when the branch changed a shared input, every step runs: the CI files,
+//   a lockfile or package manifest, the build configuration, the Docker files, a migration, and the paths listed under
+//   "shared" in ci-steps.json (shared code, the schema). When the reach of a change is unclear, list it there.
+//   Every step also gets CI_DB_NAME and CI_DB_PREFIX (a database for this run on the shared server, and the prefix of
+//   them all) and the environment variable CI_CHANGED_FILES: the path of a text file listing the files the branch
 //   changed (empty text when every file counts), for a step that checks only those, for example a linter's --include.
 // A PASS is kept per pair of commits (branch + dev): run again on the same pair, it is reused at once, so the
-// Lead's check right after the Dev's costs nothing. One run at a time on this machine (a lock in .git): the others wait.
+// Lead's check right after the Dev's costs nothing. A new commit on either side, or a changed ci-steps.json (it is in
+// the branch's commit), needs a new run; --again runs it anyway, for example after the machine's tools changed. One run at a time on this machine (a lock in .git): the others wait.
 // Prints PASS or FAIL per step and the total time, and exits 0 only when every step passed. It never pushes.
 import { execSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -22,6 +27,15 @@ import os from "node:os";
 import path from "node:path";
 
 const args = process.argv.slice(2);
+// With a build host (rule "Where CI runs"), the run happens there over SSH.
+const kitLevel = await import("./project-level.mjs").catch(() => null);
+if (kitLevel) {
+  let code = null;
+  try {
+    code = kitLevel.onBuildHost(kitLevel.readProject(execSync("git rev-parse --show-toplevel").toString().trim()) || kitLevel.readProject(kitLevel.mainCheckout()), "ci-local.mjs", args);
+  } catch {}
+  if (code !== null) process.exit(code);
+}
 const sh = (cmd, cwd) => execSync(cmd, { cwd, stdio: ["ignore", "pipe", "pipe"] }).toString().trim();
 const branch = args.find((a) => !a.startsWith("--")) || sh("git branch --show-current");
 const started = Date.now();
@@ -110,13 +124,30 @@ process.on("SIGINT", () => process.exit(130));
 const waited = Date.now() - started;
 if (reuse()) process.exit(0); // the run we waited for may have checked the same pair
 
+// Inputs every step depends on: a change to one of them runs every step.
+const SHARED = [
+  "scripts/ci-steps.json", "scripts/ci-local.mjs", "package.json", "package-lock.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "yarn.lock",
+  "**/*.csproj", "**/*.sln", "**/*.props", "**/*.targets", "global.json", "**/packages.lock.json", "requirements*.txt", "poetry.lock",
+  "pyproject.toml", "go.mod", "go.sum", "Cargo.toml", "Cargo.lock", "Dockerfile", "docker/**", "docker-compose.yml", ".dockerignore",
+  "**/migrations/**", "**/Migrations/**",
+];
+let fullReason = "";
 // Files the branch changed since it left dev; null means "run every step".
 const changedFiles = (() => {
   if (full || headSha === baseSha) return null;
   const files = sh(`git diff --name-only ${base}...${head}`).split("\n").filter(Boolean);
-  return files.includes("scripts/ci-steps.json") ? null : files;
+  let own = [];
+  try {
+    own = [].concat(JSON.parse(sh(`git show ${headSha}:scripts/ci-steps.json`)).shared || []);
+  } catch {}
+  const hit = files.find((f) => SHARED.concat(own).some((p) => glob(p)(f)));
+  if (hit) {
+    fullReason = hit;
+    return null;
+  }
+  return files;
 })();
-const glob = (p) => {
+function glob(p) {
   if (!/[*?]/.test(p)) {
     const dir = p.replace(/\/+$/, "");
     return (f) => f === dir || f.startsWith(`${dir}/`);
@@ -131,13 +162,17 @@ const glob = (p) => {
     .replace(/\u0001/g, ".*");
   const rx = new RegExp(`^${re}$`);
   return (f) => rx.test(f);
-};
+}
 const touched = (patterns) => !changedFiles || patterns.some((p) => changedFiles.some(glob(p)));
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "crewbook-ci-"));
 const work = path.join(dir, "src");
+// CI_DB_NAME: a database name for this run's integration tests on the shared server (<project>_ci_<sha>_<time>), to
+// create at the start and drop at the end; CI_DB_PREFIX names them all, so a first step can drop the old ones.
+const ciPrefix = `${path.basename(sh("git rev-parse --show-toplevel")).toLowerCase().replace(/[^a-z0-9]+/g, "_")}_ci_`;
+const ciDb = `${ciPrefix}${headSha.slice(0, 7)}_${Date.now().toString(36)}`;
 // CI_CHANGED_FILES: a text file with the changed files, one per line, for steps that check only those (a linter);
-// empty when every file counts (dev itself, or the branch changed ci-steps.json).
+// empty when every file counts (dev itself, or the branch changed a shared input).
 let changedList = "";
 if (changedFiles) {
   changedList = path.join(dir, "changed-files.txt");
@@ -149,7 +184,7 @@ const step = (name, cmd) => {
   if (!ok) return results.push([name, "SKIP"]);
   process.stdout.write(`- ${name}... `);
   const t = Date.now();
-  const r = spawnSync(cmd, { cwd: work, shell: true, encoding: "utf8", maxBuffer: 1 << 28, env: { ...process.env, CI_CHANGED_FILES: changedList } });
+  const r = spawnSync(cmd, { cwd: work, shell: true, encoding: "utf8", maxBuffer: 1 << 28, env: { ...process.env, CI_CHANGED_FILES: changedList, CI_DB_NAME: ciDb, CI_DB_PREFIX: ciPrefix } });
   const pass = r.status === 0;
   console.log(`${pass ? "PASS" : "FAIL"} (${took(Date.now() - t)})`);
   if (!pass) {
@@ -166,7 +201,8 @@ try {
   if (headSha !== baseSha) step("Merge dev", `git -c user.name=ci -c user.email=ci@local merge --no-edit -q ${baseSha}`);
   const file = path.join(work, "scripts", "ci-steps.json");
   const steps = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")).steps || [] : [];
-  if (!steps.length) console.log("! scripts/ci-steps.json has no steps yet: the Lead adds the stack's steps at G3.");
+  if (!steps.length) console.log("! scripts/ci-steps.json has no steps yet: the Lead adds the stack's steps at setup.");
+  if (fullReason) console.log(`Every step runs: ${fullReason} is a shared input.`);
   for (const s of steps) {
     if (s.if && !fs.existsSync(path.join(work, s.if))) {
       results.push([s.name, "SKIP"]);

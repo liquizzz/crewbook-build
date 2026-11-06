@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Written by | Lead |
-| Status | Draft / Approved (G3) |
+| Status | Draft / Approved with the plan |
 | Approved on | YYYY-MM-DD |
 | Based on | `docs/product/proposal.md`, `docs/product/screens/`, `docs/product/prd.md`, `docs/tech/srs.md` |
 

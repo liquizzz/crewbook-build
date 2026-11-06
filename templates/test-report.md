@@ -1,6 +1,6 @@
 # Test report v<X.Y.Z>
 
-Save as `docs/tech/test-reports/vX.Y.Z.md`. Written by Test (Lite: Dev1) for the regression on `staging` (G5), or for a hotfix check. The acceptance section is filled by Test (Lite: the Lead) after the regression passes.
+Save as `docs/tech/test-reports/vX.Y.Z.md`. Written by Test (the Dev when there is no Test) for the regression on `staging` (the milestone approval), or for a hotfix check. The acceptance section is filled by Test (Lite: the Lead) after the regression passes.
 
 | Field | Value |
 |---|---|

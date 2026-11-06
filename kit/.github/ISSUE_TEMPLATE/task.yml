@@ -1,13 +1,13 @@
 name: Task
-description: Work for Dev, Test or DevOps, created by the Lead as a sub-issue of a CR, or from a technical ADR.
+description: Work for the Dev, Frontend, Test or UI/UX, written by the Lead so a fresh session can do it without the history.
 title: "<module>: <what to do>"
 body:
   - type: input
     id: parent
     attributes:
-      label: Parent CR or ADR
-      description: The CR it comes from, the ADR for a technical change, or the milestone for a G3 task.
-      placeholder: "#12 / ADR-0006 / v0.1.0"
+      label: Parent
+      description: The milestone, the CR it comes from, or the ADR for a technical change.
+      placeholder: "v0.1.0 / #12 / ADR-0006"
     validations:
       required: true
   - type: input
@@ -20,8 +20,15 @@ body:
   - type: textarea
     id: what
     attributes:
-      label: What to do
-      description: "Reference the spec: docs/tech/spec/CR-<n>-<slug>.md"
+      label: What to do and how
+      description: "The approach, the files to change, the pattern to copy (a file or a function that already does something alike), the spec (docs/tech/spec/...). For a backend task with an API: the contract (endpoint, request, response, errors) in the OpenAPI file."
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Tests that must pass
+      description: The tests the level needs (rule "Change level" in CLAUDE.md) and where they go.
     validations:
       required: true
   - type: textarea
@@ -34,8 +41,36 @@ body:
     id: level
     attributes:
       label: Change level (add the matching L* label)
-      description: Money, security, user data or deletes are always L3. When in doubt, pick the higher level.
-      options: ["L0 Display", "L1 Setting", "L2 Module logic", "L3 Core"]
+      description: "The risk. L0: no logic, state or data. L1: small logic or a value, existing endpoints only. L2: new behaviour or a business rule in one module, or any change to the API contract. L3: shared code, permissions, money, personal data, deletes, the schema, an outside system, deployment. Highest level wins; when in doubt, the higher one."
+      options: ["L0 Display", "L1 Setting or small logic", "L2 Module logic", "L3 Core"]
+    validations:
+      required: true
+  - type: dropdown
+    id: reach
+    attributes:
+      label: Reach (L3 only)
+      description: "How far the tests go. One point: one configuration or infrastructure value. Narrow: inside one shared module, its interface and behaviour unchanged. Wide: a changed interface or behaviour others use; permissions, money, personal data, deletes, the schema."
+      options: ["Not L3", "One point", "Narrow", "Wide"]
+    validations:
+      required: true
+  - type: input
+    id: places
+    attributes:
+      label: Affected places (L3)
+      placeholder: "the connection string in .env.example and appsettings; or the modules that use the changed interface"
+  - type: checkboxes
+    id: signals
+    attributes:
+      label: Difficulty signals (they set the model, not the level)
+      options:
+        - label: The request is clear (no decision left open)
+        - label: There is a pattern and tests to copy
+        - label: No change to the architecture or to several modules
+  - type: dropdown
+    id: model
+    attributes:
+      label: Model and effort to start on (rule "Models" in CLAUDE.md)
+      options: ["Haiku low", "Sonnet medium", "Sonnet high", "Opus medium", "Opus high"]
     validations:
       required: true
   - type: input
@@ -48,7 +83,7 @@ body:
     id: role
     attributes:
       label: Role
-      options: [Dev1, Dev2, Test, DevOps]
+      options: [Dev, Frontend, Test, UI/UX]
     validations:
       required: true
   - type: dropdown
@@ -58,18 +93,11 @@ body:
       options: ["15 min (L0)", "30 min (L1)", "1 h (L2)", "2 h (L3)", "over 2 h (split it)"]
     validations:
       required: true
-  - type: dropdown
-    id: confidence
-    attributes:
-      label: Confidence
-      options: [High, Medium, Low]
-    validations:
-      required: true
   - type: checkboxes
     id: dor
     attributes:
       label: Definition of Ready
       options:
         - label: CR approved by the client (plus the owner for L2-L3), or the ADR accepted
-        - label: SRS and spec merged into dev
-        - label: Nothing blocks it (dependencies, accounts, data, secrets)
+        - label: SRS, spec and, for an API, the contract merged into dev
+        - label: Nothing blocks it (a backend task it needs is merged, accounts, data, secrets)

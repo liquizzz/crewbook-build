@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: MIT
+# Crewbook by Hai Nguyen (github.com/liquizzz/crewbook-build)
+#
+# The services one machine shares across every project and environment (node scripts/hosts.mjs shared up <service>).
+# Each runs once: a project or an environment is a database, a login or a Redis number inside them, never another
+# container. Copied to ~/.crewbook/shared/docker-compose.yml; add a service there for another version a project needs
+# (for example sqlserver-2017), never one per project. Passwords come from ~/.crewbook/.env (hosts.mjs secret <NAME>).
+name: crewbook-shared
+
+services:
+  sqlserver-2022:
+    profiles: ["sqlserver-2022"]
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?run node scripts/hosts.mjs secret MSSQL_SA_PASSWORD}
+    ports: ["1433:1433"]
+    volumes: ["sqlserver-2022:/var/opt/mssql"]
+    restart: unless-stopped
+
+  postgres-17:
+    profiles: ["postgres-17"]
+    # pgvector also serves plain Postgres; PostGIS gets its own service only when a project needs it.
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run node scripts/hosts.mjs secret POSTGRES_PASSWORD}
+    ports: ["5432:5432"]
+    volumes: ["postgres-17:/var/lib/postgresql/data"]
+    restart: unless-stopped
+
+  redis-7:
+    profiles: ["redis-7"]
+    # One Redis; each project and environment uses its own database number.
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    restart: unless-stopped
+
+  registry:
+    profiles: ["registry"]
+    # A registry on the LAN, for projects that do not push to GHCR. Servers only pull from it.
+    image: registry:2
+    ports: ["5000:5000"]
+    volumes: ["registry:/var/lib/registry"]
+    restart: unless-stopped
+
+volumes:
+  sqlserver-2022:
+  postgres-17:
+  registry:

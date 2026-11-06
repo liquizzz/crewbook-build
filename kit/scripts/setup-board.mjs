@@ -19,7 +19,7 @@ const STATUSES = [
   ["Done", "GREEN", "Merged and CI green (and tested, when it went to Testing)"],
 ];
 const FIELDS = [
-  ["Role", ["lead", "dev", "test", "uiux", "devops"]],
+  ["Role", ["lead", "dev", "frontend", "uiux", "test"]],
   ["Level", ["L0", "L1", "L2", "L3"]],
   ["Priority", ["P1", "P2", "P3"]],
 ];
