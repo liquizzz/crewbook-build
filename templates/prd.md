@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Owner | Lead |
-| Status | Draft / In review / Approved (G2) |
+| Status | Draft / In review / Approved with the plan |
 | Approved on | YYYY-MM-DD (after this date every functional change is a CR; a technical one is an ADR) |
 | Last updated | YYYY-MM-DD |
 | Time box | <e.g. one weekend, 8 hours> |

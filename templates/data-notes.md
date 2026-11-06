@@ -5,7 +5,7 @@
 | Source | <system and version, e.g. SQL Server 2019 copy restored on YYYY-MM-DD> |
 | Where the copy lives | <client environment / local machine; never in git> |
 | Access | <read-only login name> |
-| Status | Draft / Approved (G2) |
+| Status | Draft / Approved with the plan |
 | Owner | Lead |
 
 > Counts and structure only. No real records, personal data or credentials in this file.

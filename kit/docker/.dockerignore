@@ -6,3 +6,8 @@
 !.env.example
 .claude
 docs
+**/bin
+**/obj
+**/__pycache__
+**/.venv
+tests

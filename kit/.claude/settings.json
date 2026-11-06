@@ -1,16 +1,34 @@
 {
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
-      "source": { "source": "github", "repo": "anthropics/claude-plugins-official" }
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
     },
     "thedotmack": {
-      "source": { "source": "github", "repo": "thedotmack/claude-mem" }
+      "source": {
+        "source": "github",
+        "repo": "thedotmack/claude-mem"
+      }
     },
     "humanizer": {
-      "source": { "source": "github", "repo": "blader/humanizer" }
+      "source": {
+        "source": "github",
+        "repo": "blader/humanizer"
+      }
     },
     "ui-ux-pro-max-skill": {
-      "source": { "source": "github", "repo": "nextlevelbuilder/ui-ux-pro-max-skill" }
+      "source": {
+        "source": "github",
+        "repo": "nextlevelbuilder/ui-ux-pro-max-skill"
+      }
+    },
+    "knowledge-work-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/knowledge-work-plugins"
+      }
     }
   },
   "enabledPlugins": {
@@ -18,6 +36,7 @@
     "code-review@claude-plugins-official": true,
     "claude-mem@thedotmack": true,
     "context7@claude-plugins-official": true,
+    "product-management@knowledge-work-plugins": true,
     "humanizer@humanizer": true,
     "rampstack-seo@anthropic-plugin-directory": false
   },
@@ -34,7 +53,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash|PowerShell|Edit|Write|MultiEdit|NotebookEdit",
+        "matcher": "Bash|PowerShell|Edit|Write|MultiEdit|NotebookEdit|Read",
         "hooks": [
           {
             "type": "command",

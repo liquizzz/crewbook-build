@@ -1,12 +1,17 @@
 ---
-description: Show or change which provider (Claude, DeepSeek) and model each role runs on; "/cb-model mode <claude|deepseek|mix>" for the whole project
-argument-hint: "[mode <claude|deepseek|mix> | <role> <opus|sonnet|deepseek-pro|deepseek-flash|default>]"
+description: Change the model of a task. "/cb-model up" = one step up; "/cb-model <model> [effort]"; "/cb-model #n <model> [effort]" (Lead); "/cb-model mode <claude|deepseek>" (Lead)
+argument-hint: "up [reason] | <haiku|sonnet|opus> [effort] | #<n> <model> [effort] | mode <claude|deepseek>"
 ---
 
-Models: **$ARGUMENTS**. Only the Lead changes them, on the owner's request. In another session, show the table (no argument) and, for a change, end with the hand-off block for the Lead (prompt: `/cb-model <arguments>`).
+Model: **$ARGUMENTS** (rule "Models" in `CLAUDE.md`). Showing the models is `/cb-progress`; this command changes them. A session cannot change its own model or effort: the app refuses it. So the Lead switches the other sessions, and the owner switches the Lead's in the model menu.
 
-1. **No argument:** run `node scripts/model.mjs` and show its table in the owner's language: each role, its provider, its model, and whether it is the mode's default or changed; whether the DeepSeek key is set (never its value).
-2. **`mode <claude|deepseek|mix>`:** the whole project (rule "Models" in `CLAUDE.md`). Before `deepseek` or `mix`, say in one line that the code those roles see goes to DeepSeek's servers, so a client project needs the client's OK. Run `node scripts/model.mjs mode <mode>`. Without the DeepSeek key it refuses: give the owner `node scripts/set-secret.mjs DEEPSEEK_API_KEY` to run in a terminal (never in the chat), then run it again. Commit `.claude/project.json`.
-3. **`<role> <model>`:** one role (`lead`, `dev1`, `dev2`, `test`, `uiux`, `devops`), for example a stuck task (`/cb-model dev1 deepseek-pro`, or `opus`). `default` takes it back to the mode's model. Run `node scripts/model.mjs <role> <model>`; it refuses `deepseek-pro` for UI/UX and Test, which look at images. Note the change and why on the task's issue.
-4. **After a change:** a running session keeps its old model. Tell the owner which sessions to restart, or restart them yourself when the app lets you (Claude Code desktop: for a Claude model, also set the open session's model with `set_session_model`). In the restarted session, `/status` shows the model and the address (`api.deepseek.com` for DeepSeek).
-5. Report in two lines: what changed, and which sessions need a restart.
+- **`up [reason]`, `<model> [effort]` in a role's session** (Dev, Frontend, Test, UI/UX): send the Lead one line, `#<n>: <the request> (<reason>)` (rule "Hand-offs"), and stop until it answers. Do not keep working on the old model if the owner asked for a stronger one.
+- **The same in the Lead's own session:** for your own work, tell the owner in one line which model and effort to pick in the model menu (`/model` in the CLI), and why.
+- **The Lead, for a role's task** (a request from that role or the owner, `/cb-model #<n> <model> [effort]`, or a task that is stuck):
+  1. Check the cause first (rule "Models", When a task fails): a broken environment or an unclear task is fixed, not moved up.
+  2. `node scripts/model.mjs up <role> <reason>` (one step) or `node scripts/model.mjs task <role> #<n> <model> <effort>` (a given model); it prints the model id.
+  3. Opus needs the owner's OK unless `/cb-auto escalate` is on and the owner allowed it: ask in one line with the reason and the cost.
+  4. Set it on the session (`set_session_model`, `set_session_effort`); write the move on the issue as one comment, `Model: <from> → <to> (<cause>: <reason>)`, which the weekly measures count; tell the role to go on.
+- **`mode <claude|deepseek>`** (Lead): `node scripts/model.mjs mode <mode>`. `claude`: every role on Claude, the model chosen per task. `deepseek`: the Dev, Frontend and Test on DeepSeek, the Lead and UI/UX on Claude; DeepSeek gets the code those roles see, so a client project needs the client's OK, and its key must be set first (the owner runs `node scripts/set-secret.mjs DEEPSEEK_API_KEY` in a terminal, never in the chat). A DeepSeek session starts with `claude` in its worktree, not from the app (rule "Models"); tell the owner which sessions to start again. Commit `.claude/project.json`.
+
+Report in one or two lines: which session, the model and effort now, why.

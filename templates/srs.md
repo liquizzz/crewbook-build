@@ -1,8 +1,8 @@
 # Software Requirements Specification: <Project name>
 
-Save as `docs/tech/srs.md`. Structure follows ISO/IEC/IEEE 29148 (software requirements), cut down to what one owner needs. The Lead writes sections 1-3 (the functional part: one `FR-xxx` per requirement, with its origin and acceptance) at G2, then adds the NFR targets, the architecture and the traceability at G3 and keeps the SRS current after that through CRs. Sections 1-3 are in plain words, like the PRD; the NFRs and the architecture may be technical but each section opens with a sentence anyone can read. Mandatory for every project. It always describes the system as it is now; every CR updates it before its tasks are assigned; its version equals the release version.
+Save as `docs/tech/srs.md`. Structure follows ISO/IEC/IEEE 29148 (software requirements), cut down to what one owner needs. The Lead writes sections 1-3 (the functional part: one `FR-xxx` per requirement, with its origin and acceptance) during setup, then adds the NFR targets, the architecture and the traceability with the plan and keeps the SRS current after that through CRs. Sections 1-3 are in plain words, like the PRD; the NFRs and the architecture may be technical but each section opens with a sentence anyone can read. Mandatory for every project. It always describes the system as it is now; every CR updates it before its tasks are assigned; its version equals the release version.
 
-**Version:** 0.0.0 · **Status:** Functional draft (G2) / Baseline draft (G3) · **Last updated:** YYYY-MM-DD
+**Version:** 0.0.0 · **Status:** Functional draft (setup) / Baseline (plan approved) · **Last updated:** YYYY-MM-DD
 
 ## Revision history
 Newest first. The `release` script adds the row for each release; the Lead adds CR rows under "Unreleased" while the milestone runs.
@@ -11,7 +11,7 @@ Newest first. The `release` script adds the row for each release; the Lead adds 
 | SRS version | Release | Date | CRs | Sections changed | Summary |
 |---|---|---|---|---|---|
 | Unreleased | n/a | n/a | <CR-12> | <§3.2> | <...> |
-| 0.0.0 | n/a | YYYY-MM-DD | n/a | All | Baseline approved at G3 |
+| 0.0.0 | n/a | YYYY-MM-DD | n/a | All | Baseline approved with the plan |
 
 ## 1. Introduction
 ### 1.1 Purpose and scope

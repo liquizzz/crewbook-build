@@ -1,15 +1,15 @@
 # Test strategy: <Project name>
 
-Save as `docs/tech/test-strategy.md`. Written by the Lead, approved at G3. A short form of the test plan in ISO/IEC/IEEE 29119-3.
+Save as `docs/tech/test-strategy.md`. Written by the Lead, approved with the plan. A short form of the test plan in ISO/IEC/IEEE 29119-3.
 
 | Field | Value |
 |---|---|
 | SRS | `docs/tech/srs.md` |
-| Status | Draft / Approved (G3) |
+| Status | Draft / Approved with the plan |
 | Last updated | YYYY-MM-DD |
 
 ## 1. What must be true to release (exit criteria)
-<The requirements and non-functional targets that decide a release (G5), in 3-5 bullets, with FR/NFR IDs.>
+<The requirements and non-functional targets that decide the milestone approval, in 3-5 bullets, with FR/NFR IDs.>
 
 Product risks tested first: <the 2-3 things that would hurt most if wrong, with FR/NFR IDs>.
 

@@ -22,12 +22,12 @@
 ## 4. How it was delivered
 | Phase | What AI did | What the human decided | Time |
 |---|---|---|---|
-| 1 Planning (G1 proposal) | <...> | <...> | <...> |
-| 2 Requirements (G2) | <...> | <...> | <...> |
-| 3 Design, stack and SRS (G3) | <...> | <...> | <...> |
-| 4 Build (G4) | <...> | <...> | <...> |
-| 5 Test and acceptance (G5) | <...> | <...> | <...> |
-| 6 Release (G6) | <...> | <...> | <...> |
+| 1 Setup: roles and requirements | <...> | <...> | <...> |
+| 2 Setup: stack and environments | <...> | <...> | <...> |
+| 3 Plan approval | <...> | <...> | <...> |
+| 4 Build | <...> | <...> | <...> |
+| 5 Milestone approval | <...> | <...> | <...> |
+| 6 Release approval | <...> | <...> | <...> |
 | 7 Maintenance | <...> | <...> | <...> |
 
 ## 5. Results

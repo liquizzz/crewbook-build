@@ -37,7 +37,23 @@ function readProject(root) {
   }
 }
 
-function reminder(cwd) {
+// The task the Lead recorded for this worktree (scripts/model.mjs task), and a warning when the session runs another model.
+function taskLine(root, model) {
+  let task = null;
+  try {
+    task = JSON.parse(fs.readFileSync(path.join(root, ".claude", "task.json"), "utf8"));
+  } catch {
+    return "";
+  }
+  const asked = `${task.model} ${task.effort}`;
+  const running = String(model || "").toLowerCase();
+  if (running && !running.includes(task.model)) {
+    return `Warning: this session runs ${model}, but task #${task.issue} is set for ${asked}. Before any work, tell the Lead in one line ("#${task.issue}: running ${model}, set for ${asked}") so it switches the session; do not switch it yourself.`;
+  }
+  return `Task #${task.issue} is set for ${asked} (rule "Models"); a session cannot change its own model: /cb-model up asks the Lead.`;
+}
+
+function reminder(cwd, model) {
   const root = findRoot(cwd);
   if (!root) return "";
   const roleFile = path.join(root, ".claude", "role");
@@ -54,19 +70,22 @@ function reminder(cwd) {
       `"Setup is not done. Open the session "${name} - Lead" and type /cb-setup; it tells you when to come back here."`,
     ].join(" ");
   }
-  // Roles the kit no longer has: their open work goes to another session.
-  const retired = { po: "the Lead", dev3: "Dev1 or Dev2", dev4: "Dev1 or Dev2" }[role];
+  // Roles the kit no longer has: their open work goes to another session (scripts/project-level.mjs RETIRED_ROLES).
+  const retired = {
+    po: "the Lead", dev1: "the Dev", dev2: "Frontend", dev3: "the Dev or Frontend", dev4: "the Dev or Frontend",
+    devops: "the Lead (set-up) and the Dev (builds and images)",
+  }[role];
   if (retired) {
     return `Crewbook: the kit no longer has a ${role} role; its work goes to ${retired}. Do no new work here. Tell the owner, in the owner's language, to finish or hand over what is open, close this session, and remove the worktree when its work is merged.`;
   }
-  const family = role.replace(/\d+$/, "");
-  const roleDoc = `.claude/roles/${family}.md`;
+  const roleDoc = `.claude/roles/${role}.md`;
   const skills = roleSkills(path.join(root, roleDoc));
   return [
     `Crewbook: you are the ${role} session. Read CLAUDE.md and ${roleDoc} before any work, run the Recovery steps in ${roleDoc}, then do what the owner asked.`,
     "Use the skill the Skills table in CLAUDE.md names for each task, every time, without waiting for the owner to ask.",
     skills ? `Your role's skills: ${skills}` : "",
-    "AI does the work; the owner decides: draft at once from what the owner says, ask once (at most three questions, each with a suggested answer), redo freely, write documents in plain language, and ask for one approval.",
+    taskLine(root, model),
+    "The AI understands; the owner decides: work out what the owner means, propose at once with a recommendation, ask once (at most three questions, each with a suggested answer), never round after round, write documents in plain language.",
     project.language ? `Talk to the owner in ${project.language} in everything they read, including the end-of-turn recap, the next-step box, questions and button labels; only code, commits, paths and commands stay in English.` : "Talk to the owner in the language CLAUDE.md sets, in everything they read, including the end-of-turn recap and button labels.",
     "Every approval request ends with the For you block, files and issues are clickable links, and a hand-off ends with the prompt alone in a code block (CLAUDE.md).",
     "Another role's work goes to that role's session through a hand-off; never start a side session for it.",
@@ -78,7 +97,7 @@ try {
   try {
     input = JSON.parse(fs.readFileSync(0, "utf8") || "{}");
   } catch {}
-  const text = reminder(process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd());
+  const text = reminder(process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd(), input.model);
   if (text) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: text } }));
 } catch {}
 process.exit(0);

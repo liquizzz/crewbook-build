@@ -16,22 +16,22 @@ git clone https://github.com/liquizzz/crewbook-build.git
 node crewbook-build/kit/init.mjs
 ```
 
-The first time, install the tools listed in How to run (once per machine). Then answer eight short questions (Enter takes each suggestion) and open the `START-HERE.md` it writes into your project. Every next step there is one short command to type, such as `/cb-setup`, `/cb-next <your idea>`, `/cb-build try`, `/cb-build done` or `/cb-release` ("cb" stands for Crewbook), and each hand-off ends with a prompt you copy with one click. `/cb-setup` asks one question: which models the team runs on (`claude`, `deepseek` or `mix`); `/cb-model` changes it later.
+The first time, install the tools listed in How to run (once per machine). Then answer three short questions (Enter takes each suggestion) and open the `START-HERE.md` it writes into your project. You open the Lead and type `/cb-setup`: five questions, each with a suggestion (the roles, how much runs without you, your idea, the stack, the environments), then you approve the plan and the Lead creates the rest of the team. `/cb-help` lists every command ("cb" stands for Crewbook); each hand-off ends with a prompt the sessions pass on by themselves.
 
 ## What you get: a Claude Code agent team in one command
 
 | You get | How |
 |---|---|
-| A ready project in one command | `init.mjs` creates the folder, git branches, the Lead's worktree (its own folder of the project, one per session), the GitHub repo (private or public) with labels and a kanban board, CI and Docker image builds, the Claude Code plugins the team uses, and `START-HERE.md`; the Lead's `/cb-setup` then opens the gate issues and the other roles' worktrees |
-| A small team that knows its job | Every project starts with two sessions. The Lead is your one contact from the idea to each release: the proposal, the screen sketches and the requirements (G1-G2), the solution design (G3), every change with its price and the client's approval, review, the acceptance on `staging`, the handover and the release. Dev1 builds; a second Dev joins only when you ask for it (`/cb-add-dev`), with its own module. Test, UI/UX and DevOps join only for high-stakes work. Each role has a role file with its rules and paths; a guard hook (a script that checks every command and edit) blocks risky commands and edits outside the role |
+| A ready project in one command | `init.mjs` creates the folder, git branches, the Lead's worktree (its own folder of the project, one per session), the GitHub repo (private or public) with labels and a kanban board, CI and Docker image builds, the Claude Code plugins the team uses, and `START-HERE.md`; the Lead's `/cb-setup` then creates every other role's worktree and session |
+| A team you pick, split by layer | The Lead and the Dev always; UI/UX (the design, ahead of the code), Frontend (the screens, beside the Dev) and Test (test cases and the regression) when the project needs them, chosen at setup and added later with `/cb-add-role`. The Lead is your one contact from the idea to each release; the Dev and Frontend never touch the same files. Each role has a role file with its rules and paths; a guard hook (a script that checks every command and edit) blocks risky commands, edits outside the role and reading database backups |
 | The right skill for each task, chosen in advance | Suggestions use brainstorming, code uses test-first development, failures use systematic debugging, nothing is called done without a verification step, and the Lead reviews every change. Documents can get a humanizer pass, which you turn on at init or later. A hook reminds each session at start, so you never name a skill |
-| AI does the work, you decide | You say what you want in your own words; the session drafts at once, asks at most three questions (each with a suggested answer), marks its guesses ⚠️ and redoes the draft as often as you like, then asks for one approval. "later" parks a decision until a step needs it, and "suggest" asks for ideas. A product you name is tried in the browser, an old system is read for what to keep, and facts you give are checked |
-| See it first, then build it | The Lead sketches the main screens you can click through, so you approve a product you can see (G1 and G2, one approval). It then shows the whole plan in one solution design: the parts, the stack and why, the data, the look and feel, the milestones and the risks (G3). Every document is in plain words |
-| Lower token cost | Tests sized to the change (levels L0 to L3), no `/goal` or `/loop`, compact rules per role, short hand-off prompts, a fresh context for each Dev task, roles opened only when there is work for them, and the option to run the Dev and Test sessions (or every session) on DeepSeek |
-| Quality you can check | Gates you approve, each with a For you block (a few things to try yourself, with links to the evidence), a requirements document kept current with every change, CI on every push, and your own acceptance test before each release |
-| Room to grow | `node scripts/set-level.mjs` moves a project from Lite (Lead and Dev1) to Full (adds Test, UI/UX and DevOps sessions, for money, security, personal data or a client who signs off each release), or back, without redoing anything |
+| The AI understands, you decide | You say what you want in your own words; the Lead works out what you mean, fills the gaps and proposes with a recommendation, asks at most one short round, and marks its guesses ⚠️. You can answer "you decide". You decide three times: the plan, each milestone, each release |
+| A plan before the code | Stories (with the ones usually missing as suggestions), a function tree of modules, screens and actions, three architectures with their stack and cost (one recommended), and the environments ready before the first task. Every document is in plain words |
+| Lower token cost, measured | Each task on the cheapest Claude model that does it well (Haiku, Sonnet or Opus, from its level and how clear it is), moved up only when it is stuck; reviews and CI runs reused while still valid; a fresh context after each phase; databases and model servers once per machine; a weekly report of tokens, cost, first-try passes and defects per role, model and level (`/cb-progress report`). The Dev, Frontend and Test can run on DeepSeek instead |
+| Quality you can check | Three approvals you give, each with a For you block (a few things to try yourself, with links to the evidence), tests and reviews sized to each change's risk, a requirements document kept current with every change, CI on every change, and your own acceptance test before each release |
+| Room to grow | `/cb-add-role` adds UI/UX, Frontend or Test when the project needs them; `/cb-auto` sets how much runs without you, from every merge waiting for you to all of them merged by the Lead |
 | Kit updates in a running project | `/cb-update` in the Lead brings the newest kit into a project that already runs: kit files are replaced, your own files, rules and decisions stay, and it lands through a PR you approve |
-| Releases you can run anywhere | Each version tag builds a Docker image; `node scripts/run.mjs v0.1.0` runs it, or rolls back to an older tag |
+| Releases you can run anywhere | Each version tag builds a Docker image; `node scripts/run.mjs v0.1.0` runs it, `/cb-deploy staging <tag>` puts it on a server, and the previous tag rolls it back |
 
 ## The best tool for each stage
 
@@ -66,12 +66,12 @@ The book gives each step as prompts (what to say, what Claude asks back, what it
 | 0 | [Introduction](docs/book/00-introduction.md) | Understand the model, the principles and how prompts work in this book |
 | 1 | [Setup](docs/book/01-setup.md) | Start a project, connect GitHub, open the first sessions |
 | 2 | [The team](docs/book/02-the-team.md) | Know who does what, how code moves, what the guardrails block |
-| 3 | [Foundation](docs/book/03-foundation.md) | Picture the project (G1-G2), then how it is built (G3), with two approvals |
+| 3 | [Foundation](docs/book/03-foundation.md) | Setup: the roles, the requirements, the stack and the environments, then the plan you approve |
 | 4 | [The delivery loop](docs/book/04-delivery-loop.md) | Ask for changes, follow progress, keep the milestone on date |
 | 5 | [Releases](docs/book/05-releases.md) | Release, go live, hotfix, roll back |
 | 6 | [Continuity](docs/book/06-continuity.md) | Restart, compact, trace a change, switch machines without losing work |
 | 7 | [Front-end projects](docs/book/07-frontend-projects.md) | Show design rounds (to you or a client) while the product is built |
-| 8 | [Lite mode](docs/book/08-lite-mode.md) | Run with two sessions; move to Full and back |
+| 8 | [Lite mode](docs/book/08-lite-mode.md) | Run with the Lead and the Dev only; add roles later |
 | 9 | [Token budget](docs/book/09-token-budget.md) | Keep cost under control; avoid `/goal` and `/loop` |
 | A | [Templates](docs/book/appendix-a-templates.md) | See every document the sessions fill in |
 | B | [Kit reference](docs/book/appendix-b-kit.md) | See what the kit installs and how to change it |
@@ -86,22 +86,22 @@ The [Quick start in chapter 0](docs/book/00-introduction.md#quick-start-from-ide
 ## FAQ
 
 **Can I build an app with Claude Code if I can't code?**
-Yes. You describe what you want, correct the sessions' drafts and approve each gate; the sessions write the code, the tests and the documents. You do need to install a few tools once and type short commands such as `/cb-next` and `/cb-build try`. [How to run](HOW-TO-RUN.md) walks through each one.
+Yes. You describe what you want, correct the Lead's proposals and approve the plan, each milestone and each release; the sessions write the code, the tests and the documents. You do need to install a few tools once and type a few short commands such as `/cb-setup` and `/cb-release demo`. [How to run](HOW-TO-RUN.md) walks through each one.
 
 **How is this different from vibe coding?**
 Vibe coding ships whatever the last prompt produced. In Crewbook every change has a requirement, a review by the Lead and tests sized to the change, and nothing is released before it is tested on `staging`, accepted against every acceptance criterion and approved by you, so the tenth feature is as solid as the first.
 
 **How is it different from Claude Code agent teams or spec-driven kits?**
-Each role (Lead, Dev, and Test, UI/UX or DevOps when needed) runs in its own session and git worktree, and a guard hook keeps it inside its role. The process covers the whole delivery: proposal and screen sketches, requirements (SRS), solution design, build, release, change requests and rollback, with six gates (G1 to G6).
+Each role (the Lead and the Dev, and UI/UX, Frontend or Test when the project needs them) runs in its own session and git worktree, on the model its task needs, and a guard hook keeps it inside its role. The process covers the whole delivery: requirements and a function tree, the architecture, the environments, build, release, change requests and rollback, with three approvals for you.
 
 **How is Crewbook different from BMAD-METHOD or spec-kit?**
-All three start from a spec. Crewbook uses the plugin that does each stage best (superpowers for brainstorming and test-first code, ui-ux-pro-max and frontend-design for the look and the screens, context7 for library facts) in place of one framework for everything. It leads you one step at a time: one command per stage, a START-HERE file that lists every step, and at the end of each step the session tells you, or sends the next session, what comes next. You can approve without reading code: each gate shows what to try yourself, what a wrong result looks like and what the tests already prove, and changes merge on their own after the Lead's review (a security review for money, security or personal data), while every release waits for you. The result is a real project, with a branch per role, reviewed pull requests, a kanban board, CI, tagged releases and a Docker image you run with one command. For a quick prototype spec-kit is faster; Crewbook is for software you will hand over, maintain or show a client.
+All three start from a spec. Crewbook uses the plugin that does each stage best (superpowers for brainstorming and test-first code, ui-ux-pro-max and frontend-design for the look and the screens, context7 for library facts) in place of one framework for everything. It leads you one step at a time: one command per stage, a START-HERE file that lists every step, and at the end of each step the session tells you, or sends the next session, what comes next. You can approve without reading code: each approval shows what to try yourself, what a wrong result looks like and what the tests already prove, and changes merge on their own after their reviews (a security review for money, security or personal data) up to the level you set, while every release waits for you. The result is a real project, with a branch per role, reviewed pull requests, a kanban board, CI, tagged releases and a Docker image you run with one command. For a quick prototype spec-kit is faster; Crewbook is for software you will hand over, maintain or show a client.
 
 **What stack does it use?**
-Any. The Lead proposes one in the solution design at G3, with the options it left out and why, and you approve it. A platform you or your client require is a constraint in the proposal.
+Any. At setup the Lead proposes three architectures with their stack and cost, one recommended, and you pick one or let it decide. A platform you or your client require is a constraint.
 
 **What does it cost?**
-A Claude subscription that includes Claude Code, and GitHub (the free plan is enough). With the `deepseek` or `mix` model mode you also pay DeepSeek for what those sessions use. [Chapter 9](docs/book/09-token-budget.md) shows how the kit keeps token use down.
+A Claude subscription that includes Claude Code, and GitHub (the free plan is enough). With the `deepseek` model mode you also pay DeepSeek for what the Dev, Frontend and Test sessions use. [Chapter 9](docs/book/09-token-budget.md) shows how the kit keeps token use down, and `/cb-progress report` measures it every week.
 
 ## Repository
 

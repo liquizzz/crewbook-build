@@ -28,6 +28,22 @@ body:
     validations:
       required: true
   - type: input
+    id: caused
+    attributes:
+      label: Caused by
+      description: The task and its PR that brought the defect in (from the area and the git history), or "unknown". It goes to the role that made that task.
+      placeholder: "#42 (PR #58)"
+    validations:
+      required: true
+  - type: dropdown
+    id: level
+    attributes:
+      label: Change level of the fix (add the matching L* label)
+      description: Set by the fix's own risk (rule "Change level"), not copied from the task; data loss, permissions, money or personal data are L3.
+      options: ["L0 Display", "L1 Setting or small logic", "L2 Module logic", "L3 Core"]
+    validations:
+      required: true
+  - type: input
     id: fr
     attributes:
       label: Related requirement

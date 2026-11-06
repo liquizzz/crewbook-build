@@ -4,21 +4,21 @@ Closes #
 ## Change
 <!-- What changed, in a few lines -->
 
-## Change level (confirmed against the files changed)
-- [ ] L0 display
-- [ ] L1 setting
-- [ ] L2 module logic
-- [ ] L3 core
-- Same as the task's label? If wider, say why and tell the Lead:
+## Level and reach (confirmed against the files changed)
+- [ ] L0 display (no logic, state or data)
+- [ ] L1 setting or small logic (existing endpoints only)
+- [ ] L2 module logic, or a change to the API contract
+- [ ] L3 core · reach: one point / narrow / wide · places:
+- Same as the task's? If wider, say why and tell the Lead:
 
-## Checked (tests per level: rule "Change level" in `CLAUDE.md`)
-- [ ] Build and lint pass
-- [ ] CI on this machine (local mode): `ci-local` PASS line pasted here
-- [ ] A unit test for the change (L1+)
-- [ ] Module tests and the main scenario run locally (L2+)
-- [ ] Integration tests, edge cases and `security-review` (L3)
-- [ ] Self-review: `code-review` on this diff, findings fixed (L2-L3): <how many>
-- [ ] Only my module's folders, or a shared file my task owns
+## Checked (rule "Change level" in `CLAUDE.md`)
+- [ ] `ci-local` PASS (or CI on GitHub green): branch `<sha>` + dev `<sha>`
+- [ ] L0: looked at in the running app (style or layout changes only)
+- [ ] L1: the affected action tried in the running app; a test when there is logic; a configuration value changed in every environment file
+- [ ] L2: module tests and the main scenario run locally
+- [ ] L3: tests by reach (one point: starts, healthcheck, one read and one write, the old value can be put back; narrow: the module and its public interface; wide: the modules that use it, edge cases)
+- [ ] Self-review on commit `<sha>`: `code-review` (L2-L3) and `security-review` (L3, or any change to permissions, money, personal data or a secret); findings fixed: <how many>
+- [ ] Only my role's folders, or a shared file my task owns
 
 ## Documents
 - [ ] The SRS matches the behaviour (or no requirement changed)
@@ -31,8 +31,10 @@ Closes #
 - [ ] Permissions correct; no access opened by accident
 - [ ] Deletes and overwrites are confirmed or reversible
 - [ ] Money and order logic checked at the edges
-- [ ] Extra review proposed? (`codex-review` / `claude-review`, the owner decides; `/cb-review` runs the Codex one)
+- [ ] Schema or data change: update and rollback scripts tried on a copy of the staging database
+- [ ] A second opinion proposed? (`/cb-review` runs Codex; the owner decides)
 
 ## Hand-off
 - Commit: `role/<role>` @ `<sha>`
-- Notes for the reviewer:
+- Decisions to keep:
+- Left for later:

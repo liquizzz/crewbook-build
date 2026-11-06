@@ -3,13 +3,18 @@
 // Crewbook by Hai Nguyen (github.com/liquizzz/crewbook-build)
 // role-guard: Claude Code PreToolUse hook for Bash, PowerShell and file edits.
 // Enforces Crewbook rules per role. The role is read from .claude/role in the
-// worktree (one word: lead, dev1, dev2, test, uiux, devops), written by scripts/new-role-worktree.mjs.
+// worktree (one word: lead, dev, uiux, frontend, test), written by scripts/new-role-worktree.mjs.
 //
 //   Push    every role except the Lead pushes only role/<role>; nobody force-pushes dev, staging, main;
 //           nobody uses --no-verify; only the Lead merges PRs.
 //   Ask     the Lead's pushes to main or production, tag pushes, GitHub releases and workflow runs
 //           open an approval prompt for the owner.
-//   Paths   each role edits only the paths it owns (defaults below, override in .claude/ownership.json).
+//   Data    no role reads a database backup or dump (*.bak, *.bacpac, *.dump, *.dmp, *.sql.gz, backups/): real data never
+//           reaches a model; restoring one with the database's own tools is fine.
+//   Deploy  production is deployed by the owner in a terminal: no session runs deploy.mjs production.
+//   Paths   each role edits only the paths it owns (defaults below, override in .claude/ownership.json). When two
+//           roles list a folder, the longer path wins: "src/" for the Dev and "src/Web/Views/" for Frontend.
+//           A role the project does not have leaves its paths to the Dev (Frontend, Test); the Lead may edit anything.
 //
 // Block: exit 2 with the reason on stderr. Ask: exit 0 with a permissionDecision "ask" on stdout.
 // Tests: node .claude/hooks/role-guard.test.cjs
@@ -24,10 +29,13 @@ const OWNER_GATED_BRANCHES = ["main", "production"];
 // Paths each role may edit, relative to the worktree root. "*" means everything.
 const DEFAULT_OWNERSHIP = {
   lead: ["*"],
-  dev: ["app/", "src/", "packages/", "tests/unit/", "CHANGELOG.md", "package.json", "pnpm-lock.yaml", ".env.example"],
+  dev: [
+    "app/", "src/", "api/", "server/", "backend/", "packages/", "tests/unit/", "CHANGELOG.md", "package.json", "pnpm-lock.yaml", ".env.example",
+    ".github/workflows/", "infra/", "scripts/", "docs/tech/ops/", "docker/", ".dockerignore", "Dockerfile", "docker-compose.yml",
+  ],
+  frontend: ["web/", "frontend/", "client/", "packages/ui/", "tests/ui/", "CHANGELOG.md"],
   test: ["tests/", "docs/tech/test-cases/", "docs/tech/test-reports/"],
   uiux: ["design/", "packages/tokens/"],
-  devops: [".github/workflows/", "infra/", "scripts/", "docs/tech/ops/", "docker/", ".dockerignore", "Dockerfile", "docker-compose.yml"],
 };
 
 function readInput() {
@@ -50,27 +58,49 @@ function findRole(startDir) {
   }
 }
 
-function roleFamily(role) {
-  return (role || "").replace(/\d+$/, ""); // dev1, dev2 → dev
-}
-
-// At Lite there is no Test session: Dev1 also does the Test work, so it also owns the Test paths.
-function levelOwnership(root) {
+function readRoles(root) {
   try {
-    const level = JSON.parse(fs.readFileSync(path.join(root, ".claude", "project.json"), "utf8")).level;
-    if (level === "lite") return { ...DEFAULT_OWNERSHIP, dev: [...DEFAULT_OWNERSHIP.dev, ...DEFAULT_OWNERSHIP.test] };
-  } catch {}
-  return DEFAULT_OWNERSHIP;
-}
-
-function loadOwnership(root) {
-  const base = levelOwnership(root);
-  try {
-    return { ...base, ...JSON.parse(fs.readFileSync(path.join(root, ".claude", "ownership.json"), "utf8")) };
+    const roles = JSON.parse(fs.readFileSync(path.join(root, ".claude", "project.json"), "utf8")).roles;
+    return Array.isArray(roles) ? roles : null;
   } catch {
-    return base;
+    return null;
   }
 }
+
+// The ownership map: the defaults, the project's own .claude/ownership.json on top, and the paths of a role the project
+// does not have handed to the Dev (it builds both layers without Frontend and tests without Test).
+function loadOwnership(root) {
+  let map = { ...DEFAULT_OWNERSHIP };
+  try {
+    map = { ...map, ...JSON.parse(fs.readFileSync(path.join(root, ".claude", "ownership.json"), "utf8")) };
+  } catch {}
+  const roles = readRoles(root);
+  if (roles) {
+    for (const r of ["frontend", "test"]) {
+      if (roles.includes(r)) continue;
+      map.dev = [...(map.dev || []), ...(map[r] || [])];
+      delete map[r];
+    }
+  }
+  return map;
+}
+
+const matches = (rel, p) => (p.endsWith("/") ? rel.startsWith(p) : rel === p);
+
+// The role that owns a path: the longest matching path across all roles (the Lead's "*" never wins).
+function ownerOf(rel, map) {
+  let best = null;
+  for (const [role, paths] of Object.entries(map)) {
+    for (const p of paths || []) {
+      if (p !== "*" && matches(rel, p) && (!best || p.length > best.path.length)) best = { role, path: p };
+    }
+  }
+  return best;
+}
+
+// A database backup or dump: its content is real data.
+const BACKUP = /(^|[\\/])(db-)?backups?[\\/]|\.(bak|bacpac|dump|dmp)$|\.sql\.gz$/i;
+const READERS = ["cat", "type", "get-content", "gc", "head", "tail", "less", "more", "strings", "xxd", "od", "hexdump", "zcat", "gunzip", "select-string", "grep", "rg", "findstr"];
 
 // ---------- shell commands ----------
 
@@ -225,6 +255,13 @@ function checkCommand(command, role, cwd) {
     if (/^-encodedcommand$/i.test(words[0] || "")) {
       return { block: "Encoded PowerShell commands are not allowed; run the command in plain text." };
     }
+    const base = (words[0] || "").replace(/^.*[\\/]/, "").replace(/\.exe$/i, "").toLowerCase();
+    if (READERS.includes(base) && words.slice(1).some((w) => BACKUP.test(w))) {
+      return { block: "Database backups and dumps hold real data and are never read by a session. Restore them with the database's own tools (db-setup restore)." };
+    }
+    if (words.some((w) => /(^|[\\/])deploy\.mjs$/.test(w)) && words.includes("production")) {
+      return { block: "Production is deployed by the owner in a terminal (node scripts/deploy.mjs production <tag> --owner). Give the owner the command." };
+    }
     if (isTool(words[0], "gh")) {
       if (words[1] === "pr" && words[2] === "merge" && role !== "lead") {
         return { block: `Role "${role || "unknown"}" may not merge PRs. Send the PR link to the Lead.` };
@@ -274,12 +311,22 @@ function checkEdit(filePath, role, root, cwd) {
   if (rel === ".env" || /(^|\/)\.env(\.[^/]*)?$/.test(rel) && !rel.endsWith(".example")) {
     return { block: "Real .env files are filled in by the owner, not by agents." };
   }
-  // A role's own entry (for example "dev2": its module's folders) wins over its family's ("dev").
   const map = loadOwnership(root);
-  const owned = map[role] || map[roleFamily(role)] || [];
+  const owned = map[role] || [];
   if (owned.includes("*")) return null;
-  if (owned.some((p) => (p.endsWith("/") ? rel.startsWith(p) : rel === p))) return null;
+  const owner = ownerOf(rel, map);
+  // A file two roles both list (CHANGELOG.md for the Dev and Frontend) is shared: each may edit it.
+  if (owner && (owner.role === role || owned.some((p) => matches(rel, p) && p.length === owner.path.length))) return null;
+  if (owner) return { block: `${rel} belongs to ${owner.role} (${owner.path}), not to "${role}". Ask the Lead through the issue instead.` };
   return { block: `Role "${role}" does not own ${rel}. Owned: ${owned.join(", ")}. Ask through the issue instead.` };
+}
+
+// Reading a file (the Read tool): backups and dumps are real data.
+function checkRead(filePath) {
+  if (filePath && BACKUP.test(String(filePath).split("\\").join("/"))) {
+    return { block: "Database backups and dumps hold real data and are never read by a session. Restore them with the database's own tools (db-setup restore)." };
+  }
+  return null;
 }
 
 function main() {
@@ -292,6 +339,7 @@ function main() {
 
   let result = null;
   if (tool === "Bash" || tool === "PowerShell") result = checkCommand(ti.command || "", role, cwd);
+  else if (tool === "Read") result = checkRead(ti.file_path);
   else result = checkEdit(ti.file_path || ti.notebook_path, role, found.root, cwd);
 
   if (result && result.block) {
@@ -307,4 +355,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { checkCommand, checkEdit, splitCommands, unwrap, parseGit, analysePush };
+module.exports = { checkCommand, checkEdit, checkRead, splitCommands, unwrap, parseGit, analysePush, loadOwnership, ownerOf };

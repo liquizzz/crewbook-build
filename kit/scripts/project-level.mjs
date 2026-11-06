@@ -1,41 +1,85 @@
 // SPDX-License-Identifier: MIT
 // Crewbook by Hai Nguyen (github.com/liquizzz/crewbook-build)
-// Shared by init.mjs, update.mjs and set-level.mjs: what each level needs, the project record in .claude/project.json,
-// the "Level:" line in CLAUDE.md and START-HERE.md rendered from .claude/start-here/<level>.md.
-import { execFileSync } from "node:child_process";
+// Shared by init.mjs, update.mjs, roles.mjs and new-role-worktree.mjs: the roles a project can have, the project record
+// in .claude/project.json, the "Roles:" line in CLAUDE.md and START-HERE.md rendered from .claude/start-here.md.
+import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
-// worktrees: the role worktrees the level uses once /cb-setup is done. init creates only the Lead's;
-// /cb-setup creates the others (setup comes first; the session-start hook enforces it).
-export const LEVELS = {
-  lite: {
-    title: "Lite",
-    branches: ["dev", "staging"],
-    worktrees: ["lead", "dev1"],
-    help: "Lead and one Dev, each in its own session. The starting level for any client project or product.",
-    line: "Lite (Lead and Dev1 sessions; book chapter 8)",
-  },
-  full: {
-    title: "Full",
-    branches: ["dev", "staging"],
-    worktrees: ["lead"],
-    help: "Adds Test, UI/UX and DevOps sessions. Money, security, personal data, or a client who signs off each release.",
-    line: "Full process (the Lead, then Dev1, Test, UI/UX and DevOps as needed, Dev2 on /cb-add-dev; book chapter 2)",
-  },
+// The branches every project has besides main.
+export const BRANCHES = ["dev", "staging"];
+// The roles a project can have. The Lead and the Dev are always on; the owner picks the others at /cb-setup.
+export const ROLES = ["lead", "dev", "uiux", "frontend", "test"];
+export const REQUIRED_ROLES = ["lead", "dev"];
+export const OPTIONAL_ROLES = ["uiux", "frontend", "test"];
+// What each role does and when it is worth having: shown at /cb-setup and by roles.mjs.
+export const ROLE_INFO = {
+  lead: { title: "Lead", does: "Plans, decides, splits tasks, reviews, merges and releases; designs when there is no UI/UX", when: "Always" },
+  dev: { title: "Dev", does: "Builds the backend, the infrastructure and the images; both layers when there is no Frontend; the tests when there is no Test", when: "Always" },
+  uiux: { title: "UI/UX", does: "Designs the screens before they are built: a prototype the client can see and approve", when: "The product has screens a client approves, or the look matters" },
+  frontend: { title: "Frontend", does: "Builds the screens from the approved design, beside the Dev", when: "The product has a real UI, so backend and frontend can be built at the same time" },
+  test: { title: "Test", does: "Writes the test cases early and runs the regression on staging", when: "Money, security, personal data, or a client who signs off each release" },
 };
-export const LEVEL_ORDER = ["lite", "full"];
-// Removed levels and the level to use instead.
-export const REMOVED_LEVELS = { starter: "lite" };
-// The roles a project can have, and roles the kit no longer has (their worktrees are kept until the owner removes them).
-export const ROLES = ["lead", "dev1", "dev2", "test", "uiux", "devops"];
-export const RETIRED_ROLES = { po: "the Lead (DEC-074)", dev3: "Dev1 or Dev2 (DEC-075)", dev4: "Dev1 or Dev2 (DEC-075)" };
+// Local ports for the roles that run the app.
+export const PORTS = { uiux: 5100, dev: 5201, frontend: 5202, test: 5300 };
+// Roles the kit no longer has, and who does their work now (their worktrees are kept until the owner removes them).
+export const RETIRED_ROLES = {
+  po: "the Lead (DEC-074)",
+  dev1: "the Dev (DEC-081)",
+  dev2: "Frontend (DEC-081)",
+  dev3: "the Dev or Frontend (DEC-081)",
+  dev4: "the Dev or Frontend (DEC-081)",
+  devops: "the Lead for the set-up and the Dev for builds and images (DEC-081)",
+};
 
-export function parseLevel(value) {
-  const v = String(value || "").trim().toLowerCase();
-  if (LEVELS[v]) return v;
-  const n = Number(v);
-  return Number.isInteger(n) && LEVEL_ORDER[n - 1] ? LEVEL_ORDER[n - 1] : null;
+export const roleTitle = (role) => ROLE_INFO[role]?.title || role;
+
+// The machine's shared hosts (~/.crewbook/hosts.json, or CREWBOOK_HOME): the build host, the registry, the database
+// servers and the staging server, set once for every project (scripts/hosts.mjs). No passwords in it.
+export const crewbookHome = () => process.env.CREWBOOK_HOME || path.join(process.env.HOME || process.env.USERPROFILE || ".", ".crewbook");
+export function readHosts() {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(crewbookHome(), "hosts.json"), "utf8"));
+  } catch {
+    return {};
+  }
+}
+// "local", or { ssh: "user@host", path: "<the project's clone there>" }: the project's own setting wins over the machine's.
+export function buildHostOf(project) {
+  const host = project?.buildHost || readHosts().build || "local";
+  if (host === "local") return null;
+  const ssh = typeof host === "string" ? host.replace(/^ssh:/, "") : host.ssh;
+  const where = typeof host === "object" && host.path ? host.path : null;
+  return ssh ? { ssh, path: where || `~/crewbook/${project?.repo?.split("/")[1] || project?.name || "project"}` } : null;
+}
+export const registryOf = (project) => project?.registry || readHosts().registry || null;
+// Run a kit script on the project's build host over SSH instead of here, when the project has one: the clone there
+// fetches, moves to origin/dev for the newest scripts, and runs the script with --here. Returns the exit code, or null
+// when the script should run here. CREWBOOK_SSH_DRY=1 prints the command instead (tests).
+export function onBuildHost(project, script, args) {
+  const host = buildHostOf(project);
+  if (!host || args.includes("--here") || process.env.CREWBOOK_HERE) return null;
+  const quote = (a) => `'${String(a).replace(/'/g, "'\''")}'`;
+  const remote = `cd ${host.path} && git fetch -q origin && git checkout -q -B crewbook-build origin/dev && node scripts/${script} ${args.map(quote).join(" ")} --here`;
+  if (process.env.CREWBOOK_SSH_DRY) {
+    console.log(`ssh ${host.ssh} ${remote}`);
+    return 0;
+  }
+  console.log(`On the build host ${host.ssh} (${host.path}); push the branch first, it fetches from origin.`);
+  const r = spawnSync("ssh", [host.ssh, remote], { stdio: "inherit" });
+  return r.status ?? 1;
+}
+// The images the project builds: "images" in project.json ({ name, paths }), else one "app" image of everything.
+export const imagesOf = (project) => (Array.isArray(project?.images) && project.images.length ? project.images : [{ name: "app", paths: ["."] }]);
+
+// The roles from an answer such as "all", "none", "uiux,test" or "lead dev frontend": always with the Lead and the Dev,
+// in the kit's order. Returns null when a name is not a role.
+export function parseRoles(value) {
+  const v = String(value ?? "").trim().toLowerCase();
+  if (v === "" || v === "all") return [...ROLES];
+  const asked = v === "none" ? [] : v.split(/[\s,]+/).filter(Boolean).map((r) => (r === "ui/ux" ? "uiux" : r));
+  if (asked.some((r) => !ROLES.includes(r))) return null;
+  return ROLES.filter((r) => REQUIRED_ROLES.includes(r) || asked.includes(r));
 }
 
 export function slugify(name) {
@@ -99,19 +143,24 @@ export function kitVersion(playbook) {
   }
 }
 
-// Replace the "- Level:" line of CLAUDE.md. Returns false if the line is missing.
-export function setClaudeLevel(dir, level) {
+// The "- Roles:" line of CLAUDE.md for a list of roles.
+export const rolesLine = (roles) => roles?.length
+  ? `- Roles: ${roles.map(roleTitle).join(", ")}. Add one with \`/cb-add-role <role>\`; what a missing role did goes to the Lead (design) or the Dev (frontend, tests).`
+  : "- Roles: chosen at /cb-setup.";
+
+// Replace the "- Roles:" line of CLAUDE.md. Returns false if the line is missing.
+export function setClaudeRoles(dir, roles) {
   const file = path.join(dir, "CLAUDE.md");
   if (!fs.existsSync(file)) return false;
   const text = fs.readFileSync(file, "utf8");
-  if (!/^- Level: .*$/m.test(text)) return false;
-  fs.writeFileSync(file, text.replace(/^- Level: .*$/m, `- Level: ${LEVELS[level].line}. Change it with \`node scripts/set-level.mjs <lite|full>\`.`));
+  if (!/^- Roles: .*$/m.test(text)) return false;
+  fs.writeFileSync(file, text.replace(/^- Roles: .*$/m, rolesLine(roles)));
   return true;
 }
 
-// Write START-HERE.md from the template of the project's level.
+// Write START-HERE.md from the kit's template.
 export function renderStartHere(dir, project, root = dir) {
-  const template = path.join(dir, ".claude", "start-here", `${project.level}.md`);
+  const template = path.join(dir, ".claude", "start-here.md");
   if (!fs.existsSync(template)) return false;
   const [owner, repoName] = project.repo ? project.repo.toLowerCase().split("/") : ["<github-user>", "<repo>"];
   const values = {
@@ -122,7 +171,7 @@ export function renderStartHere(dir, project, root = dir) {
     image: `ghcr.io/${owner}/${repoName}-app`,
     main: root,
     lead: worktreePath(root, "lead"),
-    dev1: worktreePath(root, "dev1"),
+    roles: project.roles?.length ? project.roles.map(roleTitle).join(", ") : "chosen at /cb-setup",
   };
   const text = fs.readFileSync(template, "utf8").replace(/\{\{(\w+)\}\}/g, (m, k) => (k in values ? values[k] : m));
   fs.writeFileSync(path.join(dir, "START-HERE.md"), text);

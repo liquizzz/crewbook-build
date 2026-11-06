@@ -6,7 +6,7 @@ Save as `docs/product/stories/US-NNN-<slug>.md`. Written by the Lead from the ap
 |---|---|
 | PRD must-have | <#> |
 | Screen | `docs/product/screens/<file>.html` |
-| SRS requirements | <FR-xxx, written by the Lead at G2> |
+| SRS requirements | <FR-xxx, written by the Lead at setup> |
 | Priority | Must / Should / Could |
 | Status | Draft / Approved / Delivered in <vX.Y.Z> |
 
