@@ -10,7 +10,8 @@
 //   node scripts/hosts.mjs add db <name> <engine> <version> <host:port>   a database server (the shared one, or online)
 //   node scripts/hosts.mjs shared <up|down> <service...>   start or stop shared services on this machine:
 //                                                          sqlserver-2022, postgres-17, redis-7, registry
-//   node scripts/hosts.mjs secret <NAME>                   a password for the shared services (hidden, never printed)
+//   node scripts/hosts.mjs secret <NAME>                   a password for the shared services (hidden, never printed;
+//                                                          POSTGRES_PASSWORD also changes it in the running server)
 //   --dry-run                                              print what would run
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -70,6 +71,17 @@ if (cmd === "add" && what === "db") {
   process.exit(0);
 }
 
+// The password each shared service needs, from ~/.crewbook/.env. It is set when the service's data is first created;
+// "secret" changes it in the running server too (POSTGRES_PASSWORD), so the file and the server never differ.
+const NEEDS = { "sqlserver-2022": "MSSQL_SA_PASSWORD", "postgres-17": "POSTGRES_PASSWORD" };
+const inEnvFile = (name) => {
+  try {
+    return fs.readFileSync(path.join(home, ".env"), "utf8").split(/\r?\n/).some((l) => l.startsWith(`${name}=`) && l.length > name.length + 1);
+  } catch {
+    return false;
+  }
+};
+
 if (cmd === "shared" && ["up", "down"].includes(what)) {
   if (!fs.existsSync(sharedFile)) {
     const template = path.join(mainCheckout(), "docker", "shared-compose.yml");
@@ -80,7 +92,16 @@ if (cmd === "shared" && ["up", "down"].includes(what)) {
     }
     console.log(`Copied the shared services to ${sharedFile}.`);
   }
+  // A copy from an older kit checks every password with ":?" and so stops one service for want of another's.
+  const copy = fs.existsSync(sharedFile) ? fs.readFileSync(sharedFile, "utf8") : "";
+  if (/:\?run node scripts\/hosts\.mjs secret/.test(copy) && !dry) {
+    fs.writeFileSync(sharedFile, copy.replace(/\$\{([A-Z_]+):\?run node scripts\/hosts\.mjs secret [A-Z_]+\}/g, "${$1:-}"));
+  }
   if (what === "up" && !rest.length) fail("Name the services to start: sqlserver-2022, postgres-17, redis-7, registry.");
+  // Each service's password, checked only for the services being started (the compose file has no ":?" check).
+  const missing = what === "up" ? rest.map((s) => NEEDS[s]).filter((v) => v && !inEnvFile(v)) : [];
+  if (missing.length && dry) console.log(missing.map((v) => `Needs ${v} (node scripts/hosts.mjs secret ${v}) before it starts.`).join("\n"));
+  else if (missing.length) fail(missing.map((v) => `Set ${v} first: node scripts/hosts.mjs secret ${v}`).join("\n"));
   const a = ["compose", "-f", sharedFile, "--env-file", path.join(home, ".env"), ...rest.flatMap((s) => ["--profile", s]), ...(what === "up" ? ["up", "-d", "--wait", ...rest] : ["down"])];
   if (dry) {
     console.log(`docker ${a.join(" ")}`);
@@ -128,6 +149,17 @@ if (cmd === "secret" && /^[A-Z][A-Z0-9_]*$/.test(what || "")) {
   const lines = (fs.existsSync(envFile) ? fs.readFileSync(envFile, "utf8").split(/\r?\n/) : []).filter((l) => l && !l.startsWith(`${what}=`));
   fs.writeFileSync(envFile, [...lines, `${what}=${value}`].join("\n") + "\n");
   console.log(`${what} set in ${envFile} (not shown).`);
+  // The value only applies when a server's data is first created. For a running shared Postgres, change it there too,
+  // over the container's local socket (no old password needed); the value goes through stdin, never the command line.
+  if (what === "POSTGRES_PASSWORD") {
+    const container = spawnSync("docker", ["ps", "-q", "--filter", "label=com.docker.compose.project=crewbook-shared", "--filter", "label=com.docker.compose.service=postgres-17"], { encoding: "utf8" });
+    const id = (container.stdout || "").trim().split(/\r?\n/)[0];
+    if (id) {
+      const sql = `ALTER ROLE postgres PASSWORD '${value.replace(/'/g, "''")}';\n`;
+      const r = spawnSync("docker", ["exec", "-i", id, "psql", "-U", "postgres", "-q", "-v", "ON_ERROR_STOP=1"], { input: sql, encoding: "utf8" });
+      console.log(r.status === 0 ? "The running shared Postgres uses the new password too." : "Could not change it in the running Postgres; it still has the old one. Run this again once it runs.");
+    }
+  }
   process.exit(0);
 }
 

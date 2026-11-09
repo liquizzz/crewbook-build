@@ -8,7 +8,7 @@
 //   counts for the role's task open at that time (between its "Started #n" comment and its close) that started last;
 // - per level: tasks closed, first-try passes (no "Needs changes", no move up), fix rounds, moves up and their causes,
 //   hours from start to merge;
-// - the owner's interventions: the messages the owner typed in the sessions;
+// - the owner's interventions: the messages the owner typed in the sessions (messages from other sessions apart);
 // - defects opened, by severity, and by the level and model of the task that caused them ("Caused by").
 // --project points at another project (its main checkout), for a baseline: the round-4 project before the new kit.
 // The cost is an estimate at list prices (PRICES below); on a subscription it shows where the usage goes, not a bill.
@@ -53,6 +53,7 @@ for (const r of roles) {
 const seen = new Set();
 const calls = []; // { role, ts, model, usage }
 const owner = {}; // role -> count
+const relayed = {}; // role -> messages from other sessions (the Lead's prompts, another session's relay)
 for (const [dir, role] of Object.entries(roleOf)) {
   for (const f of fs.readdirSync(path.join(projectsDir, dir)).filter((x) => x.endsWith(".jsonl"))) {
     const file = path.join(projectsDir, dir, f);
@@ -72,6 +73,8 @@ for (const [dir, role] of Object.entries(roleOf)) {
         if (m.id && seen.has(m.id)) continue;
         if (m.id) seen.add(m.id);
         calls.push({ role, ts, model: m.model, usage: m.usage });
+      } else if (o.type === "user" && o.isMeta && typeof m?.content === "string" && /<cross-session-message[\s>]/.test(m.content)) {
+        relayed[role] = (relayed[role] || 0) + 1; // a message another session sent; never the owner's
       } else if (o.type === "user" && !o.isMeta && m) {
         const text = typeof m.content === "string" ? m.content : (m.content || []).filter((c) => c.type === "text").map((c) => c.text).join(" ");
         if (text.trim() && !/^\s*</.test(text) && !(m.content || []).some?.((c) => c.type === "tool_result")) owner[role] = (owner[role] || 0) + 1;
@@ -140,7 +143,7 @@ const levels = ["L0", "L1", "L2", "L3"].map((l) => {
   const t = tasks.filter((x) => x.level === l);
   return { level: l, tasks: t.length, first: t.filter((x) => x.first).length, fixes: t.reduce((a, x) => a + x.fixes, 0), moves: t.reduce((a, x) => a + x.moves, 0), hours: median(t.map((x) => x.hours)), tokens: t.reduce((a, x) => a + x.tokens, 0), usd: t.reduce((a, x) => a + x.usd, 0) };
 });
-const result = { project: project.name || path.basename(root), from: day(since), to: day(until), total, byRole: Object.fromEntries(Object.entries(byRole).map(([k, v]) => [k, sum(v)])), levels, tasks, owner, defects };
+const result = { project: project.name || path.basename(root), from: day(since), to: day(until), total, byRole: Object.fromEntries(Object.entries(byRole).map(([k, v]) => [k, sum(v)])), levels, tasks, owner, relayed, defects };
 if (args.includes("--json")) {
   console.log(JSON.stringify(result, null, 1));
   process.exit(0);
@@ -156,6 +159,7 @@ out.push("", "| Level | Tasks | First try | Fix rounds | Moves up | Hours to mer
 for (const l of levels) out.push(`| ${l.level} | ${l.tasks} | ${l.first} | ${l.fixes} | ${l.moves} | ${l.hours.toFixed(1)} | ${fmt(l.tokens)} | $${l.usd.toFixed(0)} |`);
 const causes = tasks.flatMap((t) => t.causes);
 if (causes.length) out.push("", `Stuck causes: ${["environment", "request", "reasoning", "scope"].map((c) => `${c} ${causes.filter((x) => x === c).length}`).join(", ")}.`);
-out.push("", `The owner's messages: ${Object.entries(owner).map(([r, n]) => `${r} ${n}`).join(", ") || "none"}.`);
+out.push("", `The owner's messages: ${Object.entries(owner).map(([r, n]) => `${r} ${n}`).join(", ") || "none"}. Messages from other sessions (not counted as the owner's): ${Object.entries(relayed).map(([r, n]) => `${r} ${n}`).join(", ") || "none"}.`);
+out.push("Not counted: model calls a plugin makes in the background (claude-mem's notes) and sessions outside the project's worktrees.");
 out.push(`Defects opened: ${defects.length}${defects.length ? ` (${defects.map((d) => `#${d.number} ${d.sev}, from ${d.level} on ${d.model}`).join("; ")})` : ""}.`);
 console.log(out.join("\n"));

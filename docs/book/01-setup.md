@@ -1,125 +1,109 @@
 # Chapter 1: Setup
 
-**Purpose:** go from an empty folder to a project with the kit installed, GitHub ready, the setup done and the Lead ready for your idea.
+**Purpose:** go from an empty folder to a project with the kit installed, a GitHub repo with a board, and the Lead ready for your idea.
 
-## You do this yourself (once)
+## You do this yourself (once per machine)
 
-These involve your machine, accounts or secrets:
-- Install the Claude Code desktop app, Git, Node.js 20+, the GitHub CLI (`gh`), Docker and, for front-end products, pnpm. Docker is required: `kit/init.mjs` stops if `docker` or `docker compose` is missing, and warns if Docker is installed but not running. Check with `docker compose version`.
-- Clone Crewbook: Build: `git clone https://github.com/liquizzz/crewbook-build.git`.
-- Sign in to GitHub in a terminal: `gh auth login`, then `gh auth refresh -s project`.
-- The Claude Code plugins the kit uses. `init` installs them for you with the `claude` command, and the Lead's `/cb-setup` checks them first; type these in any Claude Code session only if `init` asks you to:
+These touch your machine and your accounts, so no session does them for you:
 
-| Plugin | Why the kit needs it | Install |
-|---|---|---|
-| superpowers | Planning, test-first work, debugging and checking before saying "done" | `/plugin install superpowers@claude-plugins-official` |
-| code-review | The Lead's PR reviews, and the fallback when Codex is unavailable | `/plugin install code-review@claude-plugins-official` |
-| claude-mem | Memory across sessions, so a restarted session finds its context | `/plugin marketplace add thedotmack/claude-mem` then `/plugin install claude-mem@thedotmack` |
-| context7 | Current library documentation for Dev sessions | `/plugin install context7@claude-plugins-official` |
-| humanizer | Only if you want polished documents (init question 6): each document reads like a person wrote it | `/plugin marketplace add blader/humanizer` then `/plugin install humanizer@humanizer` |
-| frontend-design | Products with screens, enabled by the Lead at G3: screens that look designed, in the look and feel you picked | `/plugin install frontend-design@claude-plugins-official` |
-| ui-ux-pro-max | Products with screens, enabled by the Lead at G3: searches styles, palettes and fonts for the look-and-feel options | `/plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill` then `/plugin install ui-ux-pro-max@ui-ux-pro-max-skill` |
+- Install the Claude Code desktop app, Git, Node.js 20 or newer, the GitHub CLI (`gh`) and Docker, and start Docker. `init` stops when `docker compose` is missing.
+- Sign in to GitHub in a terminal and let the CLI create boards:
 
-Then run `/reload-plugins`. Optional plugins (Figma, Codex review, product-management for the Lead…) are listed in [Appendix B](appendix-b-kit.md#plugins). You do not pick skills: the kit's `CLAUDE.md` names the skill for each task, and every session uses it. Every plugin adds to each session's context, so install only what the project uses ([chapter 9](09-token-budget.md)).
+```bash
+gh auth login
+```
+
+```bash
+gh auth refresh -s project
+```
+
+- Clone the playbook next to where your projects live:
+
+```bash
+git clone https://github.com/liquizzz/crewbook-build.git
+```
+
+Plugins install themselves: `init` runs `scripts/plugins.mjs`, and the Lead's `/cb-setup` checks them before anything else. When the `claude` command is missing, `init` prints the `/plugin install` lines to paste into any session. Which plugin each role gets, and why, is in [Appendix B](appendix-b-kit.md#plugins).
 
 ## 1. Create the project
 
-**What it does:** installs the kit (shared `CLAUDE.md`, role files, guard hook, issue forms, workflows, scripts, Docker files, document templates in `docs/templates/`), creates the docs folders, the branches and the Lead's worktree, optionally creates the GitHub repo, and writes `START-HERE.md`: your next steps as commands to type (`/cb-setup`, `/cb-next`, `/cb-build try`, `/cb-build done`, `/cb-release`).
+**What it does:** installs the kit into a new folder: the shared `CLAUDE.md`, the role files, the guard hook, the scripts, the issue forms, the workflows, the Docker files and the document templates. It creates the branches `main`, `dev` and `staging`, the Lead's worktree, the GitHub repo with its labels and kanban board, and `START-HERE.md`, your next steps as commands.
 
-**You run,** in a terminal:
-1. Go to your projects folder, the one that holds `crewbook-build`, with `cd <your projects folder>`. The Claude Code Terminal panel opens in your home folder, so this step applies there too.
-2. Run init:
-```
+**You run,** in a terminal, in the folder that holds `crewbook-build`:
+
+```bash
 node crewbook-build/kit/init.mjs
 ```
 
-**It asks you,** each question with a one-line hint (Enter takes the suggestion):
-1. Project name.
-2. Where to create the project (a new folder, suggested from the name).
-3. Level: `1` (Lite) or `2` (Full) ([chapter 0](00-introduction.md#choose-the-level-of-process)). You can change it later.
-4. Your working language, and the language for documents if it is not English.
-5. A separate design prototype that someone reviews before the app is built ([chapter 7](07-frontend-projects.md))? Suggested: no.
-6. Polished documents? Suggested: no. Yes gives every document a humanizer pass: it reads better and costs more tokens, so it pays off when other people read the documents. Tell the Lead "Polish documents from now on" to turn it on later.
-7. One-line description (optional).
-8. Create the GitHub repo now: `private` (suggested, as `<you>/<name>`), `public` or `none`.
+**It asks you** three things, each with a suggestion (Enter takes it): the project name, the folder, and the GitHub repo (`private`, `public` or `none`).
 
-**It does:** creates `main`, `dev` and `staging`, writes your language into `CLAUDE.md`, leaves out the design pipeline unless you asked for it, commits the kit, creates the Lead's worktree in `<projects>/<project>-wt/lead/` (the Lead creates the others), marks the setup as not done yet; if you chose a repo, creates it, pushes the branches and creates the labels and the kanban board (`scripts/setup-board.mjs`).
+**It does:** everything above, then installs the plugins. A private repo runs CI on your machine, so it spends none of your GitHub Actions minutes; a public one runs it on GitHub for free.
 
-**You check:** the report, then open `START-HERE.md` in the project. If init created a public repo, open its Actions tab on GitHub (a private repo runs CI on your machine instead, see [chapter 4](04-delivery-loop.md)): a new repo may show **Enable Actions on this repository**, and nothing runs until you click it.
+**You check:** the "Please check" lines at the end of its report, then open `START-HERE.md`. On a new public repo, open its Actions tab once: if GitHub shows **Enable Actions on this repository**, click it, or nothing runs.
 
-For scripts or CI: `node crewbook-build/kit/init.mjs <folder> --name "<name>" --level lite --github none --yes` asks nothing.
+For scripts and tests: `node crewbook-build/kit/init.mjs <folder> --name "<name>" --github none --yes` asks nothing.
 
-## 2. Finish the setup
+## 2. Start the Lead
 
-**What it does:** fits `CLAUDE.md` to your project, opens the gate issues and milestones on GitHub, sets the model each role runs on, and (Lite) creates Dev1's folder. Setup comes first: until it is done, any other session only tells you to finish it.
+**What it does:** opens the one session you talk to. It names itself "<Project> - Lead", files itself in a sidebar group named after the project, and runs the setup ([chapter 3](03-the-plan.md)).
 
-**Ask:** open a Claude Code session in the `lead` worktree and type:
+**Ask:** open a Claude Code session in the Lead's folder (`<project>-wt/lead`, shown in `START-HERE.md`) and type, in your own language:
+
 > /cb-setup
 
-**Claude asks you:** one thing, the model mode (suggested: `claude`):
+**Claude asks you:** the five setup questions, starting with the roles, how much runs without you and your idea, all in one message.
 
-| Mode | Lead, UI/UX, DevOps | Dev, Test |
-|---|---|---|
-| `claude` | Claude Opus | Claude Sonnet |
-| `deepseek` | Lead and DevOps `deepseek-pro`; UI/UX `deepseek-flash` | `deepseek-flash` |
-| `mix` | Claude Opus | `deepseek-flash` |
+**Claude does:** the plan, then every other role's worktree and session, each detached and filed in the project's group.
 
-The roles that look at screens run on `deepseek-flash`, because `deepseek-pro` reads no images; in `deepseek` mode the Lead looks at a screen through a subagent on `deepseek-flash`. `deepseek` and `mix` send the code those roles see to DeepSeek's servers, so a client project needs the client's OK. They also need your DeepSeek key first: run `node scripts/set-secret.mjs DEEPSEEK_API_KEY` in a terminal (never paste it in the chat); without it the Lead cannot choose them. Your idea and any constraints (a required platform, a deadline, systems it must work with) come at G1, the stack at G3 ([chapter 3](03-foundation.md)).
+**You check:** the plan, once. Then the sidebar shows one group with the Lead and the roles you chose.
 
-**Claude does:**
-- fills in `CLAUDE.md`: the description from init, the stage and the Stack line ("chosen at G3, in the solution design");
-- creates milestone v0.1.0 (Full: also v0.2.0) and one issue per foundation gate: "G1 Proposal", "G2 Requirements", "G3 Design, stack and SRS";
-- in Claude Code desktop, renames its own session `<Project> - Lead` if needed and files it in a sidebar group named after the project;
-- marks the setup done, sets the model mode, merges into `dev`, checks that CI ran on GitHub;
-- Lite: creates Dev1's worktree. Full: none yet; UI/UX joins at G3, Dev1 and Test when G3 is approved.
-
-**You check:** the report, `CLAUDE.md` and the board on GitHub.
-
-## 3. Give the Lead your idea
-
-**You do:** stay in the Lead's session and type `/cb-next <your idea, in your own words>` ([chapter 3](03-foundation.md)). The Lead opens the other sessions when there is work for them. A session knows its role when it starts and finds where the work stands by itself; after a restart, open a new session in the same folder.
-
-## Change the models later
-
-**Ask the Lead:**
-> /cb-model
-
-**Claude does:** shows each role with its provider and model. `/cb-model mode <claude|deepseek|mix>` changes the whole project; `/cb-model <role> <opus|sonnet|deepseek-pro|deepseek-flash|default>` changes one role, for example a Dev on a hard task. A running session keeps its old model until it restarts; the Lead says which sessions to restart.
-
-## Change the level later
-
-**You run,** in the Lead's worktree: `node scripts/set-level.mjs <lite|full>`. Going up creates the branches and worktrees the level needs; going down deletes nothing and lists the sessions you can close. Then ask the Lead to commit it and, when going up, "Draft what this level still lacks." ([chapter 8](08-lite-mode.md#move-up-or-down)).
+Until setup is done, any other session you open only tells you to finish it first.
 
 ## Secrets
 
-**You run,** once per secret (an API key, a database password): `node scripts/set-secret.mjs <NAME>`, then paste the value when asked. It is not shown; it goes into the git-ignored `.env.local` of every checkout, and new worktrees get it too. Never paste a secret into a session or send a screenshot of a terminal that shows one.
+**What it does:** puts an API key or a password where every checkout can use it and no session can read it.
 
-## 4. Run it with Docker
+**You run,** in the project's main folder:
 
-**What it does:** makes every part of the product run in Docker, on your machine and anywhere else you choose. The kit installs `docker-compose.yml`, `docker/design.Dockerfile` and `docker/app.Dockerfile`; the `image-design` and `image-app` workflows build images into GitHub's container registry (`ghcr.io`). The Lead does it by itself after you approve the solution design at G3 ([chapter 3](03-foundation.md#3-how-we-build-it-phase-3)).
+```bash
+node scripts/set-secret.mjs <NAME>
+```
 
-**Ask the Lead,** to check it again later:
-> Check that the Docker setup still runs.
+Type the value when asked. Nothing shows on screen; the value goes into the git-ignored `.env.local` of every checkout. The guard stops any session, subagent or review from reading `.env` files or printing the environment, so the value stays out of every transcript. Never paste a secret into a chat. If one ever reaches a chat, replace it.
 
-**Claude does:** fits `docker-compose.yml` and the Dockerfiles to the stack in the solution design, replaces `<owner>` and `<project>`, runs `docker compose up --build` and checks each service starts, writes the variable names in `docs/tech/ops/`.
+The databases get their own command, which you run once when the Lead asks: `node scripts/db-setup.mjs create` makes one database and one login per role and writes each connection string where it belongs, without showing any of them ([chapter 2](02-the-team.md#environments)).
 
-**You do:** set each secret with `node scripts/set-secret.mjs <NAME>`.
+## The machine's shared services
 
-**You check:** `docker compose up` starts the product on your machine.
+**What it does:** runs each database engine once for every project on this machine (one Postgres 17, one SQL Server 2022, one Redis), so ten projects do not mean ten database containers.
 
-Until go-live everything runs on your machine. Before go-live the Lead suggests where to run the images and writes the deployment notes; each release is a versioned image you can run or roll back by tag ([chapter 5](05-releases.md#2-go-live-first-production-release)).
+**Ask the Lead:**
+
+> /cb-env
+
+**Claude does:** shows what runs, proposes what the project needs, and gives you the commands that need a password, such as:
+
+```bash
+node scripts/hosts.mjs secret POSTGRES_PASSWORD
+```
+
+That command also changes the password in the running Postgres, so the file and the server never disagree. To open the shared server in a database tool, connect as `postgres` to `localhost:5432` with that password (in DBeaver, tick "Show all databases").
+
+**You check:** `node scripts/hosts.mjs` lists the services and the hosts.
 
 ## Optional: a second-opinion reviewer
 
-**You do:** in any session, install the Codex plugin once per machine:
+Install the Codex plugin once per machine, in any session:
+
 ```
 /plugin marketplace add openai/codex-plugin-cc
 /plugin install codex@openai-codex
 /reload-plugins
 /codex:setup
 ```
-It uses your ChatGPT login and Codex limits; Claude's `/code-review` is the fallback. Usage: chapter 2.
 
-> **Token tip:** compact the Lead after setup; open other roles only when the Lead proposes them for work that is ready to start.
+The Lead then offers `/cb-review #<PR>` on risky pull requests ([chapter 4](04-delivery-loop.md)).
+
+> **Token tip:** you do not need to read the kit's files. Each session reads only the part it needs.
 
 Next: [Chapter 2: The team](02-the-team.md).

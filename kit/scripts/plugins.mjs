@@ -3,19 +3,25 @@
 // Crewbook by Hai Nguyen (github.com/liquizzz/crewbook-build)
 // Install the Claude Code plugins this project enables. Enabling a plugin in the project's .claude/settings.json
 // does not download it, so init runs this once, and the Lead runs it again at G3 when it enables the design plugins.
-//   node scripts/plugins.mjs            install every plugin in "enabledPlugins" for this user (once per machine)
+//   node scripts/plugins.mjs            install every plugin in "enabledPlugins", and the ones a role adds, for this user
+//                                       (once per machine)
 //   node scripts/plugins.mjs --dry-run  print the commands only
 // It adds each plugin's marketplace (from "extraKnownMarketplaces"), then installs the plugin with the claude CLI.
 // Without the claude CLI (some desktop-only machines) it prints the /plugin lines to paste into any session.
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { ROLE_PLUGINS } from "./project-level.mjs";
 
 const dry = process.argv.includes("--dry-run");
 const root = execFileSync("git", ["rev-parse", "--show-toplevel"]).toString().trim();
 const settings = JSON.parse(fs.readFileSync(path.join(root, ".claude", "settings.json"), "utf8"));
 const markets = settings.extraKnownMarketplaces || {};
-const plugins = Object.entries(settings.enabledPlugins || {}).filter(([, on]) => on).map(([id]) => id);
+// The shared set, plus the plugins a role turns on for itself (claude-mem for the Lead: project-level.mjs ROLE_PLUGINS).
+const plugins = [...new Set([
+  ...Object.entries(settings.enabledPlugins || {}).filter(([, on]) => on).map(([id]) => id),
+  ...Object.values(ROLE_PLUGINS).flatMap((set) => Object.entries(set).filter(([, on]) => on).map(([id]) => id)),
+])];
 const repoOf = (market) => (markets[market] && markets[market].source && markets[market].source.repo) || null;
 
 const claude = (args) => {

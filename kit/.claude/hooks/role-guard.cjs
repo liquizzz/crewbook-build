@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: MIT
 // Crewbook by Hai Nguyen (github.com/liquizzz/crewbook-build)
-// role-guard: Claude Code PreToolUse hook for Bash, PowerShell and file edits.
+// role-guard: Claude Code PreToolUse hook for Bash, PowerShell, file reads, searches and edits.
 // Enforces Crewbook rules per role. The role is read from .claude/role in the
 // worktree (one word: lead, dev, uiux, frontend, test), written by scripts/new-role-worktree.mjs.
 //
@@ -11,6 +11,10 @@
 //           open an approval prompt for the owner.
 //   Data    no role reads a database backup or dump (*.bak, *.bacpac, *.dump, *.dmp, *.sql.gz, backups/): real data never
 //           reaches a model; restoring one with the database's own tools is fine.
+//   Secrets no session reads a real .env file (.env, .env.local, .env.staging; .env.example is fine), dumps its
+//           environment (printenv, a bare env, Get-ChildItem env:) or prints a resolved compose file or a container's
+//           settings (docker compose config, docker inspect without --format). Scripts read .env.local themselves.
+//           Subagents and review skills run through the same hook.
 //   Deploy  production is deployed by the owner in a terminal: no session runs deploy.mjs production.
 //   Paths   each role edits only the paths it owns (defaults below, override in .claude/ownership.json). When two
 //           roles list a folder, the longer path wins: "src/" for the Dev and "src/Web/Views/" for Frontend.
@@ -100,7 +104,19 @@ function ownerOf(rel, map) {
 
 // A database backup or dump: its content is real data.
 const BACKUP = /(^|[\\/])(db-)?backups?[\\/]|\.(bak|bacpac|dump|dmp)$|\.sql\.gz$/i;
-const READERS = ["cat", "type", "get-content", "gc", "head", "tail", "less", "more", "strings", "xxd", "od", "hexdump", "zcat", "gunzip", "select-string", "grep", "rg", "findstr"];
+const READERS = ["cat", "type", "get-content", "gc", "head", "tail", "less", "more", "strings", "xxd", "od", "hexdump", "zcat", "gunzip", "select-string", "grep", "rg", "findstr",
+  "sed", "awk", "bat", "nl", "cut", "sort", "uniq", "jq", "source", "."];
+
+// A real .env file: .env, .env.local, .env.staging, app/.env; not the committed .env.example (.sample, .template).
+function isEnvFile(word) {
+  const w = String(word || "").replace(/^['"]|['"]$/g, "").split("\\").join("/");
+  return /(^|\/)\.env(\.[^/]*)?$/i.test(w) && !/\.(example|sample|template)$/i.test(w);
+}
+// Inline code (node -e, python -c) that names a real .env file.
+const INLINE = ["node", "python", "python3", "py", "deno", "bun", "ruby", "perl", "php"];
+const mentionsEnvFile = (text) => /(^|[^\w.-])\.env(\.(?!example\b|sample\b|template\b)[\w-]+)?(?![\w.-])/i.test(text);
+const SECRET_BLOCK = "Real .env files and environment dumps hold secrets and are never read or printed by a session (subagents and reviews included). Scripts read .env.local themselves; check a value with a script that prints only yes/no or a count, or ask the owner.";
+const BACKUP_BLOCK = "Database backups and dumps hold real data and are never read by a session. Restore them with the database's own tools (db-setup restore).";
 
 // ---------- shell commands ----------
 
@@ -196,17 +212,31 @@ function parseGit(words) {
   }
   if (i >= words.length) return null;
   i++;
+  // Where git runs: each -C is relative to the one before; --git-dir names the repository itself.
+  let dir = null;
+  let gitDir = null;
   while (i < words.length && words[i].startsWith("-")) {
-    if (["-C", "-c", "--git-dir", "--work-tree"].includes(words[i])) i += 2;
+    const w = words[i];
+    if (w === "-C") {
+      dir = dir ? path.resolve(dir, words[i + 1] || "") : words[i + 1] || null;
+      i += 2;
+    } else if (w === "--git-dir" || w === "--work-tree") {
+      if (w === "--git-dir") gitDir = words[i + 1] || null;
+      i += 2;
+    } else if (w.startsWith("--git-dir=")) {
+      gitDir = w.slice("--git-dir=".length);
+      i++;
+    } else if (w === "-c") i += 2;
     else i++;
   }
   if (i >= words.length) return null;
-  return { sub: words[i], args: words.slice(i + 1) };
+  return { sub: words[i], args: words.slice(i + 1), dir, gitDir };
 }
 
-function currentBranch(cwd) {
+function currentBranch(cwd, gitDir) {
   try {
-    return execSync("git rev-parse --abbrev-ref HEAD", { cwd, stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+    const where = gitDir ? `--git-dir "${path.resolve(cwd, gitDir)}" ` : "";
+    return execSync(`git ${where}rev-parse --abbrev-ref HEAD`, { cwd, stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
   } catch {
     return null;
   }
@@ -214,7 +244,7 @@ function currentBranch(cwd) {
 
 const stripRef = (ref) => ref.replace(/^\+/, "").replace(/^refs\/heads\//, "");
 
-function analysePush(args, cwd) {
+function analysePush(args, cwd, gitDir) {
   const r = { force: false, all: false, tags: false, del: false, targets: [] };
   const positional = [];
   for (let i = 0; i < args.length; i++) {
@@ -228,7 +258,7 @@ function analysePush(args, cwd) {
     else if (!a.startsWith("-")) positional.push(a);
   }
   const refspecs = positional.slice(1); // the first positional is the remote
-  if (refspecs.length === 0) r.targets.push(currentBranch(cwd) || "<unknown>");
+  if (refspecs.length === 0) r.targets.push(currentBranch(cwd, gitDir) || "<unknown>");
   for (const spec of refspecs) {
     if (spec.startsWith("+")) r.force = true;
     if (spec.startsWith(":")) {
@@ -238,7 +268,7 @@ function analysePush(args, cwd) {
     }
     const parts = spec.split(":");
     let dst = stripRef(parts.length > 1 ? parts[1] : parts[0]);
-    if (dst === "HEAD") dst = currentBranch(cwd) || "<unknown>";
+    if (dst === "HEAD") dst = currentBranch(cwd, gitDir) || "<unknown>";
     if (/^refs\/tags\//.test(dst) || /^v\d/.test(dst)) r.tags = true;
     r.targets.push(dst);
   }
@@ -251,13 +281,39 @@ function checkCommand(command, role, cwd) {
     return { block: "Do not skip checks with --no-verify. Fix the reported problem instead." };
   }
   let ask = null;
+  for (const raw of splitCommands(command)) {
+    // A bare "env" prints the whole environment; unwrap() would drop it as a wrapper.
+    const first = (raw[0] || "").replace(/^.*[\\/]/, "").replace(/\.exe$/i, "").toLowerCase();
+    if (first === "env" && raw.slice(1).every((w) => w.startsWith("-") || /^[A-Za-z_][A-Za-z0-9_]*=/.test(w))) return { block: SECRET_BLOCK };
+  }
+  // The folder each command runs in: "cd ../main && git push" pushes main's branch, not this worktree's.
+  let here = cwd;
   for (const words of splitCommands(command).flatMap((c) => unwrap(c))) {
+    const verb = (words[0] || "").toLowerCase();
+    if (["cd", "pushd", "set-location", "sl", "chdir"].includes(verb)) {
+      const to = words.slice(1).find((w) => !w.startsWith("-"));
+      if (to && here) here = path.resolve(here, to);
+      continue;
+    }
     if (/^-encodedcommand$/i.test(words[0] || "")) {
       return { block: "Encoded PowerShell commands are not allowed; run the command in plain text." };
     }
     const base = (words[0] || "").replace(/^.*[\\/]/, "").replace(/\.exe$/i, "").toLowerCase();
-    if (READERS.includes(base) && words.slice(1).some((w) => BACKUP.test(w))) {
-      return { block: "Database backups and dumps hold real data and are never read by a session. Restore them with the database's own tools (db-setup restore)." };
+    if (READERS.includes(base) && words.slice(1).some((w) => BACKUP.test(w))) return { block: BACKUP_BLOCK };
+    if (READERS.includes(base) && words.slice(1).some(isEnvFile)) return { block: SECRET_BLOCK };
+    if (base === "printenv") return { block: SECRET_BLOCK };
+    if (["get-childitem", "gci", "ls", "dir", "get-item", "gi"].includes(base) && words.slice(1).some((w) => /^env:/i.test(w))) return { block: SECRET_BLOCK };
+    if (words.length === 1 && /^\$env:[A-Za-z_][A-Za-z0-9_]*$/i.test(words[0])) return { block: SECRET_BLOCK };
+    if (["echo", "write-output", "write-host", "printf"].includes(base) && words.slice(1).some((w) => /\$env:[A-Za-z_]/i.test(w))) return { block: SECRET_BLOCK };
+    if (INLINE.includes(base) && words.some((w) => /^(-e|-c|-p|--eval|--print)$/i.test(w)) && mentionsEnvFile(words.slice(1).join(" "))) return { block: SECRET_BLOCK };
+    if (isTool(words[0], "docker") || isTool(words[0], "docker-compose")) {
+      const rest = words.slice(1);
+      const listOnly = rest.some((w) => /^--(services|volumes|images|profiles|networks)$/.test(w));
+      if (rest.includes("config") && (isTool(words[0], "docker-compose") || rest.includes("compose")) && !listOnly) return { block: SECRET_BLOCK };
+      if (rest[0] === "inspect" && !rest.some((w) => /^(-f|--format)(=|$)/.test(w))) {
+        return { block: "docker inspect prints a container's settings, secrets included. Use --format with the field you need, for example docker inspect --format \"{{.State.Health.Status}}\" <container>." };
+      }
+      if (rest[0] === "exec" && rest.some((w) => ["env", "printenv"].includes(w.toLowerCase()))) return { block: SECRET_BLOCK };
     }
     if (words.some((w) => /(^|[\\/])deploy\.mjs$/.test(w)) && words.includes("production")) {
       return { block: "Production is deployed by the owner in a terminal (node scripts/deploy.mjs production <tag> --owner). Give the owner the command." };
@@ -278,13 +334,16 @@ function checkCommand(command, role, cwd) {
     }
     const git = parseGit(words);
     if (!git || git.sub !== "push") continue;
-    const p = analysePush(git.args, cwd);
+    // Git runs in the folder named by -C (or the --git-dir repository), so the branch is read there.
+    const pushDir = git.dir && here ? path.resolve(here, git.dir) : here;
+    const p = analysePush(git.args, pushDir, git.gitDir);
 
     if (p.force && p.targets.some((t) => PROTECTED_FROM_FORCE.includes(t))) {
       return { block: `Force push to ${p.targets.join(", ")} is not allowed for any role.` };
     }
     if (role === "lead") {
-      const gated = p.targets.filter((t) => OWNER_GATED_BRANCHES.includes(t));
+      // A branch the hook cannot read (a folder it cannot open) is treated like main: the owner is asked.
+      const gated = p.targets.filter((t) => OWNER_GATED_BRANCHES.includes(t) || t === "<unknown>");
       if (gated.length || p.tags || p.all) {
         ask = ask || { ask: `Lead pushes ${[...gated, p.tags ? "tags" : "", p.all ? "--all" : ""].filter(Boolean).join(", ")}: owner approval required (release / deployment gate).` };
       }
@@ -308,7 +367,7 @@ function checkEdit(filePath, role, root, cwd) {
   const abs = path.resolve(cwd, filePath);
   const rel = path.relative(root, abs).split(path.sep).join("/");
   if (rel.startsWith("..") || path.isAbsolute(rel)) return null; // outside the worktree (scratch files)
-  if (rel === ".env" || /(^|\/)\.env(\.[^/]*)?$/.test(rel) && !rel.endsWith(".example")) {
+  if (isEnvFile(rel)) {
     return { block: "Real .env files are filled in by the owner, not by agents." };
   }
   const map = loadOwnership(root);
@@ -321,11 +380,18 @@ function checkEdit(filePath, role, root, cwd) {
   return { block: `Role "${role}" does not own ${rel}. Owned: ${owned.join(", ")}. Ask through the issue instead.` };
 }
 
-// Reading a file (the Read tool): backups and dumps are real data.
+// Reading a file (the Read tool): backups and dumps are real data; real .env files hold secrets.
 function checkRead(filePath) {
-  if (filePath && BACKUP.test(String(filePath).split("\\").join("/"))) {
-    return { block: "Database backups and dumps hold real data and are never read by a session. Restore them with the database's own tools (db-setup restore)." };
-  }
+  if (filePath && BACKUP.test(String(filePath).split("\\").join("/"))) return { block: BACKUP_BLOCK };
+  if (filePath && isEnvFile(filePath)) return { block: SECRET_BLOCK };
+  return null;
+}
+
+// Searching (the Grep tool): it skips git-ignored files unless pointed at one, so check its path and glob.
+function checkSearch(ti) {
+  const where = [ti.path, ti.glob].filter(Boolean).map((w) => String(w).split("\\").join("/"));
+  if (where.some((w) => isEnvFile(w) || /(^|[/{,])\.env(\.?\*|\.\{|\*)/i.test(w))) return { block: SECRET_BLOCK };
+  if (where.some((w) => BACKUP.test(w))) return { block: BACKUP_BLOCK };
   return null;
 }
 
@@ -340,6 +406,7 @@ function main() {
   let result = null;
   if (tool === "Bash" || tool === "PowerShell") result = checkCommand(ti.command || "", role, cwd);
   else if (tool === "Read") result = checkRead(ti.file_path);
+  else if (tool === "Grep") result = checkSearch(ti);
   else result = checkEdit(ti.file_path || ti.notebook_path, role, found.root, cwd);
 
   if (result && result.block) {
@@ -355,4 +422,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { checkCommand, checkEdit, checkRead, splitCommands, unwrap, parseGit, analysePush, loadOwnership, ownerOf };
+module.exports = { checkCommand, checkEdit, checkRead, checkSearch, isEnvFile, splitCommands, unwrap, parseGit, analysePush, loadOwnership, ownerOf };

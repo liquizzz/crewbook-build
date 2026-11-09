@@ -66,7 +66,7 @@ try {
   check("docker: healthcheck on the app, START-HERE runs run.mjs", read(a, "docker-compose.yml").includes("healthcheck:") && read(a, "START-HERE.md").includes("node scripts/run.mjs") && !read(a, "START-HERE.md").includes("docker login"));
   check("setup: one image per layer, dependency files first", read(a, ".claude", "roles", "lead.md").includes("one image per layer") && read(a, ".claude", "roles", "lead.md").includes("dependency files before the source") && read(a, ".claude", "commands", "cb-release.md").includes("node scripts/run.mjs staging"));
   const plug = node([path.join("scripts", "plugins.mjs"), "--dry-run"], { cwd: a });
-  check("plugins: installed from the enabled list, marketplaces first", plug.includes("claude plugin marketplace add thedotmack/claude-mem") && plug.includes("claude plugin install superpowers@claude-plugins-official --scope user") && plug.indexOf("marketplace add") < plug.indexOf("plugin install"));
+  check("plugins: installed from the enabled list, marketplaces first", plug.includes("claude plugin marketplace add thedotmack/claude-mem") && plug.includes("claude plugin install claude-mem@thedotmack --scope user") && plug.includes("claude plugin install superpowers@claude-plugins-official --scope user") && plug.indexOf("marketplace add") < plug.indexOf("plugin install"));
   check("plugins: /cb-setup checks them before anything else", read(a, ".claude", "commands", "cb-setup.md").includes("**Plugins first:**") && read(a, ".claude", "commands", "cb-setup.md").includes("node scripts/plugins.mjs"));
   check("links: issue numbers carry a title and CR, never bare", read(a, "CLAUDE.md").includes("An issue or PR number never stands alone") && read(a, "CLAUDE.md").includes("**Next:** [#12") && read(a, ".claude", "commands", "cb-progress.md").includes("as a link with its short title"));
   check("sessions: created at setup with a model and detached at once", read(a, "CLAUDE.md").includes("**Opening sessions:**") && read(a, "CLAUDE.md").includes("detach it to top level at once") && read(a, "CLAUDE.md").includes("file it back into your sidebar group") && read(a, ".claude", "commands", "cb-setup.md").includes("named after the project") && read(a, ".claude", "commands", "cb-setup.md").includes("`model` Sonnet") && read(a, ".claude", "commands", "cb-add-role.md").includes("`/cb-setup` step 7") && read(a, ".claude", "commands", "cb-plan.md").includes("rule \"Opening sessions\""));
@@ -157,6 +157,7 @@ try {
   // which is never printed; mix is the old name of deepseek.
   const model = (...m) => spawnSync("node", [path.join("scripts", "model.mjs"), ...m], { cwd: wt(a, "lead"), encoding: "utf8" });
   const localSettings = (role) => { try { return JSON.parse(fs.readFileSync(path.join(wt(a, role), ".claude", "settings.local.json"), "utf8")); } catch { return {}; } };
+  check("plugins per role: claude-mem only for the Lead, Product Management off outside the Lead", localSettings("lead").enabledPlugins?.["claude-mem@thedotmack"] === true && localSettings("dev").enabledPlugins?.["product-management@knowledge-work-plugins"] === false && localSettings("dev").enabledPlugins?.["claude-mem@thedotmack"] === undefined && JSON.parse(read(a, ".claude", "settings.json")).enabledPlugins["claude-mem@thedotmack"] === false);
   const pickOf = (...x) => model("pick", ...x).stdout.trim().split(" (")[0];
   check("models: the starting table", pickOf("L0", "3", "--files", "2") === "haiku low" && pickOf("L0", "3", "--files", "9") === "sonnet low" && pickOf("L1", "2") === "sonnet medium" && pickOf("L1", "3") === "haiku medium" && pickOf("L2", "3") === "sonnet high" && pickOf("L3", "3") === "sonnet high" && pickOf("L3", "1") === "opus high" && pickOf("analysis") === "opus medium" && pickOf("review", "0", "--level", "L3") === "opus medium" && pickOf("coordination") === "sonnet low");
   const rec = model("task", "dev", "#12", "haiku", "low");
@@ -253,6 +254,21 @@ try {
   const none = review({ CODEX_PLUGIN_ROOT: "", HOME: path.join(tmp, "no-home"), USERPROFILE: path.join(tmp, "no-home") }, "feature");
   check("codex-review: adversarial runs the plugin on the branch against dev with the focus, in a worktree at the head", adv.status === 0 && adv.stdout.includes("FAKE CODEX FINDINGS") && ["adversarial-review", "--wait", "--base", "dev", "--scope", "branch", "the payment flow"].every((x) => seen.args.includes(x)) && seen.head === git(cr, "rev-parse", "feature") && path.resolve(seen.cwd) !== path.resolve(cr));
   check("codex-review: standard is the review alone; the default adds a security pass; the worktree is removed afterwards", std.status === 0 && seenStdArgs[0] === "review" && both.status === 0 && (both.stdout.match(/FAKE CODEX FINDINGS/g) || []).length === 2 && both.stdout.includes("adversarial review (security)") && seenBoth.args[0] === "adversarial-review" && seenBoth.args.some((x) => x.startsWith("security:")) && git(cr, "worktree", "list").split("\n").length === worktreesBefore);
+  // A local branch behind its remote copy: after the fetch, the review is pinned to the remote's newer commit.
+  const crRemote = path.join(tmp, "ci-remote.git");
+  git(tmp, "clone", "-q", "--bare", cr, crRemote);
+  git(cr, "remote", "add", "origin", crRemote);
+  const crPeer = path.join(tmp, "ci-peer");
+  git(tmp, "clone", "-q", crRemote, crPeer);
+  git(crPeer, "-c", "user.name=t", "-c", "user.email=t@t", "checkout", "-q", "feature");
+  fs.writeFileSync(path.join(crPeer, "newer.txt"), "newer\n");
+  git(crPeer, "add", "newer.txt");
+  git(crPeer, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "newer");
+  git(crPeer, "push", "-q", "origin", "feature");
+  const newer = git(crPeer, "rev-parse", "HEAD");
+  const fresh = spawnSync("node", [path.join("scripts", "codex-review.mjs"), "feature", "standard"], { cwd: cr, encoding: "utf8", env: { ...process.env, CODEX_PLUGIN_ROOT: fakeCodex, FAKE_OUT: out } });
+  const seenFresh = JSON.parse(fs.readFileSync(out, "utf8"));
+  check("codex-review: a stale local branch is not reviewed; the fetched remote commit is", fresh.status === 0 && seenFresh.head === newer && seenFresh.head !== git(cr, "rev-parse", "feature") && fresh.stdout.includes("differs from origin/feature"));
   const offHome = path.join(tmp, "codex-off-home");
   fs.mkdirSync(path.join(offHome, ".claude", "plugins", "cache", "openai-codex", "codex", "1.0.0"), { recursive: true });
   fs.cpSync(path.join(fakeCodex, "scripts"), path.join(offHome, ".claude", "plugins", "cache", "openai-codex", "codex", "1.0.0", "scripts"), { recursive: true });
@@ -274,12 +290,18 @@ try {
   const shown = envRun("hosts.mjs").stdout;
   const sharedUp = envRun("hosts.mjs", "shared", "up", "sqlserver-2022", "postgres-17", "--dry-run").stdout;
   check("hosts: set once for every project, shared services by profile, no password in hosts.json", shown.includes("192.168.1.10:5000") && shown.includes("deploy@192.168.1.20") && sharedUp.includes("--profile sqlserver-2022 --profile postgres-17") && sharedUp.includes("up -d --wait") && !/password/i.test(fs.readFileSync(path.join(crewHome, "hosts.json"), "utf8")) && fs.existsSync(path.join(a, "docker", "shared-compose.yml")));
+  check("relay: every report goes through the Lead, stalled sessions found, approvals asked alone", read(a, "CLAUDE.md").includes("**Everything goes through the Lead.**") && read(a, "CLAUDE.md").includes("**Stalled sessions.**") && read(a, ".claude", "commands", "cb-progress.md").includes("stalled sessions") && read(a, ".claude", "commands", "cb-setup.md").includes("counts as the plan approval only when it says so") && read(a, ".claude", "commands", "cb-setup.md").includes("ask them together in your first message"));
+  const dbPlan = envRun("db-setup.mjs", "--plan").stdout;
+  check("db-setup: one database and login per role and environment, CI login apart", dbPlan.includes("tiny_todo_dev (login tiny_todo_dev) -> DEV_DATABASE_URL") && dbPlan.includes("tiny_todo_staging (login tiny_todo_staging) -> STAGING_DATABASE_URL") && dbPlan.includes("login tiny_todo_ci (CI, creates databases)"));
   const leadProject = path.join(wt(a, "lead"), ".claude", "project.json");
   const leadProjectText = fs.readFileSync(leadProject, "utf8");
   fs.writeFileSync(leadProject, JSON.stringify({ ...JSON.parse(leadProjectText), buildHost: "ssh:ci@192.168.1.10", images: [{ name: "api", paths: ["api"] }, { name: "web", paths: ["web"] }] }, null, 2));
   const ciRemote = envRun("ci-local.mjs", "role/dev");
   const runRemote = envRun("run.mjs", "dev", "--build-only");
   check("build host: ci-local and builds run there over SSH with --here", ciRemote.stdout.includes("ssh ci@192.168.1.10") && ciRemote.stdout.includes("node scripts/ci-local.mjs 'role/dev' --here") && runRemote.stdout.includes("node scripts/run.mjs 'dev' '--build-only' --here"));
+  const runNoLayers = envRun("run.mjs", "dev", "--here", "--dry-run").stdout;
+  check("images: a layer whose folder does not exist yet is not built or started", runNoLayers.includes("docker compose up -d --no-build --wait --wait-timeout 120") && !runNoLayers.includes("120 api web"));
+  for (const d of ["api", "web"]) fs.mkdirSync(path.join(wt(a, "lead"), d), { recursive: true });
   const runImages = envRun("run.mjs", "dev", "--here", "--dry-run").stdout;
   check("images: one per layer, dev builds only the changed ones as :dev and :dev-<sha>, pushed to the registry", runImages.includes("build api, web from dev") && runImages.includes(":dev-<sha>") && runImages.includes("push api:dev to 192.168.1.10:5000") && runImages.includes("docker compose up -d --no-build --wait --wait-timeout 120 api web"));
   fs.writeFileSync(leadProject, leadProjectText);

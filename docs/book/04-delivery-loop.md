@@ -1,155 +1,78 @@
 # Chapter 4: The delivery loop
 
-**Purpose:** ship the product in small releases (milestones), turning each request into tested code without losing control of scope or date.
+**Purpose:** let the team build a milestone while you do something else, and know how to step in: a change, a bug, a model, a look at where things stand.
 
-The rules:
-- A milestone holds a few CRs and ships in a day or so. Only one runs at a time; one more is "next".
-- The plan is set at the start of your working day; you decide.
-- Each task has a change level that sets its testing: L0 display · L1 setting · L2 logic in one module · L3 core, money, security, user data, deletes.
-- Estimates are in AI time: what the sessions take to build and test, plus your time for reviews and approvals, plus waits for things only others can give. Until the project has its own numbers, a task takes about 15 min (L0), 30 min (L1), 1 h (L2) or 2 h (L3) of AI time; a milestone that is ready after G3 usually fits in a day. Each closed task records its actual AI time, and the Lead updates the numbers every milestone.
-- The committed date includes a risk buffer (+15% / +25% / +40%). New work in the day is paid from it; when it is used up, work moves to the next milestone or you move the date.
+## 1. The milestone becomes tasks
 
-## 1. Ask for a change
+**What it does:** splits the milestone into tasks a fresh session can build without asking again.
 
-**What it does:** records every change so the client cannot later say "I never asked for that", and the extra cost has a trail. A change is sorted by what the client receives:
+**Ask:** nothing; the Lead runs it after the plan approval, and again for each milestone. By hand: `/cb-plan v0.2.0` in the Lead.
 
-| | Functional | Technical |
+**Claude does:** writes each task as an issue with its approach, files, tests, change level, its reach for L3 (one point, narrow or wide), the three difficulty signals and the model they give. A task that needs both layers becomes two: the backend first, with the API contract, then the screens (or both at once against a mock of the contract when time is short). Small L0 and L1 changes in one area become one task, so they share one PR, one CI run and one merge. Each task is capped at two hours of AI time; the estimate counts AI time, your time and outside waits apart.
+
+**You check:** nothing, unless the Lead flags a task it thinks you should see.
+
+## 2. Building
+
+Each role takes its task in two steps:
+
+| Step | Command | What happens |
 |---|---|---|
-| What changes | What the client gets: a feature, behaviour a user sees, scope, acceptance, date or price | How it is built or run: a library, a provider, a model, the test approach, running cost |
-| Comes from | The client or you, to the Lead | The Lead, or you |
-| Recorded as | A CR with the client's approval and a row in `docs/product/changes.md` | An ADR; what the client must prepare and the risks you accepted go into the milestone file |
-| Who approves | The client (you record it) and you for L2-L3 | You, when it touches cost or accepts a risk |
+| Try | `/cb-build try #12` | Code and run it, no tests, no PR. Good for something you want to see early |
+| Done | `/cb-build done #12` | The checks of its level, its own review in a fresh context, a PR into `dev`, a hand-off comment |
 
-In the [news chatbot example](../examples/news-chatbot/walkthrough.md), moving the search to a self-hosted model to avoid paying for AI calls was technical, and so was skipping the full eval before the demo. Dropping the search of official sources for later was functional: the client got less.
+The checks grow with the risk:
 
-**Ask the Lead** (after G2 every change goes to the Lead; `/cb-change` sorts it first):
-> /cb-change `<what, in business terms>`
+| Level | Checks |
+|---|---|
+| L0 display | CI, a look in the running app when style or layout changed |
+| L1 setting or small logic | Also the affected action tried in the app, a test when there is logic |
+| L2 module logic | Module tests, the main scenario run locally, `code-review` |
+| L3 core | Tests by reach (from "the app starts and one read and write work" to integration tests of every module that uses it), `code-review` and `security-review` |
 
-**Claude asks you:** only what your request does not say, at most three questions together, each with its suggested answer. A CR needs:
-1. Who asked, how (email, chat, meeting) and when.
-2. What changes for the user, from what to what.
-3. Acceptance: what must be true when it is done (it proposes the criteria in the user's words).
-4. The price, and whether it is billed (it gives the AI time and the date itself).
-5. Priority: this milestone or the next, and anything out of scope.
+`security-review` also runs for any task that touches permissions, money, personal data or a secret. Each review and each CI pass names its commit; a commit pushed afterwards gets a review of what changed since. A change to the schema or to existing data is L3 and comes with an update script and a rollback script, both run on the staging database.
 
-**Claude does:** drafts the CR from your request at once, opens a CR issue with the scope before and after and the impact; when the client approves, records the approval (name, date, link) on it, exports it to `docs/product/cr/`, adds the row to `changes.md`, updates the SRS and writes the spec, all in one PR. A technical change becomes an ADR instead.
+**CI** runs on GitHub for a public repo and on your machine for a private one (`node scripts/ci-local.mjs <branch>`), one run at a time, skipping the steps whose files did not change. A green run is reused when nothing it depends on moved.
 
-**You check:** the client's approval is recorded before work starts; approve L2-L3 CRs.
+## 3. Merging
 
-## 2. CR to tasks (nothing to ask)
+**What it does:** puts a reviewed change on `dev`.
 
-**Claude does** (the Lead, for each approved CR):
-- updates the SRS (FR/NFR, Revision History "Unreleased", traceability) and writes the spec ([template](../../templates/spec.md));
-- merges both into `dev` before any task starts;
-- creates task sub-issues with level, module, estimate, confidence, assignee; moves them to Ready.
+**Claude does:** the Lead reads the diff against the task, checks that every review finding is fixed or answered and that the reviews and CI name the PR's last commit, then merges up to the level you allowed with `/cb-auto merge` and writes one line in its recap: "Merged PR #58 (L2), CI green." A PR missing a review its level needs goes back as "Needs changes". After the merge the Dev rebuilds only the images whose files changed and tags them `:dev-<sha>`, so Frontend and Test can pin the exact version.
 
-A task is Ready when its CR is approved by the client (or its ADR accepted), the SRS and spec are on `dev`, it has acceptance criteria linked to `FR-xxx`, nothing blocks it and its assignee is free.
+**Claude asks before:** a merge above your `merge` level.
 
-A task is Done when it is pushed, its PR (`Closes #n`) passed CI and the Lead's review, tests pass for its level, the SRS and `CHANGELOG.md` are updated, and it is merged into `dev`.
+## 4. A change to what the product does
 
-## 3. Where things stand
+**What it does:** keeps a record of every change the client gets, so nobody can later say "I never asked for that".
 
-**What it does:** shows the live state of the project: stage, what is done, in progress, waiting for you or blocked, CI, and the next step.
+**Ask:** `/cb-change <what you want, in your own words>` in the Lead.
 
-**Ask any session**, whenever you want:
-> /cb-progress
+**Claude asks you:** only what the request does not say: who asked and how, which version it goes in, the price and whether it is billed.
 
-**Claude does:** checks GitHub and git live and replies in at most 10 lines with links. It writes nothing.
+**Claude does:** sorts it. A change to what the client gets (a feature, behaviour, scope, a date, the price) is a CR: who asked, the scope before and after, the impact in AI time and date, a row in `docs/product/changes.md` and an update to the requirements. A change to how it is built (a library, a provider, the running cost) is an ADR. Then it plans the tasks.
 
-**You check:** "waiting for the owner" and "blocked". Answer the decisions in one reply, e.g. "1 yes, 2 next milestone".
+**Claude asks before:** an L2 or L3 CR, the price of a change, and anything that moves the client's scope, date or price. A CR waits for the client's approval (name, date, a link to the email) before work starts.
 
-When you want it kept, for yourself or a client, type `/cb-progress report` in the Lead: it saves the same state in `docs/reports/<date>.md` ([template](../../templates/daily-report.md)) and sends you the link.
+## 5. Something does not work
 
-## 4. Something urgent comes up
+**Ask:** `/cb-bug <what happened>` in any session.
 
-**Ask the Lead:**
-> `<the new item>`. Can we fit it in this milestone?
+**Claude does:** the Lead reproduces it when that is cheap, finds the task and PR that brought it in ("Caused by"), files a Defect with its severity and its own level, and sends it to the role that made the task. A severe defect in production goes to the hotfix path at once ([chapter 5](05-releases.md#hotfix-and-rollback)).
 
-**Claude asks you:** only what is missing about the item (as in step 1).
+**You check:** the two-line report: the defect, its severity and level, who fixes it and when.
 
-**Claude does:** sorts it: defect in testing → this milestone · L0-L1 within the buffer → this milestone · L2-L3 or more than 2 h of AI time → next milestone, unless you accept a later date · high-severity production defect → hotfix (chapter 5). Tells you the effect on the buffer and the date.
+## 6. Where things stand
 
-**You check:** accept, defer, or move the date.
+**Ask:** `/cb-progress` in any session.
 
-## 5. The date is at risk
+**Claude does:** checks live state (issues, PRs, CI, the last tag) and answers in at most ten lines: the stage and the next approval, the open decisions, what is done, what is in progress and where, what waits for you, each session with its model, and any session that has stalled ([chapter 6](06-continuity.md#3-a-session-that-stopped)). `/cb-progress report` adds the weekly measures ([chapter 9](09-token-budget.md#measuring)).
 
-**Claude does:** the Lead proposes these steps on its own, in order: (1) use the buffer, (2) move the lowest-priority CR to the next milestone, (3) move the date.
+## 7. A stronger model, or a second opinion
 
-**You check:** choose. Only you can move the date.
+- `/cb-model up` moves the current task one step up the ladder; `/cb-redo` does the last step again one step up and keeps the first result to compare.
+- `/cb-review #<PR>` asks Codex for a second review and a security pass, posted on the PR; the Lead accepts or rejects each finding. The Lead proposes it for risky PRs; you can type it any time.
 
-## 6. Test by change level
+> **Token tip:** let the merge level do its job. Every PR you ask to see yourself costs a round of messages; the reviews and CI already checked it.
 
-**What it does:** tests exactly what the change level requires, so small changes cost little and risky ones are covered. The level is confirmed before any test starts.
-
-| Level | Dev before the PR | Test after merge (only with `/cb-auto testing on`, Full) |
-|---|---|---|
-| L0 Display | Build, lint, local look | None now; covered by the milestone regression |
-| L1 Setting | + unit tests for the change | Check the changed spot only |
-| L2 Module logic | + unit tests; main scenario locally | That module's scenarios (by `FR-xxx`) |
-| L3 Core | + integration tests, edge cases | Core scenarios, related modules, part of the regression |
-
-**Claude does,** on its own for every task:
-1. The tester (the Dev before the PR; Test after the merge when per-task testing is on) reads the task's level and the files actually changed, and writes one line on the issue: *"Level L1 confirmed: only the default page size changed; testing the list page only."*
-2. If the change is wider than its label, it raises the level (e.g. an "L1" that touched shared code or data becomes L3) and tells the Lead; it never lowers a level on its own.
-3. It tests only that scope, then records the result on the issue.
-
-**Ask the Lead** when you doubt a level:
-> Is #42 really L1? Show me what changed.
-
-**Claude does:** compares the diff with the level rules and confirms or raises it.
-
-Each task is checked once more at the end of the milestone, whatever its level, on `staging`: the regression (Full: Test; Lite: Dev1), then the acceptance (Full: Test; Lite: the Lead). The release adds no tests.
-
-## 7. Build modes
-
-**What it does:** keeps day-to-day work fast and every merge controlled.
-
-| Type | When | Tests | Merge |
-|---|---|---|---|
-| `/cb-build try [#n]` | You want to see a task working, try it, change direction | None; it only has to run | No. Committed and pushed to `role/<role>`; the issue stays In progress |
-| `/cb-build done [#n]` | The task is finished | Exactly the task's confirmed level (section 6) | A PR the Lead merges after its review and green CI (section 8); the Lead then closes the issue |
-| `/cb-release demo` | You want to show the milestone to someone | Regression and acceptance on `staging`, your acceptance scenarios | No tag; the demo runs the `:staging` image |
-| `/cb-release` | You publish a version | None more: the accepted `staging` commit is released | `main`, a tag and a versioned image ([chapter 5](05-releases.md)) |
-
-Only `/cb-build done` puts code into `dev`, so `dev` always holds tested work. The board follows each issue: Ready, In progress, In review (back to In progress when the Lead asks for changes), Testing (Full, only with `/cb-auto testing on`), Done. Anything waiting for the Lead's review or your merge is in In review, docs PRs included.
-
-> **Token tip:** most tasks are L0-L1. Keeping them at "build + changed spot" is where most testing tokens are saved; do not ask for a full regression after each merge.
-
-## 8. Where CI runs
-
-**What it does:** runs the build, lint and tests of every PR somewhere, without spending more than you have. A GitHub account's free Actions minutes (2,000 a month) are shared by all its private repos, and a project with a real stack uses them up in days.
-
-| Mode | When | What runs where |
-|---|---|---|
-| `github` | Public repo (free minutes), or you pay for minutes | GitHub Actions: CI on each PR (PRs that only change documents are skipped), the image on `staging` and on each tag, CodeQL on `main` and once a week |
-| `local` | Private repo (the default) | Your machine: `node scripts/ci-local.mjs <branch>` runs the steps of `scripts/ci-steps.json` on the branch merged with `dev`. The Dev runs it before the PR, the Lead again right before the merge (reused at once when neither the branch nor `dev` has moved), and `node scripts/run.mjs` builds the images here. One run at a time; the others wait. The workflows stay in the repo and skip their jobs |
-
-**Ask the Lead:**
-> Run CI on GitHub from now on. (or: on my machine)
-
-**Claude does:** runs `node scripts/ci-mode.mjs github` (or `local`), which sets `"ci"` in `.claude/project.json` and the repo variable `CI_MODE`, and commits. At G3 it writes the same steps in `.github/workflows/ci.yml` and `scripts/ci-steps.json`, so you can switch at any time.
-
-**You check:** `ci-local` prints the time of each step and the total. When a run takes more than about 5 minutes, ask the Lead `Make CI faster.`; it starts with the slowest step. The kit already avoids repeated work: a PASS for the same branch and `dev` is reused, a step with `"changed"` paths runs only when the branch touched them, a linter can check only the changed files (`CI_CHANGED_FILES`), and an image is built once per set of files, so the release tag reuses the image of the accepted `staging` commit. Once per milestone the Lead runs `node scripts/ci-local.mjs staging --full`, which runs every step, and Test does not repeat those automated tests. In local mode your machine builds and tests more (Docker must be running for the image and for tests that use containers). CodeQL does not run on a private repo either way; L3 work keeps its `security-review`.
-
-## 9. Add a second Dev
-
-**What it does:** splits the milestone between two Devs when it has two workstreams that do not touch each other. One Dev (Dev1) is the default; the kit has at most two.
-
-**Ask the Lead:**
-> /cb-add-dev `<the workstream for Dev2, e.g. the media module>`
-
-**Claude does:** splits the open tasks into two workstreams (a module, its folders, its tests) and shows you a short table: workstream, folders, tasks, and the shared files with their one owner (migrations, routing, menus, `CHANGELOG.md`). When the milestone has no two independent workstreams, it says so and adds no Dev2.
-
-**You check:** the split; answer yes or say what to change.
-
-**Claude does,** on your yes: writes the two workstreams under `dev1` and `dev2` in `.claude/ownership.json` (the role guard enforces them), assigns Dev2's tasks with the shared-file tasks first, creates Dev2's worktree (port 5202; Dev1 runs on 5201) and opens its session.
-
-## 10. A task is stuck
-
-**What it does:** stops a Dev from burning tokens on a task it cannot finish. The Lead writes each task with its approach, the files to change and the tests that must pass, so a Dev on a smaller model builds it without guessing.
-
-**Claude does:** after two tries that leave the tests or CI red, the Dev stops and tells the Lead what it tried and what fails. The Lead then picks one: a stronger model for that Dev (`/cb-model dev1 opus`, for example), a smaller split of the task, or it does the hard part itself. It notes the choice on the issue.
-
-**You check:** nothing, unless the Lead asks you to restart a session so it picks up the new model.
-
-Next: [Chapter 5: Releases](05-releases.md).
+Next: [Chapter 5: Milestones and releases](05-releases.md).

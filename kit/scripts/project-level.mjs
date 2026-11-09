@@ -177,3 +177,61 @@ export function renderStartHere(dir, project, root = dir) {
   fs.writeFileSync(path.join(dir, "START-HERE.md"), text);
   return true;
 }
+// The image of one compose service with a given tag, from the text of `docker compose config --format json`. It reads
+// the service's own "image", never the list of images `config --images <name>` prints, which also holds the images of
+// the services it depends on (web lists api's image too).
+export function serviceImage(configJson, name, tag) {
+  try {
+    const image = JSON.parse(configJson)?.services?.[name]?.image;
+    return typeof image === "string" && image.endsWith(`:${tag}`) ? image : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+// A connection string as a container must use it: this machine's own addresses (localhost, 127.0.0.1, ::1) become
+// host.docker.internal. null when it is not a URL. Never log the result: it holds the password.
+export function containerUrl(value) {
+  try {
+    const u = new URL(value);
+    if (["localhost", "127.0.0.1", "[::1]", "::1"].includes(u.hostname)) u.hostname = "host.docker.internal";
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+
+// The address other machines on the LAN reach this one on, from os.networkInterfaces(): 192.168.x or 10.x first (the
+// 172.x ones are mostly Docker's and WSL's own networks). null without a network.
+export function lanAddress(interfaces) {
+  const all = Object.values(interfaces).flat().filter((i) => i && i.family === "IPv4" && !i.internal).map((i) => i.address);
+  return all.find((a) => a.startsWith("192.168.")) || all.find((a) => a.startsWith("10.")) || all[0] || null;
+}
+
+
+// The image that holds the backend and its migrations: "backend" in project.json, else api, else app, else the first.
+export function backendOf(project) {
+  const names = imagesOf(project || {}).map((i) => i.name);
+  if (project?.backend) return project.backend;
+  return ["api", "app"].find((n) => names.includes(n)) || names[0] || "app";
+}
+
+// Plugins per role, on top of the project's .claude/settings.json, in each worktree's git-ignored settings.local.json.
+// The shared file holds the safe default (claude-mem off, Product Management on). The Lead, a long-running session that
+// keeps the whole project's thread, also gets claude-mem; the other roles drop Product Management, which only the Lead
+// uses (requirements, roadmap, CRs). Superpowers stays on everywhere: the Skills table gives every role its skills.
+export const ROLE_PLUGINS = {
+  lead: { "claude-mem@thedotmack": true },
+  other: { "product-management@knowledge-work-plugins": false },
+};
+export function applyRolePlugins(dir, role) {
+  const file = path.join(dir, ".claude", "settings.local.json");
+  let settings = {};
+  try {
+    settings = JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {}
+  const mine = ROLE_PLUGINS[role === "lead" ? "lead" : "other"];
+  settings.enabledPlugins = { ...(settings.enabledPlugins || {}), ...mine };
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(settings, null, 2) + "\n");
+}

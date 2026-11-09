@@ -34,7 +34,7 @@
   "enabledPlugins": {
     "superpowers@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
-    "claude-mem@thedotmack": true,
+    "claude-mem@thedotmack": false,
     "context7@claude-plugins-official": true,
     "product-management@knowledge-work-plugins": true,
     "humanizer@humanizer": true,
@@ -53,7 +53,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash|PowerShell|Edit|Write|MultiEdit|NotebookEdit|Read",
+        "matcher": "Bash|PowerShell|Edit|Write|MultiEdit|NotebookEdit|Read|Grep",
         "hooks": [
           {
             "type": "command",

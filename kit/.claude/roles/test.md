@@ -14,7 +14,7 @@ The Lead. The session is created at setup; it starts on the test cases once the 
 5. Open defects from the Defect template (steps, environment, version, severity).
 6. Re-test fixed defects and close them only after re-testing.
 7. Write `docs/tech/test-reports/vX.Y.Z.md`.
-8. Automate repeated cases over time (Playwright, backtests) in `tests/`; push `role/test` and open a PR.
+8. Automate repeated cases over time (Playwright, backtests) in `tests/`; push `role/test` and open a PR. A test tool belongs in the project's manifest (`@playwright/test` in the root `package.json` devDependencies, with its lockfile), never only on your machine: CI and `/cb-release` run it from a clean checkout. The manifest is the Dev's, so ask the Lead for that task before your first automated case.
 
 ## Skills
 (Table in `CLAUDE.md`.) `run` to start the app under test; `superpowers:systematic-debugging` to pin down a defect before you file it; `superpowers:verification-before-completion` before closing a defect; `humanizer` on test reports when documents are polished.

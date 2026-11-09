@@ -1,33 +1,46 @@
 # Appendix A: Templates
 
-**Purpose:** the documents sessions fill in. You rarely open them yourself: the session copies the template, fills it in from what you said in plain words, and marks its guesses ⚠️ for you to correct.
+**Purpose:** the documents the sessions fill in. You rarely open a template yourself: the session copies it into `docs/`, fills it in from what you said in plain words, and marks its guesses ⚠️ for you to correct.
 
 **Ask any session:**
+
 > Use the `<template>` template for `<topic>`.
 
-| Template | Written by | Saved as | Used in |
-|---|---|---|---|
-| [Proposal](../../templates/proposal.md) | Lead | `docs/product/proposal.md` (one page) | Ch. 3, picture the project (G1), approved with the screen sketches in `docs/product/screens/` |
-| [PRD](../../templates/prd.md) | Lead | `docs/product/prd.md` | Ch. 3, phase 2 |
-| [Data notes](../../templates/data-notes.md) | Lead | `docs/product/data-notes.md` | Ch. 3, phase 2 |
-| [User story](../../templates/user-story.md) | Lead | `docs/product/stories/US-NNN-*.md` | Ch. 3, phase 2 |
-| [DEC](../../templates/dec.md) | Lead | `docs/product/dec/DEC-n-*.md` | Any business decision |
-| [SRS](../../templates/srs.md) | Lead | `docs/tech/srs.md` | Ch. 3: G2 draft, G3 baseline; every CR |
-| [Solution design](../../templates/solution-design.md) | Lead (look and feel: UI/UX at Full) | `docs/tech/solution-design.md` | Ch. 3, how we build it (G3) |
-| [ADR](../../templates/adr.md) | Lead | `docs/tech/adr/NNNN-*.md` | Any technical decision |
-| [C4 diagrams](../../templates/c4.md) | Lead | `docs/tech/c4.md` | Ch. 3, phase 3 |
-| [Test strategy](../../templates/test-strategy.md) | Lead | `docs/tech/test-strategy.md` | Ch. 3, phase 3 |
-| [Eval plan](../../templates/eval-plan.md) | Lead | `docs/tech/eval-plan.md` | AI features |
-| [CR](../../templates/cr.md) | Lead | `docs/product/cr/CR-n-*.md` | Ch. 4, every functional change |
-| [Changes](../../templates/changes.md) | Lead | `docs/product/changes.md` | Ch. 4, one row per approved CR |
-| [Handover](../../templates/handover.md) | Lead | `docs/product/handover/vX.Y.Z.md` | Ch. 5, every release |
-| [Spec](../../templates/spec.md) | Lead | `docs/tech/spec/CR-n-*.md` | Ch. 4, every CR |
-| [Milestone](../../templates/milestone.md) | Lead | `docs/product/milestones/vX.Y.Z.md` | Ch. 4 |
-| [Report](../../templates/daily-report.md) | Lead | `docs/reports/YYYY-MM-DD.md` | Ch. 4, on `/cb-progress report` only |
-| [Test cases](../../templates/test-cases.md) | Test (Lite: Dev1) | `docs/tech/test-cases/<module>.md` | Ch. 4 |
-| [Test report](../../templates/test-report.md) | Test (Lite: Dev1; the acceptance section: the Lead) | `docs/tech/test-reports/vX.Y.Z.md` | Ch. 5, every release |
-| [Release](../../templates/release-checklist.md) | Lead | `docs/releases/vX.Y.Z.md` | Ch. 5, every release |
-| [Changelog](../../templates/changelog.md) | Lead | `CHANGELOG.md` | Every PR, every release |
-| [Case study](../../templates/case-study.md) | Lead | `docs/product/case-study.md` | End of a project or phase |
+## Used in every project
 
-Placeholders are in `<angle brackets>`. A session never leaves a placeholder unfilled: it fills in its best guess marked ⚠️, or asks you when a guess would change the result.
+| Template | Written by | Saved as | When |
+|---|---|---|---|
+| [User story](../../templates/user-story.md) | Lead | `docs/product/stories/US-NNN-*.md` | Setup question 3, then every CR that adds one |
+| [Function tree](../../templates/function-tree.md) | Lead | `docs/product/function-tree.md` | Setup question 3; it gives the folders, the roles' paths, the milestones and the tasks |
+| [Architecture options](../../templates/architecture-options.md) | Lead | In the setup conversation, then the solution design | Setup question 4: three options, one recommended |
+| [Solution design](../../templates/solution-design.md) | Lead | `docs/tech/solution-design.md` | Setup question 4; opens with "In short" |
+| [SRS](../../templates/srs.md) | Lead | `docs/tech/srs.md` | The baseline at the plan approval; updated by every CR and every release |
+| [Environments](../../templates/environments.md) | Lead | `docs/tech/ops/environments.md` | Setup question 5 and `/cb-env` |
+| [Milestone](../../templates/milestone.md) | Lead | `docs/product/milestones/vX.Y.Z.md` | `/cb-plan`; the actual AI times at the end |
+| [ADR](../../templates/adr.md) | Lead | `docs/tech/adr/NNNN-*.md` | A technical choice that was really open |
+| [DEC](../../templates/dec.md) | Lead | `docs/product/dec/DEC-n-*.md` | A business decision |
+| [CR](../../templates/cr.md) | Lead | `docs/product/cr/CR-n-*.md` | `/cb-change`, every functional change |
+| [Changes](../../templates/changes.md) | Lead | `docs/product/changes.md` | One row per approved CR |
+| [Spec](../../templates/spec.md) | Lead | `docs/tech/spec/CR-n-*.md` | A CR whose technical detail does not fit its tasks |
+| [Test cases](../../templates/test-cases.md) | Test, or the Dev without Test | `docs/tech/test-cases/<module>.md` | Each milestone |
+| [Test report](../../templates/test-report.md) | Test, or the Dev; its acceptance section the Lead without Test | `docs/tech/test-reports/vX.Y.Z.md` | `/cb-release demo` |
+| [Handover](../../templates/handover.md) | Lead | `docs/product/handover/vX.Y.Z.md` | Every release, for the client |
+| [Release](../../templates/release-checklist.md) | Lead | `docs/releases/vX.Y.Z.md` | Every release |
+| [Changelog](../../templates/changelog.md) | Every role, on its PR | `CHANGELOG.md` | Every PR and every release |
+| [Report](../../templates/daily-report.md) | Lead | `docs/reports/YYYY-MM-DD.md` | `/cb-progress report`, once a week |
+
+## On request
+
+These are there when you, a client or a reviewer ask for them; the setup does not need them.
+
+| Template | Saved as | Useful when |
+|---|---|---|
+| [Proposal](../../templates/proposal.md) | `docs/product/proposal.md` | A client wants a one-page pitch before the plan |
+| [PRD](../../templates/prd.md) | `docs/product/prd.md` | A client expects a product requirements document |
+| [Data notes](../../templates/data-notes.md) | `docs/product/data-notes.md` | The product moves or cleans existing data |
+| [C4 diagrams](../../templates/c4.md) | `docs/tech/c4.md` | Several systems talk to each other |
+| [Test strategy](../../templates/test-strategy.md) | `docs/tech/test-strategy.md` | A client or an auditor asks how testing is organised |
+| [Eval plan](../../templates/eval-plan.md) | `docs/tech/eval-plan.md` | The product has AI features whose answers must be measured |
+| [Case study](../../templates/case-study.md) | `docs/product/case-study.md` | The end of a project or a phase you want to show |
+
+Placeholders are in `<angle brackets>`. A session never leaves one unfilled: it writes its best guess marked ⚠️, or asks you when a guess would change the result.

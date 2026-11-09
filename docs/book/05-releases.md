@@ -1,87 +1,78 @@
-# Chapter 5: Releases
+# Chapter 5: Milestones and releases
 
-**Purpose:** ship each milestone as a numbered, approved version, and get back fast when something goes wrong.
+**Purpose:** try each milestone yourself before it ships, publish it as a numbered version only after your OK, and get back fast when something goes wrong.
 
-**Version rules:**
-- The kit computes the version for you, as `MAJOR.MINOR.PATCH`, from the labels of the milestone's closed issues: any `breaking` → MAJOR (from 1.0.0) · any `type:feature`/`type:change` → MINOR · only `type:fix` → PATCH.
-- Before go-live versions are `0.x.y`. Every merge into `main` is a version.
-- Breaking means something that works in production stops working the same way (data migration, changed API or core flow, different business result). A breaking change needs upgrade steps and a rollback plan in its spec.
+Two of your three decisions happen here: the milestone (is this what you wanted?) and the release (publish it). Each comes with a `For you` block: what the decision means for the product, 1 to 3 things to try with what a wrong result looks like, what the tests and reviews already prove, and the risks still open.
 
-**What a release gives you:** a git tag `vX.Y.Z` and a Docker image `ghcr.io/<owner>/<project>-app:vX.Y.Z`, built by the `image-app` workflow, with an SBOM (every library in the image) and, on public repos, a provenance attestation (a signed record of which workflow built the image from which commit) you can check with `gh attestation verify`. You run that image wherever you run the product. Before go-live the Lead suggests hosting options in the deployment notes (step 2); you choose one and run it.
+## 1. Try the milestone on staging
 
-## 1. Release a milestone
-
-**What it does:** turns a finished milestone into an approved version with an updated changelog and SRS. It is tested once, on `staging`: the regression, then the acceptance against every story and CR; then you try it yourself. AI tests check what the SRS says; only you can confirm it is what the business needs. The release itself adds no tests: if it fails where it runs, it is rolled back (section 4).
+**What it does:** puts the finished milestone on `staging`, the test copy of the product with its own database, and lets you try it before anything is published.
 
 **Ask the Lead:**
-> /cb-release v1.4.0
 
-For a demo (to a client, or just for you) without publishing, ask for `/cb-release demo`: the same checks on `staging` and your acceptance scenarios, then it stops before `main` and the tag.
+> /cb-release demo
 
-**Claude asks you:** only if something is still open: unfinished issues (move them or wait?) or open medium defects (accept or fix first?).
+**Claude asks you:** only when something is still open: unfinished tasks (move them to the next milestone, or wait?) or medium defects (accept, or fix first?).
 
 **Claude does:**
-- merges `dev` into `staging`, which builds the `:staging` image;
-- asks for the regression on `staging` (Full: the Test session; Lite: Dev1): tests, eval and adversarial sets, and when the milestone changes data, the update and rollback scripts on the staging database;
-- has every acceptance criterion of the milestone's stories and CRs tried on `staging` (Full: by the Test session, after its regression; Lite: by the Lead itself), with each result in the acceptance section of `docs/tech/test-reports/v1.4.0.md`, and a defect for each failure. A defect is fixed on `dev` and merged into `staging` again, and only the affected area and the main journeys are tested again;
-- copies the results into section 1 of `docs/product/handover/v1.4.0.md` and sends you 3-5 of them as your scenarios, in plain steps ("Log in as a sales user → create an order with 2 items → total shows 1,250,000 VND") and the command to run the staging image: `node scripts/run.mjs staging` (or your own staging server).
+- merges `dev` into `staging`; the Dev runs the full CI once on it and builds the `staging` images (with CI on your machine, here; with a staging server, there);
+- starts `staging` with its own database, http cookies and the address people on your network open, from `docker-compose.staging.yml`, without printing a password;
+- has the regression run on `staging` (Test, or the Dev without Test), with the update and rollback scripts on the staging database when the milestone changed data;
+- has every acceptance criterion of the milestone's stories and CRs tried on `staging`, on desktop and at about 390 pixels wide, each result in `docs/tech/test-reports/<version>.md`, a defect for each failure;
+- picks 3 to 5 of them as your scenarios, in plain steps: "Sign in as a member → create a task with a due date → it shows on the board under Today".
 
-**You do:** try each scenario, plus anything you know real users do. Reply per scenario: "1 ok, 2 ok, 3 wrong total when discount applied".
+Before the link goes to anyone else: when the product makes its first sign-up the administrator, you create that account first. A `staging` on plain http stays on your local network.
 
-**Claude does:** turns each failure into a defect and fixes it the same way; when all pass:
-- the Lead finishes the handover for the client ([template](../../templates/handover.md)): what is delivered, the changes in this version with who approved them and whether they are billed, what the client must prepare (server, accounts, a specialist for a large data migration), the risks you accepted, how to roll back, and a sign-off block. You send it;
-- it runs `scripts/release.mjs` (version from labels; `CHANGELOG.md` and SRS Revision History updated), writes `docs/releases/v1.4.0.md` ([template](../../templates/release-checklist.md)) and sends the summary:
-  > **v1.4.0** (from v1.3.2) · MINOR · CR-12, CR-15 · Fixed: #88, #91 · SRS §3.2, §5.1 · Regression on staging passed · Data: update and rollback tried · Acceptance passed (14/14) · Owner scenarios passed (5/5) · Handover: link · Codex: 3 findings, 2 fixed · Risks: … · Buffer used: 40 min of AI time → Approve / Reject
+**You check:** each scenario, plus anything you know real users do. Reply "All pass", or per scenario: "1 ok, 2 ok, 3 wrong total with a discount".
 
-**You check:** the summary; reply Approve or Reject (with a reason). After Approve, the Lead merges exactly the accepted `staging` commit into `main` and pushes the tag, with no new tests; the `:v1.4.0` image is built and the Lead checks that it starts and answers its healthcheck. Deploy it when you choose. Then the Lead writes where things stand in the next milestone file and asks you to type `/clear` in its session, so the next milestone starts with a fresh context ([chapter 9](09-token-budget.md#start-fresh-contexts)).
+**Claude does:** turns each failure into a defect, fixes it on `dev`, puts it on `staging` again and tests the affected area and the main journeys again. When you say "All pass", the milestone is approved. `/cb-release demo` stops here, so you can show `staging` to a client before you publish.
+
+## 2. Approve the release
+
+**What it does:** publishes the accepted `staging` commit as a version, with a tag, a Docker image and a handover for the client.
+
+**Ask the Lead:**
+
+> /cb-release
+
+**Claude does:**
+- finishes the handover ([template](../../templates/handover.md)): what is delivered, the changes with who approved them and whether they are billed, what the client must prepare, the risks you accepted, how to roll back, a sign-off block;
+- computes the version from the labels of the closed issues (`MAJOR.MINOR.PATCH`: a breaking change raises MAJOR from 1.0.0, a feature or change MINOR, fixes only PATCH; before go-live versions are `0.x.y`), updates `CHANGELOG.md` and the requirements' revision history, writes `docs/releases/<version>.md`;
+- asks you, with the summary and the `For you` block:
+
+> **v0.2.0** (from v0.1.0) · MINOR · CR-3, CR-5 · Fixed: #31, #34 · Regression on staging passed · Acceptance 14/14 · Your scenarios 5/5 · Data: update and rollback tried · Handover: link · Risks: … → Approve / Reject
+
+**You check:** the summary. Reply "Approved", or "Reject" with a reason.
+
+**Claude does,** after "Approved", with no new tests: merges exactly the accepted `staging` commit into `main`, pushes the tag and creates the GitHub release. The release image is the `staging` image tagged again when the files are the same, and built only when they differ; the Lead checks that it starts and answers its health check. Then it writes where things stand into the next milestone file and clears its own context.
 
 **Claude asks before:** pushing `main`, pushing the tag, creating the GitHub release.
 
-## 2. Go live (first production release)
+Run any version on your machine:
 
-**What it does:** marks the first live version, declares 1.0.0 and gives you what you need to deploy it.
+```bash
+node scripts/run.mjs v0.2.0
+```
 
-**Ask the Lead:**
-> We are ready to go live with `<version>`. Prepare the deployment notes.
+## 3. Put it on a server
 
-**Claude asks you:** where it will run (if you do not know yet, it suggests two or three options that fit the stack and the budget), the go-live time, and who does the smoke test with you.
+**What it does:** runs a version on a server that only pulls images; nothing is built there.
 
-**Claude does:** creates the `production` branch from the chosen tag, which records what is live; writes `docs/tech/ops/deploy.md`: the hosting you chose, image tags, environment variables (names only), data migration and backup steps, the smoke test, and the rollback command; marks the next release as `1.0.0`.
+| Environment | Who | Command |
+|---|---|---|
+| `staging` | The Dev | `/cb-deploy staging <tag>`, or `node scripts/run.mjs staging` on this machine |
+| production | You only, in a terminal | `node scripts/deploy.mjs production <tag> --owner` |
 
-**You do:** deploy the image with your own setup, run the smoke test and tell the Lead the result.
+No session can run the production command: the guard stops it. After your release approval the Lead gives you the command, the tag and what to check after it. Before your first go-live, ask the Lead to "prepare the deployment notes": it suggests two or three places to run it that fit the stack and the budget, and writes `docs/tech/ops/deploy.md` with the image tags, the variable names (never their values), the backup and migration steps, the smoke test and the rollback command.
 
-**Claude asks before:** pushing `production`.
+## Hotfix and rollback
 
-## 3. Hotfix
+**A severe defect in production:** `/cb-bug <what happens>`. The Lead files it as `sev:high`, tells you at once, and runs the hotfix path: the fix, a check of the affected area and the core scenarios on `staging`, a patch version after your OK.
 
-**What it does:** fixes a serious production defect outside the milestone.
+**A release that misbehaves:** run the same deploy command with the previous tag. Every release is its own image, so going back takes minutes. Going back to an older image does not undo a change to the database: when the release changed data, the rollback script runs too, on production only with your OK. The release notes say which versions can go back by tag alone.
 
-**Ask the Lead:**
-> Production defect: `<what happens>`. Hotfix it.
+> **Data changes:** the kit makes a migration lighter (an update script and a rollback script, both tried on the staging database before the release). For a large or risky migration, the Lead tells you to have a database specialist review it, and the handover lists it for the client.
 
-**Claude asks you:** steps to reproduce, who is affected, severity (proposed), workaround if any.
-
-**Claude does:** opens a `sev:high` defect; branches `hotfix/*` from `production`; a Dev fixes; Test (Lite: Dev1) checks the area and core scenarios on `staging`; prepares `vX.Y.(Z+1)`; after your approval merges into `production` and `main`, then back into `staging` and `dev`. The new tag builds a new image.
-
-**You do:** deploy the hotfix image.
-
-## 4. Roll back
-
-**What it does:** puts the previous version back live in minutes, because every release is a separate image.
-
-**Ask the Lead:**
-> Production has a problem. Prepare a rollback to the previous version.
-
-**Claude asks you:** confirm the target version (proposed: the last tag before the current one) and the reason.
-
-**Claude does:** checks whether data changes in between can be undone (the release's rollback script, tried on the staging database before the release), gives you the exact command for your setup, e.g. `node scripts/run.mjs v1.3.2` on your machine, opens a `sev:high` defect for the fix, and records the rollback in `CHANGELOG.md`.
-
-**You do:** run the rollback and confirm production works again.
-
-**Claude asks before:** moving the `production` branch back (only if the old version will stay live for a long time).
-
-> **Data changes:** the kit makes a migration lighter (a staging database, an update and a rollback script, both tried before the release), but it does not replace people. For a large or risky migration, have a database specialist review it; the handover lists it for the client.
-
-> **Token tip:** run the regression once per milestone, on `staging`, and test only the affected area after a fix. Close the Test session when its report is written.
+> **Token tip:** the full regression runs once per milestone, on `staging`. After a fix only the affected area and the main journeys are tested again.
 
 Next: [Chapter 6: Continuity](06-continuity.md).
