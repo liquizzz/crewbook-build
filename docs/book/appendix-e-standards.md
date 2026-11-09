@@ -1,6 +1,6 @@
 # Appendix E: Standards map
 
-**Purpose:** show which public standard or practice each part of Crewbook: Build follows, and what it leaves out on purpose.
+**Purpose:** show which public standard or practice each part of Crewbook Build for Claude follows, and what it leaves out on purpose.
 
 Crewbook aims at software one owner can trust and maintain, with no lost documents and code that is easy to control. It follows each standard where that costs the owner no extra steps or choices; the rest is left out and listed below. Nothing here is a certification. Sessions never read this appendix, so it adds no tokens.
 

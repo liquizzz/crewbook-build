@@ -116,6 +116,23 @@ function isEnvFile(word) {
 const INLINE = ["node", "python", "python3", "py", "deno", "bun", "ruby", "perl", "php"];
 const mentionsEnvFile = (text) => /(^|[^\w.-])\.env(\.(?!example\b|sample\b|template\b)[\w-]+)?(?![\w.-])/i.test(text);
 const SECRET_BLOCK = "Real .env files and environment dumps hold secrets and are never read or printed by a session (subagents and reviews included). Scripts read .env.local themselves; check a value with a script that prints only yes/no or a count, or ask the owner.";
+// The fields docker inspect --format may read: state, health, ids, names, image, times, ports and network addresses.
+// Anything else (.Config.Env, .Config.Cmd, .Args, .Mounts, a bare {{.}} or {{json .}}) can hold a secret.
+const SAFE_INSPECT = /^\.(State(\.[A-Za-z.]+)?|Id|Name|Image|Created|RestartCount|Platform|Driver|Size|RepoTags|RepoDigests|Architecture|Os|Config\.Image|Config\.Healthcheck|NetworkSettings\.(Ports|IPAddress|Networks(\.[A-Za-z0-9_.-]+)?)|HostConfig\.(PortBindings|RestartPolicy|NetworkMode))$/;
+function safeInspectFormat(args) {
+  let format = null;
+  for (let i = 0; i < args.length; i++) {
+    const m = /^(-f|--format)(?:=(.*))?$/.exec(args[i]);
+    if (m) format = m[2] !== undefined ? m[2] : args[i + 1];
+  }
+  if (!format) return false;
+  const actions = [...format.matchAll(/\{\{(.*?)\}\}/g)].map((x) => x[1]);
+  if (!actions.length) return false;
+  // Every field the template reads must be on the list; a template that reads none ({{.}}) is refused.
+  const fields = actions.flatMap((a) => a.match(/(^|[\s(])\.[A-Za-z][A-Za-z0-9_.]*|(^|[\s(])\.(?=[\s)}]|$)/g) || []).map((f) => f.trim().replace(/^\(/, ""));
+  if (actions.some((a) => /(^|\s)\.(\s|$)/.test(a.trim() === "." ? " . " : ` ${a} `))) return false;
+  return fields.length > 0 && fields.every((f) => SAFE_INSPECT.test(f));
+}
 const BACKUP_BLOCK = "Database backups and dumps hold real data and are never read by a session. Restore them with the database's own tools (db-setup restore).";
 
 // ---------- shell commands ----------
@@ -310,8 +327,10 @@ function checkCommand(command, role, cwd) {
       const rest = words.slice(1);
       const listOnly = rest.some((w) => /^--(services|volumes|images|profiles|networks)$/.test(w));
       if (rest.includes("config") && (isTool(words[0], "docker-compose") || rest.includes("compose")) && !listOnly) return { block: SECRET_BLOCK };
-      if (rest[0] === "inspect" && !rest.some((w) => /^(-f|--format)(=|$)/.test(w))) {
-        return { block: "docker inspect prints a container's settings, secrets included. Use --format with the field you need, for example docker inspect --format \"{{.State.Health.Status}}\" <container>." };
+      // docker inspect (container, image, compose) only with a --format that reads fields known to hold no secrets.
+      const inspect = rest[0] === "inspect" || (["container", "image"].includes(rest[0]) && rest[1] === "inspect");
+      if (inspect && !safeInspectFormat(rest)) {
+        return { block: "docker inspect prints a container's settings, secrets included (the environment, the command line). Use --format with a field that holds none, for example docker inspect --format \"{{.State.Health.Status}}\" <container>." };
       }
       if (rest[0] === "exec" && rest.some((w) => ["env", "printenv"].includes(w.toLowerCase()))) return { block: SECRET_BLOCK };
     }

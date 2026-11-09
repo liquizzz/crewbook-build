@@ -1,4 +1,4 @@
-# How to run
+# Crewbook Build for Claude: how to run
 
 From nothing to a project you can work on: about five minutes once your machine has the tools of step 0. You do not need to read the book first: the project you create gets its own `START-HERE.md`, with every next step as a short command to type.
 

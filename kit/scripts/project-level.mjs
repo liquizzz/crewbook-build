@@ -60,7 +60,8 @@ export function onBuildHost(project, script, args) {
   const host = buildHostOf(project);
   if (!host || args.includes("--here") || process.env.CREWBOOK_HERE) return null;
   const quote = (a) => `'${String(a).replace(/'/g, "'\''")}'`;
-  const remote = `cd ${host.path} && git fetch -q origin && git checkout -q -B crewbook-build origin/dev && node scripts/${script} ${args.map(quote).join(" ")} --here`;
+  // --from-origin: the build host's own local branches may be old; the scripts there read origin's.
+  const remote = `cd ${host.path} && git fetch -q origin && git checkout -q -B crewbook-build origin/dev && node scripts/${script} ${args.map(quote).join(" ")} --here --from-origin`;
   if (process.env.CREWBOOK_SSH_DRY) {
     console.log(`ssh ${host.ssh} ${remote}`);
     return 0;

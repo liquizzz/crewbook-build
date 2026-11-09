@@ -133,7 +133,15 @@ step("Docker is running");
 // pulled, or pulled from the registry.
 const buildHere = !source && (tag === "dev" || project.ci === "local");
 const remote = buildHere && !flag("--here") && buildHostOf(project);
-const commitOf = (ref) => quiet("git", ["rev-parse", "--verify", "-q", `${ref}^{commit}`]) || quiet("git", ["rev-parse", "--verify", "-q", `origin/${ref}^{commit}`]);
+// On a build host (--from-origin) origin's copy first: the host's own branches may be old.
+const commitOf = (ref) => {
+  const order = flag("--from-origin") ? [`origin/${ref}`, ref] : [ref, `origin/${ref}`];
+  for (const r of order) {
+    const c = quiet("git", ["rev-parse", "--verify", "-q", `${r}^{commit}`]);
+    if (c) return c;
+  }
+  return null;
+};
 // The tree of an image's paths at a commit: equal trees mean equal images.
 const treeOf = (commit, name) => {
   const paths = imagesOf(project).find((i) => i.name === name)?.paths || ["."];
@@ -186,10 +194,11 @@ const buildFrom = (ref) => {
     const key = (t) => (name === "app" ? t : `${t}:${name}`);
     if (ref === "dev" && record.get()[key("dev")] === tree && imageOf(name, "dev") && quiet("docker", ["image", "inspect", imageOf(name, "dev")]) !== null) {
       // Same files: no build, but this dev commit still gets its :dev-<sha> tag, so every role can pin it.
+      // Both tags are pushed again: a push that failed last time is retried here, never left to an older :dev.
       const tagged = tagDevSha(name);
-      if (tagged) push(name, `dev-${sha}`);
-      step(`${name}: no change since the last dev build (tagged dev-${sha})`);
-      ok = ok && tagged;
+      const pushed = tagged && push(name, "dev") !== false && push(name, `dev-${sha}`) !== false;
+      step(`${name}: no change since the last dev build (tagged dev-${sha})${tagged && !pushed ? "; the push failed" : ""}`);
+      ok = ok && tagged && pushed;
       continue;
     }
     const twin = ref === "dev" ? null : sameTreeTag(Object.fromEntries(Object.entries(record.get()).filter(([k]) => (name === "app" ? !k.includes(":") : k.endsWith(`:${name}`))).map(([k, v]) => [k.split(":")[0], v])), ref, tree);
@@ -200,13 +209,14 @@ const buildFrom = (ref) => {
     }
     if (!built) built = spawnSync("docker", ["compose", "-f", composeFile, "build", name], { cwd: work, stdio: "inherit", env: env(ref) }).status === 0;
     if (built && ref === "dev") built = tagDevSha(name);
-    if (built) {
+    // A push that fails fails the build, and the image is not recorded as done, so the next run builds and pushes again
+    // instead of leaving the servers on an older tag.
+    const pushed = built && push(name, ref) !== false && (ref !== "dev" || push(name, `dev-${sha}`) !== false);
+    if (pushed) {
       record.set(key(ref), tree);
-      push(name, ref);
-      if (ref === "dev") push(name, `dev-${sha}`);
-      step(`${name} ${ref}${ref === "dev" ? ` (and dev-${sha})` : ""} built`);
-    }
-    ok = ok && built;
+      step(`${name} ${ref}${ref === "dev" ? ` (and dev-${sha})` : ""} built${registry ? ` and pushed to ${registry}` : ""}`);
+    } else if (built) console.error(`${name} ${ref} was built, but the push to ${registry} failed: check the registry and the login, then run this again.`);
+    ok = ok && pushed;
   }
   // The Frontend database follows the new backend (rule "Environments"); Test moves its pinned images itself. It runs
   // in the built commit's worktree (its own scripts and migrations), never in the main checkout, which stays on main.

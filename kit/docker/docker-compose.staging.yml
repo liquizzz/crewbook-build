@@ -10,6 +10,10 @@
 # backend has another name, and remove a key the app does not read.
 services:
   app:
+    # host.docker.internal is built into Docker Desktop; on Linux Docker Engine this line adds it, so the backend
+    # reaches the shared database on this machine.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       DATABASE_URL:
       COOKIE_SECURE:

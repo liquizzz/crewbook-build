@@ -55,8 +55,8 @@ An older copy of the shared compose file did that. Any `hosts.mjs shared` comman
 
 ## Process
 
-**I have never written code. Can I use this?**
-Yes. You describe, correct and approve; the sessions write the code, the tests and the documents. Install the tools once with [How to run](../../HOW-TO-RUN.md), then follow the [quick start](00-introduction.md#quick-start-from-idea-to-a-running-version).
+**How much do I review myself?**
+At L0 and L1 the reviews and CI are usually enough. For L3 changes (shared code, sign-in, money, personal data, the schema) and anything the Lead flags, read the Lead's summary and the review findings, or the diff if you read code, and always try the release candidate on `staging`. Lower `/cb-auto merge` to see more PRs before they merge.
 
 **My project runs on an older kit.**
 Type `/cb-update` in the Lead ([chapter 6](06-continuity.md#7-get-the-newest-kit)). A project from before roles by layer (Dev1, Dev2, DevOps, the Lite and Full levels) stays on its kit version: `/cb-update` says so.
