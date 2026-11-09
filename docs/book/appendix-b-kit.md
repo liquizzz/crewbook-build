@@ -113,7 +113,7 @@ The kit's `CLAUDE.md` names the skill for each kind of work, and each role file 
 
 > `<what you want>`, e.g. "The Dev also owns the `db/` folder".
 
-**Claude asks you:** which roles it affects, and whether the change should go back to Crewbook: Build too.
+**Claude asks you:** which roles it affects, and whether the change should go back to Crewbook Build for Claude too.
 
 **Claude does:** edits `.claude/ownership.json`, the role file or the hook, adds a test case for a hook change, runs the tests, commits.
 

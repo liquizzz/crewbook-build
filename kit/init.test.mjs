@@ -168,6 +168,15 @@ try {
   model("task", "dev", "#12", "opus", "high");
   const top = model("up", "dev");
   check("models: the top of the ladder says split, Opus asks the owner", top.status === 1 && top.stderr.includes("top of the ladder") && model("task", "dev", "#12", "sonnet", "high").status === 0 && model("up", "dev").stdout.includes("the owner's OK first"));
+  model("task", "dev", "#12", "sonnet", "low");
+  const offLow = model("up", "dev");
+  model("task", "dev", "#12", "opus", "max");
+  const offMax = model("up", "dev");
+  model("task", "dev", "#12", "haiku", "high");
+  const offHaiku = model("up", "dev");
+  check("models: from an effort off the ladder, up is the next step above, never a skip or a step down", offLow.stdout.includes("sonnet low → sonnet medium") && offMax.status === 1 && offMax.stderr.includes("top of the ladder") && offHaiku.stdout.includes("haiku high → sonnet medium"));
+  model("task", "dev", "#12", "sonnet", "high");
+  model("up", "dev"); // back to the state the next checks expect: opus medium
   const devHook = (m) => {
     const out = execFileSync("node", [path.join(wt(a, "dev"), ".claude", "hooks", "session-start.cjs")], { input: JSON.stringify({ model: m }), env: { ...process.env, CLAUDE_PROJECT_DIR: wt(a, "dev") } }).toString();
     return out ? JSON.parse(out).hookSpecificOutput.additionalContext : "";
@@ -298,6 +307,8 @@ try {
   fs.writeFileSync(leadProject, JSON.stringify({ ...JSON.parse(leadProjectText), buildHost: "ssh:ci@192.168.1.10", images: [{ name: "api", paths: ["api"] }, { name: "web", paths: ["web"] }] }, null, 2));
   const ciRemote = envRun("ci-local.mjs", "role/dev");
   const runRemote = envRun("run.mjs", "dev", "--build-only");
+  const ciNoBranch = spawnSync("node", [path.join("scripts", "ci-local.mjs")], { cwd: wt(a, "lead"), encoding: "utf8", env: { ...process.env, CREWBOOK_HOME: crewHome, CREWBOOK_SSH_DRY: "1" } });
+  check("build host: ci-local names this worktree's branch before handing over, and asks for it pushed; the host reads origin", ciNoBranch.stdout.includes("node scripts/ci-local.mjs 'role/lead' --here --from-origin") && ciNoBranch.stderr.includes("push it first"));
   check("build host: ci-local and builds run there over SSH with --here", ciRemote.stdout.includes("ssh ci@192.168.1.10") && ciRemote.stdout.includes("node scripts/ci-local.mjs 'role/dev' --here") && runRemote.stdout.includes("node scripts/run.mjs 'dev' '--build-only' --here"));
   const runNoLayers = envRun("run.mjs", "dev", "--here", "--dry-run").stdout;
   check("images: a layer whose folder does not exist yet is not built or started", runNoLayers.includes("docker compose up -d --no-build --wait --wait-timeout 120") && !runNoLayers.includes("120 api web"));

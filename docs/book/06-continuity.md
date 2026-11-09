@@ -59,9 +59,16 @@ Read reports and PRs on GitHub from the web or your phone, and drive the session
 
 > We are moving the team to another machine. Get every role ready.
 
-**Claude does:** has each session commit and push, and lists the worktrees to recreate.
+**Claude does:** has each session commit and push, takes a `staging` backup (`node scripts/db-setup.mjs backup`, saved under `~/.crewbook/backups/`), and lists the worktrees to recreate and the secrets the project uses (names only).
 
-**You do:** on the new machine, clone the repo, run `node scripts/new-role-worktree.mjs lead`, open the Lead there and ask it to "recreate the worktrees". Then run `node scripts/db-setup.mjs env` and `node scripts/set-secret.mjs` for each secret, since secrets never travel in git.
+**You do,** on the new machine. Secrets and `.env.local` never travel in git, so the databases and their passwords are set up again there:
+1. Clone the repo, run `node scripts/new-role-worktree.mjs lead`, open the Lead there and ask it to "recreate the worktrees".
+2. Start the shared database server: `node scripts/hosts.mjs secret POSTGRES_PASSWORD`, then `node scripts/hosts.mjs shared up postgres-17`. If the old machine's server stays the shared one on your network, register it with `node scripts/hosts.mjs add db` instead.
+3. `node scripts/db-setup.mjs create`: every database and login, with new passwords written into each worktree's `.env.local`. `db-setup.mjs check` confirms them.
+4. Bring `staging` back: copy the backup file over and run `node scripts/db-setup.mjs restore <file> <project>_staging`. The other databases come back from their seed: ask the Lead to reset them.
+5. `node scripts/set-secret.mjs <NAME>` for each other secret on the list (API keys and the like).
+
+`db-setup.mjs env` only copies connection strings that already sit in the main checkout's `.env.local`, so it helps after adding a worktree, never on a fresh machine.
 
 ## 7. Get the newest kit
 

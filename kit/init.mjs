@@ -259,7 +259,7 @@ if (!fs.existsSync(log)) {
 }
 const readme = path.join(dest, "README.md");
 if (!fs.existsSync(readme)) {
-  fs.writeFileSync(readme, `# ${name}\n\n${description ? `${description}\n\n` : ""}Built with [Crewbook: Build](https://github.com/liquizzz/crewbook-build). The owner's steps are in \`START-HERE.md\`; releases are listed in \`CHANGELOG.md\`.\n`);
+  fs.writeFileSync(readme, `# ${name}\n\n${description ? `${description}\n\n` : ""}Built with [Crewbook Build for Claude](https://github.com/liquizzz/crewbook-build). The owner's steps are in \`START-HERE.md\`; releases are listed in \`CHANGELOG.md\`.\n`);
   created.push("README.md");
 }
 const envExample = path.join(dest, ".env.example");

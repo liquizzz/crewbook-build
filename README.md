@@ -1,12 +1,10 @@
-# Crewbook: Build
+# Crewbook Build for Claude
 
-**You bring the idea. Your AI team ships the software.**
+Build with Claude Code sessions that share a plan, clear responsibilities and a review process.
 
-Crewbook turns Claude Code into a small software team. You talk to one session, the Lead. It turns your idea into a plan, runs a Dev, a Frontend, a UI/UX designer and a tester in their own sessions, and comes back to you three times: to approve the plan, to try each milestone, and to approve each release. Everything between those three moments is the team's job.
+A playbook and starter kit for people with a technology background who know how a software project is made (requirements, design, build, test, release) and want Claude Code to run it, whether or not they write code themselves. One session, the Lead, turns requirements into a plan and tasks, and runs the other roles (a Dev, and Frontend, UI/UX and Test when the project needs them), each in its own worktree with its own rules. Work moves through issues, reviewed pull requests, CI, a `staging` environment and tagged releases. You decide three times: the plan, each milestone and each release. You stay responsible for the decisions: what is built, the trade-offs, and what ships.
 
-It is a book and a starter kit for people who want software they can hand over, maintain or show a client, whether they have written code for years or never written a line.
-
-**[Start a project in 5 minutes: How to run](HOW-TO-RUN.md)**
+[Set up your first project](HOW-TO-RUN.md). You need Claude Code, Git, Node.js 20+, Docker with Compose v2 and the GitHub CLI.
 
 ```bash
 git clone https://github.com/liquizzz/crewbook-build.git
@@ -16,16 +14,16 @@ git clone https://github.com/liquizzz/crewbook-build.git
 node crewbook-build/kit/init.mjs
 ```
 
-Three questions (Enter takes each suggestion), then open the Lead and type `/cb-setup`.
+Three questions (Enter takes each suggestion), then open the Lead's worktree in Claude Code and type `/cb-setup`.
 
 ## What a run looks like
 
-The first trial of this kit built a small web app for team tasks: sign-in, teams, a task board, invitations, on desktop and phone.
+The first trial of this kit built a small web app for team tasks: sign-in, teams, a task board, invitations, on desktop and phone. Your numbers depend on the project and the models; the kit measures them for you.
 
 | | |
 |---|---|
 | Setup to staging | 4 days, 21 tasks, 5 sessions working side by side |
-| Your messages | 26 in total, about one per task |
+| Owner messages | 26 in total, about one per task |
 | Cost at list prices | About $102, about $4.90 a task (an earlier run on the old kit: about $13.70 a task) |
 | Defects after merge | 0 so far |
 | What it taught us | Four groups of fixes now in the kit: secrets kept out of every session, plugins per role, staging and database scripts, and every report routed through the Lead |
@@ -79,8 +77,8 @@ flowchart LR
 
 ## FAQ
 
-**Can I build an app with Claude Code if I can't code?**
-Yes. You describe, correct and approve; the sessions write the code, the tests and the documents. You install a few tools once and type short commands such as `/cb-setup` and `/cb-release demo`. Each approval tells you what to try and what a wrong result looks like, so you decide without reading code.
+**What do I need to know?**
+How a software project moves from requirements to a release, and what a requirement, an architecture choice, a test, a pull request and a staging environment are for. You do not need to write code: the sessions write the code, the tests and the documents, and each approval lists what to try, what a wrong result looks like and what the tests and reviews already cover. Reading code helps when you want to check a risky change yourself.
 
 **How is this different from vibe coding?**
 Vibe coding ships whatever the last prompt produced. Here every change has a requirement, a risk level, tests sized to it and a review tied to its commit, and nothing is released before you have tried it on `staging`. The tenth feature is as solid as the first.

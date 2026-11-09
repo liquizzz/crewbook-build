@@ -42,11 +42,14 @@ export function pick(kind, signals = 0, files = 0, level = null) {
     default: return null;
   }
 }
-// The next step on the ladder from a model and effort (an effort between two steps goes to the next one up).
+// The next step on the ladder: the first step above the current model and effort (models in the order haiku, sonnet,
+// opus; efforts in their own order). Never down: a model and effort at or above the top has no next step (null).
+const MODEL_ORDER = ["haiku", "sonnet", "opus"];
+const rank = (m, e) => MODEL_ORDER.indexOf(m) * EFFORTS.length + Math.max(0, EFFORTS.indexOf(e));
 export function nextStep(model, effort) {
-  const at = LADDER.findIndex(([m, e]) => m === model && EFFORTS.indexOf(e) >= EFFORTS.indexOf(effort));
-  const i = at >= 0 ? at : LADDER.findIndex(([m]) => m === model);
-  return i >= 0 && i < LADDER.length - 1 ? LADDER[i + 1] : null;
+  if (!MODEL_ORDER.includes(model)) return null;
+  const here = rank(model, effort);
+  return LADDER.find(([m, e]) => rank(m, e) > here) || null;
 }
 
 // Providers. In the deepseek mode the building roles run on DeepSeek; the Lead and UI/UX stay on Claude.

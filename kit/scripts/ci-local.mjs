@@ -27,17 +27,47 @@ import os from "node:os";
 import path from "node:path";
 
 const args = process.argv.slice(2);
-// With a build host (rule "Where CI runs"), the run happens there over SSH.
+const sh = (cmd, cwd) => execSync(cmd, { cwd, stdio: ["ignore", "pipe", "pipe"] }).toString().trim();
+// The branch is settled here, before a build host takes over: there the checkout is another one, on another branch.
+const branch = args.find((a) => !a.startsWith("--")) || sh("git branch --show-current");
+// With a build host (rule "Where CI runs"), the run happens there over SSH, on this branch as pushed to origin.
 const kitLevel = await import("./project-level.mjs").catch(() => null);
 if (kitLevel) {
+  const project = (() => {
+    try {
+      return kitLevel.readProject(sh("git rev-parse --show-toplevel")) || kitLevel.readProject(kitLevel.mainCheckout());
+    } catch {
+      return null;
+    }
+  })();
+  if (project && !args.includes("--here") && kitLevel.buildHostOf(project)) {
+    if (!branch) {
+      console.error("No branch to check: name it, for example node scripts/ci-local.mjs role/dev");
+      process.exit(1);
+    }
+    // The build host fetches origin, so the branch must be pushed as it is here.
+    let local = null;
+    let pushed = null;
+    try {
+      sh("git fetch -q origin");
+    } catch {}
+    try {
+      local = sh(`git rev-parse --verify -q "${branch}^{commit}"`);
+    } catch {}
+    try {
+      pushed = sh(`git rev-parse --verify -q "origin/${branch}^{commit}"`);
+    } catch {}
+    if (local && local !== pushed) {
+      console.error(`${branch} here is not what origin has${pushed ? "" : " (not pushed)"}: push it first (git push origin ${branch}), then run this again. The build host checks what origin has.`);
+      if (!process.env.CREWBOOK_SSH_DRY) process.exit(1);
+    }
+  }
   let code = null;
   try {
-    code = kitLevel.onBuildHost(kitLevel.readProject(execSync("git rev-parse --show-toplevel").toString().trim()) || kitLevel.readProject(kitLevel.mainCheckout()), "ci-local.mjs", args);
+    code = kitLevel.onBuildHost(project, "ci-local.mjs", args.some((a) => !a.startsWith("--")) ? args : [branch, ...args]);
   } catch {}
   if (code !== null) process.exit(code);
 }
-const sh = (cmd, cwd) => execSync(cmd, { cwd, stdio: ["ignore", "pipe", "pipe"] }).toString().trim();
-const branch = args.find((a) => !a.startsWith("--")) || sh("git branch --show-current");
 const started = Date.now();
 const took = (ms) => {
   const s = Math.round(ms / 1000);
@@ -51,8 +81,9 @@ if (!args.includes("--no-fetch")) {
   }
 }
 // The local branch first: every worktree shares this repository, so it holds a Dev's latest commits, pushed or not.
+// On a build host (--from-origin) origin's copy first: the host's own branches may be old.
 const ref = (name) => {
-  for (const r of [name, `origin/${name}`]) {
+  for (const r of args.includes("--from-origin") ? [`origin/${name}`, name] : [name, `origin/${name}`]) {
     try {
       sh(`git rev-parse --verify -q "${r}^{commit}"`);
       return r;

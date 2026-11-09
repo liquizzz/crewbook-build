@@ -1,6 +1,6 @@
-# Chapter 0: Introduction
+# Chapter 0: Crewbook Build for Claude
 
-**Purpose:** build real software with a team of Claude Code sessions, where you make three decisions and the team does the rest, with every step written down so it can be checked, changed or handed over.
+**Purpose:** give people who know how a software project is made a repeatable way to build one with a team of Claude Code sessions, from the first requirements to a reviewed release, with every step written down so it can be checked, changed or handed over.
 
 ## The idea in one minute
 
@@ -10,18 +10,23 @@ Your part is three decisions: the plan, each milestone and each release. The tea
 
 ## Who this book is for
 
-| You | What you get |
-|---|---|
-| You have never written code | A team that writes it, and at each approval a short list of things to try yourself, with what a wrong result looks like |
-| You can run a project and read an error | A process that turns Claude Code into a delivery team with branches, reviews, CI, versions and Docker images |
-| You are an experienced developer | A standard way to hand real work to AI and keep it inside clear limits: one role per session, a guard on every command, a review tied to every commit |
-| You build for a client | Change requests with the client's approval, a requirements document that stays current, and a handover for each release |
+You have a technology background and know how a software project is made: requirements, design, build, test, release. You may be a developer, a product owner, a project manager, a tester or a founder; writing code yourself is not required. You want Claude Code to run that process as a team of sessions that keep track of decisions, work in separate folders and hand over changes you can check. Crewbook supplies the workflow, with the scripts, role files and templates to start a project with it.
 
-You need a few tools installed once ([How to run](../../HOW-TO-RUN.md)). You do not need to know git, GitHub or Docker: the sessions use them and tell you what to look at.
+You should know what a requirement, an architecture choice, a test, a pull request and a staging environment are for, and be able to install tools and run a command in a terminal. The sessions write the code and use Git, GitHub and Docker; you judge the plan, the evidence and the release. Reading code helps when you want to check a risky change yourself.
+
+| You want | What you get |
+|---|---|
+| Several sessions without losing the plan | Role files, one worktree per role, hand-offs on issues, recovery after a restart |
+| Changes you can review | Each task with a risk level, tests sized to it, a self-review tied to the commit, the Lead's review before merge |
+| A release you can inspect | A candidate on `staging`, the regression and acceptance evidence, a handover, your approval |
+| Work for a client | Change requests with the client's approval and price, a requirements document that stays current |
+| Control over cost | A model per task, fresh contexts by phase, weekly measures |
+
+The tools are listed in [How to run](../../HOW-TO-RUN.md).
 
 ## What the book does not do
 
-- It does not replace your judgement. The sessions share one way of thinking: if the Lead misunderstands you, the others can follow the mistake. The process makes the misunderstanding visible early (everything is written down) and you try the product yourself before each release.
+- It does not replace your judgement. You own the architecture, the code quality, the security and the running of the product. The sessions share one way of thinking: if the Lead misunderstands you, the others can follow the mistake. The process makes the misunderstanding visible early (everything is written down) and you try the product yourself before each release.
 - It does not promise a secure product when you skip the approvals, the tests or your own try on `staging`.
 - It does not run your servers. Every release is a Docker image; you choose where it runs and you put it on production yourself.
 - It does not run without you. The sessions pass work to each other, and the Lead tells you when something needs you, but you keep them open and you answer.

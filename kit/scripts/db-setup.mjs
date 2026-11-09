@@ -213,11 +213,16 @@ function backup() {
 function restore(file, db = `${P}_restore_check`) {
   ensureServer();
   if (!file || !fs.existsSync(file)) fail(`No file ${file}`);
+  // A project database keeps its own login as owner, of the database and of every restored object, with connect rights
+  // for that login only; a scratch database (the default) belongs to postgres.
+  const own = DBS.find((x) => x.db === db && !x.ci);
   psql(`DROP DATABASE IF EXISTS ${ident(db)} WITH (FORCE)`);
-  psql(`CREATE DATABASE ${db}`);
-  const r = spawnSync("docker", ["exec", "-i", CONTAINER, "pg_restore", "-U", "postgres", "-d", db, "--no-owner"], { input: fs.readFileSync(file) });
+  if (own) createDb(db, own.login);
+  else psql(`CREATE DATABASE ${db}`);
+  const as = own ? ["--role", own.login, "--no-acl"] : [];
+  const r = spawnSync("docker", ["exec", "-i", CONTAINER, "pg_restore", "-U", "postgres", "-d", db, "--no-owner", ...as], { input: fs.readFileSync(file) });
   if (r.status !== 0) fail("pg_restore failed.");
-  console.log(`Restored into ${db}.`);
+  console.log(`Restored into ${db}${own ? `, owned by ${own.login}` : ""}.`);
 }
 
 // Each login opens its own database with the password in .env.local and is refused on another one. The password goes
