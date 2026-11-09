@@ -1,79 +1,11 @@
-# Crewbook Build for Claude: how to run
+# Start a Crewbook project with Claude Code
 
-Create a project, open the Lead and describe what you want to build. The kit installs the team's workflow; the generated `START-HERE.md` takes you through the next steps. This guide assumes you already use Claude Code for software development.
+Crewbook installs a delivery workflow for developers already using Claude Code. Create a project, open its Lead and describe what you want to build.
 
-Steps 0 to 2 happen in a terminal. You need a Claude Code session only from step 3.
+Follow [Chapter 1: Start your first project](docs/book/01-setup.md) for the complete setup guide: prerequisites, cloning the Crewbook repository, running the initializer and opening the Lead. Your new project's `START-HERE.md` gives the commands and folders specific to that project.
 
-## 0. Once per machine
+Once the Lead is open, [plan your product](docs/book/02-plan-your-product.md). You choose the team and architecture, then approve one plan before implementation starts.
 
-Install the Claude Code desktop app, Git, Node.js 20+, Docker (and start it) and the GitHub CLI. Then sign in to GitHub and allow the CLI to create boards:
+Already have a project? Use [Continue and maintain](docs/book/05-continue-and-maintain.md) to restart a session, move machines or update the kit. For a project missing `/cb-update`, follow the [first-update instructions](docs/book/appendix-b-kit.md#first-update-for-an-older-project).
 
-```bash
-gh auth login
-```
-
-```bash
-gh auth refresh -s project
-```
-
-You do not install Claude Code plugins by hand: `init` (step 2) installs the ones the project uses with the `claude` command, and the Lead's `/cb-setup` checks them before anything else. If `init` cannot, it prints the `/plugin install` lines to paste into any session. The list is in [chapter 1](docs/book/01-setup.md#you-do-this-yourself-once-per-machine).
-
-## 1. Clone the Crewbook repository
-
-Open a terminal: PowerShell or Terminal on your computer, or the Terminal panel in Claude Code. The panel opens in your home folder, so go first to the folder where your projects live (create it if needed):
-
-```bash
-cd <your projects folder>
-```
-
-```bash
-git clone https://github.com/liquizzz/crewbook-build.git
-```
-
-## 2. Create your project
-
-In the same terminal and folder:
-
-```bash
-node crewbook-build/kit/init.mjs
-```
-
-It asks three questions, each with a one-line hint. Press Enter to take the suggestion in brackets.
-
-| # | Question | Suggestion | Note |
-|---|---|---|---|
-| 1 | Project name | | Any name, for example "Tiny Todo" |
-| 2 | Where to create the project | `./tiny-todo` | A new folder; init creates it |
-| 3 | GitHub repo | `private`, as `<you>/tiny-todo` | `none` to connect later |
-
-The rest (the roles, the language, your idea, the stack and the environments) comes in the Lead's `/cb-setup`.
-
-Then it installs the kit, creates the branches and the Lead's worktree, and writes `START-HERE.md`. When you choose a GitHub repo, it also sets up the repository, labels and board. Choosing `none` leaves the GitHub connection for later.
-
-Read the "Please check" lines at the end of its report. A private repo runs CI on your machine (`node scripts/ci-local.mjs`), so it uses none of your GitHub Actions minutes; switch with `node scripts/ci-mode.mjs github`. On a new public repo, open its Actions tab on GitHub once: if it shows **Enable Actions on this repository**, click it, or CI and the Docker images never run.
-
-## 3. Follow START-HERE.md
-
-Open `START-HERE.md` in your new project folder. Its first step tells you which folder to open in Claude Code (a worktree, which is a second folder of the same project, one per session, such as `tiny-todo-wt\lead`) and the command to type there: `/cb-setup` (every command starts with `cb`, for Crewbook). Write to the Lead in your own language; the sessions answer in it.
-
-Setup asks five things, each with a suggestion you can take as it is:
-
-1. The roles: the Lead and the Dev always; UI/UX, Frontend and Test ticked by default. Untick what the project does not need.
-2. How much runs without you: the sessions pass work to each other, the Lead merges by itself up to the level you choose (`off`, `only-L0`, `up-to-L1`, `up-to-L2`, `all`), a stuck task moves to a stronger model, Test checks each merged task.
-3. Your idea, in your own words: the Lead writes the stories, suggests the ones usually missing and draws the function tree.
-4. The deployment model and stack: three options with their cost, one recommended; pick one or say "you decide".
-5. The environments: the databases, the build host and `staging`, reusing what already runs on your machine (`node scripts/hosts.mjs`).
-
-You approve the plan on one page, and the Lead creates every other session. From there the Lead plans each milestone (`/cb-plan`), the sessions build and pass work to each other, and you step in when something waits for you. `/cb-release demo` gives you the milestone to try on `staging`; `/cb-release` publishes it after your OK. `/cb-progress` tells you where the project stands at any time; `/cb-help` lists every command. Set API keys and passwords with `node scripts/set-secret.mjs <NAME>`, never in the chat.
-
-## 4. Get kit updates later
-
-The kit gets better between your projects. A project started before the roles changed (Dev1, Dev2, DevOps, the Lite and Full levels) stays on its kit version: `/cb-update` says so and stops. To bring a newer project up to the newest kit, type `/cb-update` in its Lead session. The Lead fetches crewbook-build, shows you what will change, updates the kit files in its own folder and keeps your project's files, rules and decisions. The update reaches `dev` through a PR that waits for your OK. A project that still has `/kit-update` types that once; it brings in `/cb-update`. A project with neither command: run this once in its Lead folder (`<project>-wt/lead`), with your clone of crewbook-build next to the project:
-
-```bash
-node ../../crewbook-build/kit/update.mjs --dry-run
-```
-
-Then ask the Lead: "Update the kit as the dry run shows, then open a PR." From then on, `/cb-update` is there.
-
-When you want to know why a step works the way it does, the [book](README.md#the-book) has a chapter for it.
+[Commands](docs/book/appendix-a-quick-reference.md) · [Troubleshooting](docs/book/appendix-c-faq.md) · [Project checklist](docs/book/appendix-d-templates-and-checklist.md) · [Book contents](README.md#read-the-guide)

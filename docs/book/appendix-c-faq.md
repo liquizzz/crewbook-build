@@ -1,8 +1,8 @@
-# Appendix C: FAQ and troubleshooting
+# Appendix C: Troubleshooting Claude Code projects
+
+← [Back: Appendix B: Kit and configuration](appendix-b-kit.md) · [Contents](../../README.md#read-the-guide) · [Next: Appendix D: Templates and checklist](appendix-d-templates-and-checklist.md) →
 
 **Purpose:** quick answers to what comes up most.
-
-← [Back: Appendix B: Kit reference](appendix-b-kit.md) · [Contents](../../README.md#the-book) · [Next: Appendix D: Process checklist](appendix-d-checklist.md) →
 
 ## Working with sessions
 
@@ -16,13 +16,13 @@ Each step may ask at most three together, each with a suggested answer. If it as
 Roles report to the Lead, which asks you. If a role still asks you directly, answer it in the Lead's session ("Dev asks X; my answer is Y") so the thread stays in one place.
 
 **Nothing has moved for hours.**
-Type `/cb-progress`: it lists stalled sessions. The usual cause is a session that hit its usage limit or was closed. The Lead resumes it when it can; otherwise reopen the session in its folder, or wait for the limit to reset ([chapter 6](06-continuity.md#3-a-session-that-stopped)).
+Type `/cb-progress`: it lists stalled sessions. The usual cause is a session that hit its usage limit or was closed. The Lead resumes it when it can; otherwise reopen the session in its folder, or wait for the limit to reset ([chapter 5](05-continue-and-maintain.md#3-a-session-that-stopped)).
 
 **A session forgot what it was doing.**
-Open a new session in the same folder: it recovers from the issues and git. Or say "Read CLAUDE.md and continue as `<role>`."
+Open a new session in the same folder: it recovers from the issues and git. Or say "Read CLAUDE.md and continue as `<role>`." Follow the [restart steps](05-continue-and-maintain.md#1-restart-a-session).
 
 **Two sessions changed the same files.**
-They should not: each role has its own worktree and paths. Ask the Lead to check which paths each role touched and to fix `.claude/ownership.json`.
+They should not: each role has its own worktree and paths. Ask the Lead to check which paths each role touched and to fix `.claude/ownership.json`. See [project-specific configuration](appendix-b-kit.md#change-the-kit-for-one-project).
 
 **I want to talk to a Dev directly.**
 Fine for a task it already has: `/cb-build try #<n>` to see it running early. Anything new goes to the Lead, so the plan and the issues stay in step.
@@ -39,10 +39,10 @@ Working as intended, in every role and subagent. A script that needs a value rea
 Use `docker inspect --format` with the one field you need, for example `{{.State.Health.Status}}`.
 
 **"Role X does not own <path>".**
-Either the work belongs to another role (ask through the issue), or the project's folders differ from the defaults: ask the Lead to update `.claude/ownership.json`.
+Either the work belongs to another role (ask through the issue), or the project's folders differ from the defaults: ask the Lead to update `.claude/ownership.json` using the [configuration guide](appendix-b-kit.md#change-the-kit-for-one-project).
 
 **I approved a prompt by mistake.**
-The prompts only cover pushes to `main`, tags, releases and workflow runs. Ask the Lead to undo the last release step (revert, delete the tag, or deploy the previous tag).
+The prompts only cover pushes to `main`, tags, releases and workflow runs. Ask the Lead to undo the last release step (revert, delete the tag, or deploy the previous tag). Follow the [rollback guide](04-try-release-and-deploy.md#hotfix-and-rollback).
 
 ## Databases
 
@@ -53,18 +53,18 @@ The password in `~/.crewbook/.env` only applied when the server's data was first
 An older copy of the shared compose file did that. Any `hosts.mjs shared` command now repairs the copy in `~/.crewbook/shared/`; each service asks only for its own password.
 
 **A role's connection string is missing after I added a worktree.**
-`node scripts/db-setup.mjs env` copies the strings into every checkout again, with no new passwords.
+`node scripts/db-setup.mjs env` copies the strings into every checkout again, with no new passwords. On a fresh machine, follow the [migration steps](05-continue-and-maintain.md#6-move-the-team-to-another-machine) instead.
 
 ## Process
 
 **I already build with Claude Code. What does Crewbook add?**
-A team structure and a workflow you can reuse across projects: a Lead to coordinate, roles with their own worktrees, reviewed task PRs, staging demos and release handovers. Start with [How to run](../../HOW-TO-RUN.md), then follow the [quick start](00-introduction.md#quick-start-from-idea-to-a-running-version).
+A team structure and a workflow you can reuse across projects: a Lead to coordinate, roles with their own worktrees, reviewed task PRs, staging demos and release handovers. Start with [How to run](../../HOW-TO-RUN.md), then follow [chapter 1](01-setup.md) for the complete setup instructions.
 
 **How much do I review myself?**
 At L0 and L1 the reviews and CI are usually enough. For L3 changes (shared code, sign-in, money, personal data, the schema) and anything the Lead flags, read the Lead's summary and the review findings, or the diff if you read code, and always try the release candidate on `staging`. Lower `/cb-auto merge` to see more PRs before they merge.
 
 **My project runs on an older kit.**
-Type `/cb-update` in the Lead ([chapter 6](06-continuity.md#7-get-the-newest-kit)). A project from before roles by layer (Dev1, Dev2, DevOps, the Lite and Full levels) stays on its kit version: `/cb-update` says so.
+Type `/cb-update` in the Lead ([chapter 5](05-continue-and-maintain.md#7-get-the-newest-kit)). A project from before roles by layer (Dev1, Dev2, DevOps, the Lite and Full levels) stays on its kit version: `/cb-update` says so.
 
 **A document is full of technical words.**
 Every document must read clearly the first time, and a technical one opens with "In short". Say: "Rewrite `<file>` in plain language."
@@ -76,10 +76,10 @@ Ask the Lead for the main screens first: grey screens you can click through, the
 Ask the Lead what came in since the plan and how much buffer is left. Move what does not fit to the next milestone.
 
 **A task keeps failing.**
-After two red tries the role names the cause. The environment or an unclear request is fixed where it is; the same wrong reasoning moves the task one model step up; a scope that grew is split. `/cb-model up` moves it up yourself.
+After two red tries the role names the cause. The environment or an unclear request is fixed where it is; the same wrong reasoning moves the task one model step up; a scope that grew is split. `/cb-model up` requests the next model step; the [model policy](appendix-b-kit.md#change-levels-models-and-checks) covers the ladder and permissions.
 
 **A client asks for a change by email.**
-Paste it to the Lead with the date and the sender: "Client request: …". It becomes a CR with the request, its impact and price, and a row in `docs/product/changes.md`.
+Paste it to the Lead with the date and the sender: "Client request: …". It becomes a CR with the request, its impact and price, and a row in `docs/product/changes.md`. See [change requests](03-build-and-review.md#4-a-change-to-what-the-product-does).
 
 **I am away for a few days.**
 Tell the Lead: "I am away until `<date>`. Work on approved items only and queue every decision." Set `/cb-auto merge` lower if you want fewer merges while you are away.
@@ -87,10 +87,10 @@ Tell the Lead: "I am away until `<date>`. Work on approved items only and queue 
 ## Tools
 
 **`init.mjs` says Docker is missing.**
-Install Docker Desktop (or Docker Engine with Compose on Linux), check `docker compose version`, start it, and run init again.
+Install Docker Desktop (or Docker Engine with Compose on Linux), check `docker compose version`, start it, and run init again. Check the [prerequisites](01-setup.md#1-install-the-prerequisites).
 
 **CI never runs on a new public repo.**
-Open its Actions tab and click **Enable Actions on this repository**. Then push once more.
+Open its Actions tab and click **Enable Actions on this repository**. Then push once more. See the [project creation checks](01-setup.md#3-create-your-project).
 
 **`gh` lacks the `project` scope.**
 Run `gh auth refresh -s project` in a terminal.
@@ -105,8 +105,8 @@ Run `gh auth refresh -s read:packages` once and try again; `run.mjs` logs in wit
 A cache mount was emptied while the layers above it stayed cached. The kit's rule is never to install offline-only from a cache mount (`--prefer-offline`, not `--offline`); ask the Dev to fix the Dockerfile.
 
 **A Codex review fails or is out of quota.**
-The Lead says so. The roles' own `code-review` already ran; reply "skip" or try later.
+The Lead says so. The roles' own `code-review` already ran; reply "skip" or try later. The [reviewer setup](appendix-b-kit.md#optional-a-second-opinion-reviewer) is optional.
 
 ---
 
-← [Back: Appendix B: Kit reference](appendix-b-kit.md) · [Contents](../../README.md#the-book) · [Next: Appendix D: Process checklist](appendix-d-checklist.md) →
+← [Back: Appendix B: Kit and configuration](appendix-b-kit.md) · [Contents](../../README.md#read-the-guide) · [Next: Appendix D: Templates and checklist](appendix-d-templates-and-checklist.md) →

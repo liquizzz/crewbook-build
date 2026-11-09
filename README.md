@@ -2,7 +2,7 @@
 
 Build with Claude Code. Lead the team.
 
-You already build with Claude Code. Crewbook gives that work a team: a Lead to turn the idea into a plan, a Dev to build the application, and Frontend, UI/UX and Test sessions when the project needs them. Work moves through tasks and reviewed PRs to a version you can try on staging and hand over to a client.
+Crewbook is an open-source Claude Code workflow kit for developers building products and client software. Give your project a Lead to turn the idea into a plan, a Dev to build the application, and Frontend, UI/UX and Test sessions when you need them. Move from the first brief through reviewed PRs to a version you can try on staging and hand over to a client.
 
 Talk to the Lead, review the plan and try the product as it grows. Choose how much the team handles on its own. The three checkpoints are simple: approve the plan, accept each milestone, approve each release.
 
@@ -20,7 +20,7 @@ node crewbook-build/kit/init.mjs
 
 Answer three setup questions, open the Lead's worktree and type `/cb-setup`. The generated `START-HERE.md` guides you from there.
 
-## How it works
+## How the Claude Code workflow works
 
 ```mermaid
 flowchart LR
@@ -48,20 +48,30 @@ flowchart LR
 | Records a client can follow | Change requests with the client's approval and price, decisions with the options rejected, a requirements document kept current, a handover for each release, and the chain from any behaviour back to the request that caused it |
 | A workflow you can keep using | Issues and hand-offs let a fresh session pick up the work; `/cb-update` prepares supported kit updates as a PR for you to review |
 
-## The book
+## Read the guide
 
 | | Chapter | Use it to |
 |---|---|---|
-| 0 | [Introduction](docs/book/00-introduction.md) | See the idea in one minute and the seven-step quick start |
-| 1 | [Setup](docs/book/01-setup.md) | Install the tools and create the project |
-| 2 | [The team](docs/book/02-the-team.md) | Know who does what, how work moves and what the guard blocks |
-| 3 | [The plan](docs/book/03-the-plan.md) | Answer five questions and approve the plan |
-| 4 | [The delivery loop](docs/book/04-delivery-loop.md) | Let the team build; ask for a change; report a bug |
-| 5 | [Milestones and releases](docs/book/05-releases.md) | Try a milestone, approve a release, deploy, roll back |
-| 6 | [Continuity](docs/book/06-continuity.md) | Restart, recover a stalled session, update the kit |
-| 7 | [Products with screens](docs/book/07-products-with-screens.md) | Pick the look and feel; design ahead of the code |
-| 8 | [Small teams](docs/book/08-small-teams.md) | Run with fewer roles; add one later |
-| A-E | [Templates](docs/book/appendix-a-templates.md) · [Kit](docs/book/appendix-b-kit.md) · [FAQ](docs/book/appendix-c-faq.md) · [Checklist](docs/book/appendix-d-checklist.md) · [Standards](docs/book/appendix-e-standards.md) | Look something up |
+| 0 | [Meet Crewbook](docs/book/00-introduction.md) | Understand the team and choose where to start |
+| 1 | [Start your first project](docs/book/01-setup.md) | Prepare your machine and open the Lead session |
+| 2 | [Plan your product](docs/book/02-plan-your-product.md) | Choose the roles, shape the requirements and approve the plan |
+| 3 | [Build and review](docs/book/03-build-and-review.md) | Deliver tasks, review PRs, request changes and report bugs |
+| 4 | [Try, release and deploy](docs/book/04-try-release-and-deploy.md) | Accept a milestone and deliver a version your client can run |
+| 5 | [Continue and maintain](docs/book/05-continue-and-maintain.md) | Resume work, recover a session, move machines and update the kit |
+| 6 | [Design and frontend](docs/book/06-design-and-frontend.md) | Choose the look and feel and turn designs into screens |
+| 7 | [Configure your team](docs/book/07-configure-your-team.md) | Adjust autonomy and add or pause role sessions |
+
+Read chapters 1 to 5 for the main delivery path. Use chapter 6 when your product has screens, and chapter 7 when you want to change how the team works.
+
+### Reference
+
+| Appendix | Look up |
+|---|---|
+| [A. Quick reference](docs/book/appendix-a-quick-reference.md) | Commands, common tasks and Crewbook terms |
+| [B. Kit and configuration](docs/book/appendix-b-kit.md) | Installed files, scripts, models, environments and plugins |
+| [C. Troubleshooting](docs/book/appendix-c-faq.md) | Setup problems and questions during delivery |
+| [D. Templates and checklist](docs/book/appendix-d-templates-and-checklist.md) | What to check and which document to use |
+| [E. Standards map](docs/book/appendix-e-standards.md) | The practices behind the workflow |
 
 ## FAQ
 
@@ -71,8 +81,8 @@ Developers who already use Claude Code and want a repeatable way to deliver a pr
 **How is this different from vibe coding?**
 Crewbook keeps the request, implementation and review connected as the project grows. Each task has a risk level and checks to match; each milestone gets a staging version you can try before release. You can follow a change from the original request to the PR that delivered it.
 
-**How is it different from agent teams, BMAD-METHOD or spec-kit?**
-Crewbook focuses on the whole delivery workflow: role sessions in separate worktrees, task PRs, staging, release approval and client handover. The book explains the process; the kit installs the commands and templates your sessions use to follow it. See [the team](docs/book/02-the-team.md) for how the work moves.
+**How does Crewbook organize multiple Claude Code sessions?**
+Each role works in a separate Git worktree with its own branch and assigned folders. The Lead coordinates tasks, reviews PRs and merges the work into `dev`. You choose the merge and hand-off settings. See [build and review](docs/book/03-build-and-review.md) for the delivery loop and [team configuration](docs/book/07-configure-your-team.md) for the controls.
 
 **What stack does it use?**
 Any. The Lead proposes three architectures with their cost and recommends one; a platform you or your client require is a constraint.
