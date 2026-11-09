@@ -198,6 +198,7 @@ copyDir(path.join(kit, "scripts"), "scripts");
 copyFile(path.join(playbook, "templates", "changelog.md"), "CHANGELOG.md");
 copyDir(path.join(playbook, "templates"), path.join("docs", "templates"));
 copyFile(path.join(kit, "docker", "docker-compose.yml"), "docker-compose.yml");
+copyFile(path.join(kit, "docker", "docker-compose.staging.yml"), "docker-compose.staging.yml");
 copyFile(path.join(kit, "docker", "design.Dockerfile"), path.join("docker", "design.Dockerfile"));
 copyFile(path.join(kit, "docker", "app.Dockerfile"), path.join("docker", "app.Dockerfile"));
 copyFile(path.join(kit, "docker", "web.Dockerfile"), path.join("docker", "web.Dockerfile"));

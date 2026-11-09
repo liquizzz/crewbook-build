@@ -21,6 +21,14 @@ const cases = [
   ["i.ts", 'const apiKey = "abcdef123456";', "block"],
   ["j.py", 'token = "sk-abcdefghijklmnopqrstuvwxyz"', "block"],
   [".env", "X=1", "block"],
+  // A word that excuses a placeholder elsewhere on the line excuses nothing.
+  ["k.ts", 'const password = "hunter2secret"; // example connection', "block"],
+  ["l.py", 'password = "hunter2secret"  # your-db, placeholder below', "block"],
+  ["m.py", 'password = "CHANGE_ME"  # set the real one in .env', "allow"],
+  ["n.yml", "api_key: <your-api-key>", "allow"],
+  ["o.py", 'password = "example-only"', "allow"],
+  ["p.mjs", "env: { ...process.env, PGPASSWORD: pwdOf(url) }", "allow"],
+  ["q.mjs", 'env: { ...process.env, PGPASSWORD: "hunter2secret" }', "block"],
 ];
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "secret-check-"));

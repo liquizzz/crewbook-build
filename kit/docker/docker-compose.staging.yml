@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MIT
+# Crewbook by Hai Nguyen (github.com/liquizzz/crewbook-build)
+#
+# Added by `node scripts/run.mjs staging` on top of docker-compose.yml (docker compose -f docker-compose.yml -f this
+# file). The values come from that script's own environment, never from a file and never printed:
+#   DATABASE_URL   STAGING_DATABASE_URL from .env.local, with localhost turned into host.docker.internal
+#   COOKIE_SECURE  false: staging runs on plain http on the local network
+#   PUBLIC_URL     the address people on the network open (links in invitation and password e-mails)
+# The service is the backend image ("backend" in .claude/project.json, else api, else app). Rename it here when the
+# backend has another name, and remove a key the app does not read.
+services:
+  app:
+    environment:
+      DATABASE_URL:
+      COOKIE_SECURE:
+      PUBLIC_URL:

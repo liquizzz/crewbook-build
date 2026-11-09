@@ -87,37 +87,64 @@ Claude's /code-review is a different reviewer; use it only if the owner asks.`);
 
 // 2. The branch and its base.
 const root = path.dirname(path.resolve(git(["rev-parse", "--git-common-dir"])));
+let fetched = false;
 if (!noFetch) {
   try {
     git(["fetch", "-q", "origin"]);
+    fetched = true;
   } catch {
     console.log("! fetch failed: using the local branches");
   }
 }
+const shaOf = (r) => {
+  try {
+    return git(["rev-parse", "--verify", "-q", `${r}^{commit}`]);
+  } catch {
+    return null;
+  }
+};
+// A branch name resolves to one ref. After a fetch the remote's copy is the current one (a local branch of the same
+// name may be behind it); without a fetch, the local branch. The head is then pinned to that ref's commit.
+const resolve = (name) => {
+  const order = fetched ? [`origin/${name}`, name] : [name, `origin/${name}`];
+  const found = order.map((r) => [r, shaOf(r)]).filter(([, s]) => s);
+  if (!found.length) {
+    console.error(`Unknown branch ${name}`);
+    process.exit(1);
+  }
+  if (found.length > 1 && found[0][1] !== found[1][1]) console.log(`! ${found[1][0]} differs from ${found[0][0]}; reviewing ${found[0][0]}`);
+  return found[0][0];
+};
 let branch = target;
 let baseName = "dev";
+let head;
 if (/^#?\d+$/.test(target)) {
+  // A PR is pinned to the commit GitHub shows as its head (headRefOid), fetched through its pull ref, so a stale local
+  // branch or a PR from a fork is reviewed at the right commit.
+  const number = target.replace("#", "");
+  let pr;
   try {
-    const pr = JSON.parse(sh("gh", ["pr", "view", target.replace("#", ""), "--json", "headRefName,baseRefName"]));
-    branch = pr.headRefName;
-    baseName = pr.baseRefName || "dev";
+    pr = JSON.parse(sh("gh", ["pr", "view", number, "--json", "headRefName,baseRefName,headRefOid"]));
   } catch (e) {
     console.error(`Could not read PR ${target} with gh: ${String(e.stderr || e.message).trim().split(/\r?\n/)[0]}`);
     process.exit(1);
   }
-}
-const ref = (name) => {
-  for (const r of [name, `origin/${name}`]) {
+  branch = pr.headRefName;
+  baseName = pr.baseRefName || "dev";
+  if (!noFetch) {
     try {
-      git(["rev-parse", "--verify", "-q", `${r}^{commit}`]);
-      return r;
-    } catch {}
+      git(["fetch", "-q", "origin", `pull/${number}/head`]);
+    } catch {
+      console.log(`! could not fetch the pull ref of #${number}`);
+    }
   }
-  console.error(`Unknown branch ${name}`);
-  process.exit(1);
-};
-const head = ref(branch);
-const base = ref(baseName);
+  head = pr.headRefOid && shaOf(pr.headRefOid);
+  if (!head) {
+    console.error(`The head of PR #${number} (${String(pr.headRefOid || "unknown").slice(0, 7)}) is not in this repository. Fetch it (git fetch origin pull/${number}/head) and run /cb-review again. This is not a pass.`);
+    process.exit(1);
+  }
+} else head = shaOf(resolve(branch));
+const base = resolve(baseName);
 
 // 3. A throw-away worktree at the head of the branch; Codex reviews its diff against the base.
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "crewbook-codex-"));

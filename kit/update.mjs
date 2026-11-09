@@ -21,7 +21,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { RETIRED_ROLES, kitVersion, rolesLine, languageLine, mainCheckout, readProject, renderStartHere, worktreePath, writeProject } from "./scripts/project-level.mjs";
+import { RETIRED_ROLES, ROLES, applyRolePlugins, kitVersion, rolesLine, languageLine, mainCheckout, readProject, renderStartHere, worktreePath, writeProject } from "./scripts/project-level.mjs";
 
 const argv = process.argv.slice(2);
 const dry = argv.includes("--dry-run");
@@ -322,6 +322,17 @@ if (exists(SETTINGS)) {
     if (!(p in (theirs.enabledPlugins || {})) && past.some((s) => s.enabledPlugins?.[p]) && !/frontend-design|ui-ux-pro-max|humanizer/.test(p)) {
       out.notes.push(`The kit no longer enables the plugin ${p}; remove it from ${SETTINGS} if you do not use it.`);
     }
+    // A plugin the kit used to enable for every role and now gives one role only (claude-mem: the Lead, through its
+    // settings.local.json below).
+    if (mine.enabledPlugins[p] === true && theirs.enabledPlugins?.[p] === false && past.some((s) => s.enabledPlugins?.[p] === true)) {
+      merged.enabledPlugins[p] = false;
+      out.notes.push(`The plugin ${p} is now off in ${SETTINGS}; the roles that use it turn it on in their own settings.local.json.`);
+    }
+  }
+  // A plugin still on keeps its marketplace, so plugins.mjs can install it on another machine.
+  for (const [p, on] of Object.entries(merged.enabledPlugins)) {
+    const m = p.split("@")[1];
+    if (on && m && !(m in merged.extraKnownMarketplaces) && mine.extraKnownMarketplaces?.[m]) merged.extraKnownMarketplaces[m] = mine.extraKnownMarketplaces[m];
   }
   merged.permissions = { ...mine.permissions, ...theirs.permissions,
     allow: list(mine.permissions?.allow, theirs.permissions?.allow, pastSet((s) => s.permissions?.allow || [])),
@@ -364,12 +375,21 @@ if (!fs.existsSync(hook) || lf(fs.readFileSync(hook, "utf8")) !== lf(hookText.to
   }
   out.replaced.push(".git/hooks/pre-commit (not in git; every worktree uses it)");
 }
-for (const f of ["docker-compose.yml", "docker/app.Dockerfile", ".dockerignore"]) {
+// The staging overlay is new: a project without it gets it; one that has it keeps its own.
+if (!exists("docker-compose.staging.yml")) {
+  write("docker-compose.staging.yml", fs.readFileSync(path.join(kit, "docker", "docker-compose.staging.yml")));
+  out.added.push("docker-compose.staging.yml (rename its service to your backend's when it is not app)");
+}
+for (const f of ["docker-compose.yml", "docker-compose.staging.yml", "docker/app.Dockerfile", ".dockerignore"]) {
   const kitFile = path.join(kit, "docker", path.basename(f));
   const changed = project.kitVersion && git(playbook, ["diff", "--quiet", project.kitVersion, "HEAD", "--", `kit/docker/${path.basename(f)}`]) === null;
   if (changed) out.notes.push(`${f} is yours, so it was not changed; the kit's ${path.relative(playbook, kitFile).split(path.sep).join("/")} has changed since your version: compare them.`);
 }
 const main = mainCheckout(root);
+// Plugins per role (settings.local.json of each role worktree): claude-mem for the Lead, no Product Management elsewhere.
+const withPlugins = ROLES.filter((r) => fs.existsSync(worktreePath(main, r)));
+if (withPlugins.length && !dry) for (const r of withPlugins) applyRolePlugins(worktreePath(main, r), r);
+if (withPlugins.length) out.notes.push(`Plugins per role set in the settings.local.json of ${withPlugins.join(", ")}; each session picks them up when it starts again (or /reload-plugins).`);
 const retired = Object.keys(RETIRED_ROLES).filter((r) => fs.existsSync(worktreePath(main, r)));
 if (retired.length) out.notes.push(`Retired roles: ${retired.map((r) => `${r} (its work goes to ${RETIRED_ROLES[r]})`).join(", ")}. The Lead moves their open work, the owner closes their sessions, then removes each worktree: git worktree remove "${worktreePath(main, retired[0])}".`);
 if (!project.models) out.notes.push("Models: chosen per task now (rule \"Models\"); the project runs the claude mode. For DeepSeek on the Dev, Frontend and Test: /cb-model mode deepseek.");

@@ -126,6 +126,59 @@ const readCases = [
   ["backups/staging.bak", "block"],
   ["data/old.dump", "block"],
   ["docs/tech/ops/environments.md", "allow"],
+  // secrets: real .env files, never the committed example
+  [".env.local", "block"],
+  ["E:\\proj-wt\\dev\\.env.local", "block"],
+  ["app/.env", "block"],
+  [".env.staging", "block"],
+  [".env.example", "allow"],
+  ["docs/env.md", "allow"],
+];
+
+// .env files and environment dumps, read through the shell, in any role; subagents run through the same hook.
+const secretCases = [
+  ["dev", "cat .env.local", "block"],
+  ["lead", "rtk grep DATABASE_URL .env.local", "block"],
+  ["test", "Get-Content E:\\proj-wt\\test\\.env.local", "block"],
+  ["dev", "type .env", "block"],
+  ["dev", "sed -n 1,5p app/.env", "block"],
+  ["dev", "bash -c \"cat .env.local | head\"", "block"],
+  ["dev", "source .env.local && echo ok", "block"],
+  ["dev", "node -e \"console.log(require('fs').readFileSync('.env.local','utf8'))\"", "block"],
+  ["dev", "python -c \"print(open('.env').read())\"", "block"],
+  ["dev", "printenv", "block"],
+  ["dev", "env", "block"],
+  ["dev", "env | grep DATABASE", "block"],
+  ["dev", "env -0", "block"],
+  ["dev", "Get-ChildItem env:", "block"],
+  ["dev", "gci Env:DATABASE_URL", "block"],
+  ["dev", "$env:DATABASE_URL", "block"],
+  ["dev", "echo $env:DATABASE_URL", "block"],
+  ["dev", "docker compose config", "block"],
+  ["dev", "docker-compose -f docker-compose.yml config", "block"],
+  ["dev", "docker inspect team-api-1", "block"],
+  ["dev", "docker exec team-api-1 printenv", "block"],
+  // what stays allowed
+  ["dev", "cat .env.example", "allow"],
+  ["dev", "cp .env.example .env.local", "allow"],
+  ["dev", "env CI=1 pnpm test", "allow"],
+  ["dev", "$env:CI = '1'; pnpm test", "allow"],
+  ["dev", "docker compose config --services", "allow"],
+  ["dev", "docker inspect --format \"{{.State.Health.Status}}\" team-api-1", "allow"],
+  ["dev", "node scripts/run.mjs staging", "allow"],
+  ["dev", "node -e \"console.log(1)\"", "allow"],
+  ["dev", "grep -rn DATABASE_URL docs/", "allow"],
+];
+
+const { checkSearch } = require("./role-guard.cjs");
+const searchCases = [
+  [{ pattern: "DATABASE_URL", path: ".env.local" }, "block"],
+  [{ pattern: "KEY", glob: ".env*" }, "block"],
+  [{ pattern: "KEY", glob: "**/.env.*" }, "block"],
+  [{ pattern: "x", path: "backups/" }, "block"],
+  [{ pattern: "KEY", glob: ".env.example" }, "allow"],
+  [{ pattern: "DATABASE_URL", path: "src/" }, "allow"],
+  [{ pattern: "DATABASE_URL" }, "allow"],
 ];
 
 let failed = 0;
@@ -136,6 +189,8 @@ const report = (kind, role, subject, expected, got) => {
 };
 for (const [role, cmd, expected] of commandCases) report("cmd ", role, cmd, expected, outcome(checkCommand(cmd, role, process.cwd())));
 for (const [file, expected] of readCases) report("read", "any", file, expected, outcome(checkRead(file)));
+for (const [role, cmd, expected] of secretCases) report("cmd ", role, cmd, expected, outcome(checkCommand(cmd, role, process.cwd())));
+for (const [ti, expected] of searchCases) report("grep", "any", JSON.stringify(ti), expected, outcome(checkSearch(ti)));
 for (const [role, file, expected] of editCases) report("edit", role, file, expected, outcome(checkEdit(file, role, root, root)));
 
 // Roles the project does not have leave their paths to the Dev; with them, the Dev keeps out.
@@ -174,8 +229,32 @@ const multiCases = [
 ];
 for (const [dir, role, file, expected] of multiCases) report("edit", role, `${path.basename(dir)}/${file}`, expected, outcome(checkEdit(path.join(dir, file), role, dir, dir)));
 for (const dir of [small, full, split]) fs.rmSync(dir, { recursive: true, force: true });
+// Git runs where -C, cd or --git-dir point: the branch is read there, not in the session's folder.
+const { execFileSync } = require("child_process");
+const repo = (branch) => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), "guard-git-"));
+  const g = (...x) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", ...x], { cwd: d, stdio: "ignore" });
+  g("init", "-q", "-b", branch);
+  g("commit", "-q", "--allow-empty", "-m", "x");
+  return d;
+};
+const onMain = repo("main");
+const onDev = repo("role/dev");
+const dirCases = [
+  ["dev", `git -C "${onMain}" push origin`, "block"],
+  ["dev", `git -C "${onMain}" push origin HEAD`, "block"],
+  ["dev", `cd "${onMain}" && git push origin`, "block"],
+  ["dev", `git --git-dir="${onMain}/.git" push origin`, "block"],
+  ["dev", "git push origin", "allow"],
+  ["lead", `git -C "${onMain}" push origin`, "ask"],
+  ["lead", `cd "${onMain}" && git push origin`, "ask"],
+  ["lead", `git -C "${path.join(onMain, "missing")}" push origin`, "ask"],
+  ["lead", `git -C "${onDev}" push origin`, "allow"],
+];
+for (const [role, cmd, expected] of dirCases) report("dir ", role, cmd.replace(os.tmpdir(), "<tmp>"), expected, outcome(checkCommand(cmd, role, onDev)));
+for (const d of [onMain, onDev]) fs.rmSync(d, { recursive: true, force: true });
 const levelCases = roleCases;
 
-const total = readCases.length + commandCases.length + editCases.length + levelCases.length + multiCases.length;
+const total = dirCases.length + readCases.length + secretCases.length + searchCases.length + commandCases.length + editCases.length + levelCases.length + multiCases.length;
 console.log(`\n${total - failed}/${total} passed`);
 process.exit(failed ? 1 : 0);

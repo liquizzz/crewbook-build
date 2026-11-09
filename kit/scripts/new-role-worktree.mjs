@@ -11,7 +11,7 @@ import { execFileSync, execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { PORTS, RETIRED_ROLES, ROLES, roleTitle } from "./project-level.mjs";
+import { PORTS, RETIRED_ROLES, ROLES, applyRolePlugins, roleTitle } from "./project-level.mjs";
 
 const role = (process.argv[2] || "").toLowerCase();
 if (RETIRED_ROLES[role]) {
@@ -60,6 +60,8 @@ sh(`git worktree add "${wtDir}" ${branch}`);
 
 fs.mkdirSync(path.join(wtDir, ".claude"), { recursive: true });
 fs.writeFileSync(path.join(wtDir, ".claude", "role"), `${role}\n`);
+// The role's plugins (claude-mem for the Lead; no Product Management outside the Lead), in settings.local.json.
+applyRolePlugins(wtDir, role);
 
 const example = path.join(wtDir, ".env.example");
 const local = path.join(wtDir, ".env.local");

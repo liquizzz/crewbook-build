@@ -25,7 +25,8 @@ fi
 #    not an obvious placeholder; private keys; common cloud and AI key formats.
 secret_kv='(password|passwd|secret|api[_-]?key|access[_-]?key|auth[_-]?token|private[_-]?key)[a-z0-9_]*["'\'']?[[:space:]]*[:=][[:space:]]*["'\'']?[^[:space:]"'\'']{6,}'
 known_formats='-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{30,}|xox[abp]-[A-Za-z0-9-]{10,}'
-# Values read from the environment or config are fine, so are placeholders.
+# Values read from the environment or config are fine, so are placeholders. Each credential found is judged on its own
+# text (grep -o), never on the rest of its line: a comment such as "// example" next to a real value excuses nothing.
 placeholders='CHANGE_ME|<[^>]*>|\$\{[^}]*\}|\$[A-Z_]+|environ|getenv|process\.env|Environment\.|config\[|settings\.|your[_-]|example|placeholder|dummy|xxxx|\*\*\*\*'
 # Code that passes a value along is fine too: an unquoted name followed by a call, an attribute,
 # an index or the end of an argument (password=read_secret("PG"), api_key=cfg.key, password=pg_password,).
@@ -34,11 +35,11 @@ code_values='(password|passwd|secret|api[_-]?key|access[_-]?key|auth[_-]?token|p
 # The hook and its tests are skipped: their patterns and cases would match themselves.
 hits=$(git diff --cached -U0 --no-color --diff-filter=ACMR -- . ':(exclude,glob)**/hooks/pre-commit' ':(exclude,glob)**/hooks/pre-commit.test.mjs' \
   | grep -E '^\+' | grep -vE '^\+\+\+ ' \
-  | grep -iE "$secret_kv|$known_formats" \
+  | grep -oiE "$secret_kv|$known_formats" \
   | grep -viE "$placeholders" \
-  | grep -vE "$code_values" || true)
+  | grep -viE "$code_values" || true)
 if [ -n "$hits" ]; then
-  echo "Secret check: possible credential(s) in staged lines:"
+  echo "Secret check: possible credential(s) in staged lines (the matching part):"
   echo "$hits" | cut -c1-120 | sed 's/^/  /'
   status=1
 fi
