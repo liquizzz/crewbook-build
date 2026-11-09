@@ -1,6 +1,4 @@
-# Chapter 5: Continue and maintain your project
-
-← [Back: Chapter 4: Try, release and deploy](04-try-release-and-deploy.md) · [Contents](../../README.md#read-the-guide) · [Next: Chapter 6: Design and frontend](06-design-and-frontend.md) →
+# Chapter 6: Continuity
 
 **Purpose:** close, clear or move any session and have it pick up its work within a minute, and notice at once when one has quietly stopped.
 
@@ -86,8 +84,8 @@ Read reports and PRs on GitHub from the web or your phone, and drive the session
 
 **Claude asks before:** the update, and its merge, even with `merge all`. After the merge it tells every session to merge `dev` and restart.
 
-A project made before `/cb-update` existed follows the [first-update instructions](appendix-b-kit.md#first-update-for-an-older-project). See the [update reference](appendix-b-kit.md#update-the-kit-in-a-running-project) for how each kind of file is handled.
+A project made before `/cb-update` existed runs the first update by hand ([How to run](../../HOW-TO-RUN.md#4-get-kit-updates-later)).
 
----
+> **Token tip:** a fresh session that reads its hand-off is cheaper than a long one compacted twice. Clear, do not compact again.
 
-← [Back: Chapter 4: Try, release and deploy](04-try-release-and-deploy.md) · [Contents](../../README.md#read-the-guide) · [Next: Chapter 6: Design and frontend](06-design-and-frontend.md) →
+Next: [Chapter 7: Products with screens](07-products-with-screens.md).

@@ -1,17 +1,15 @@
 # Software Requirements Specification: Crewbook Build for Claude
 
-Crewbook's own requirements: what `kit/init.mjs` and the kit it installs must do, and what the book describes. Structure follows Crewbook's [SRS template](../../templates/srs.md). The reasons behind each requirement are in [decisions.md](decisions.md) (DEC-0NN).
+The requirements of the playbook itself: what `kit/init.mjs` and the kit it installs must do, and what the book promises. Structure follows the playbook's own [SRS template](../../templates/srs.md). The reasons behind each requirement are in [decisions.md](decisions.md) (DEC-0NN).
 
-**Version:** 0.37 · **Status:** Current kit and book, with a delivery-first guide and developer-focused discovery · **Last updated:** 2026-11-09
+**Version:** 0.31 · **Status:** Describes `main` after the PO was removed and the models per role added (2026-11-04) · **Last updated:** 2026-11-05
 
 ## Revision history
 Newest first. A change to the kit or the book that changes behaviour adds a row here in the same commit.
 
 | SRS version | Commit | Date | Decisions | Sections changed | Summary |
 |---|---|---|---|---|---|
-| 0.37 | (this commit) | 2026-11-09 | DEC-101, DEC-102 | §1, §3, §8 | Guide follows the delivery sequence, reference material is grouped in appendices, and public discovery describes the current developer workflow (FR-116 to FR-118) |
-| 0.36 | 492c4b1 | 2026-11-09 | DEC-098 to DEC-100 | §1, §3, §6, §8 | Benefits-first copy for developers using Claude Code; budget/token chapter removed; Back, Contents and Next navigation throughout the book (FR-115, FR-116) |
-| 0.35 | 2441bf0 | 2026-11-09 | DEC-097 | §3 | L3 starts on Opus medium; no task starts on Opus high (FR-097) |
+| 0.35 | (this commit) | 2026-11-09 | DEC-097 | §3 | L3 starts on Opus medium; no task starts on Opus high (FR-097) |
 | 0.34 | 0144621 | 2026-11-09 | DEC-095, DEC-096 | Title, §1, §3, §8 | Eight fixes from a second Codex review (FR-101, FR-103, FR-109, FR-111, FR-112, FR-114); the name Crewbook Build for Claude and its audience |
 | 0.33 | 9a62aaa | 2026-11-09 | DEC-090 to DEC-094 | §3, §6, §8 | After the first trial of the new kit: secrets kept out of sessions, plugins per role, the trial's script fixes and `db-setup.mjs`, reports through the Lead, stalled sessions, approvals asked alone (FR-109 to FR-113); a push's branch read where git runs, credentials judged one by one, `/cb-review` pinned to the PR's head (FR-015, FR-069, FR-102) |
 | 0.32 | d6d1d73 | 2026-11-05 | DEC-081 to DEC-089 | §2, §3, §7, §8 | A leaner kit: roles chosen at setup and split by layer, setup in five questions and three approvals, tasks with reach and signals, models per task, reviews once, merge levels, shared environments, weekly measures, one plugin per kind of work (FR-096 to FR-108) |
@@ -50,14 +48,14 @@ Newest first. A change to the kit or the book that changes behaviour adds a row 
 ## 1. Introduction
 
 ### 1.1 Purpose and scope
-Crewbook Build for Claude gives developers who already build with Claude Code a delivery workflow using role sessions, task PRs, staging and release handovers. Its three approval checkpoints are the plan, each milestone and each release. It has two parts:
+Crewbook Build for Claude lets one owner deliver a real software project with a team of Claude Code sessions, under a fixed process with gates the owner approves. It has two parts:
 - **The kit** (`kit/`, MIT): `init.mjs` and the files it installs into a project (project `CLAUDE.md`, role files, hooks, slash commands, scripts, GitHub workflows and forms, Docker files, document templates, `START-HERE.md`).
 - **The book** (`docs/book/`, CC BY 4.0): why each step works the way it does, as prompts, and the templates in `templates/`.
 
 Out of scope: teaching programming; choosing or running production servers (each release is a Docker image the owner runs where they like); a fast prototype mode (DEC-007); teams of several people with their own tools (DEC-011).
 
 ### 1.2 Definitions
-The book's glossary ([Appendix A](../book/appendix-a-quick-reference.md#crewbook-terms)) applies. In addition:
+The book's glossary ([chapter 0](../book/00-introduction.md#words)) applies. In addition:
 
 | Term | Meaning |
 |---|---|
@@ -88,7 +86,7 @@ The book's glossary ([Appendix A](../book/appendix-a-quick-reference.md#crewbook
 - GitHub for issues, PRs, Actions, the board and the image registry (`ghcr.io`); the free plan is enough.
 
 ### 2.3 Look and feel
-n/a: the kit itself has no application screens. Products made with it get a look-and-feel round at setup (FR-043).
+n/a: the playbook has no screens. Products made with it get a look-and-feel round at setup (FR-043).
 
 ### 2.4 Constraints and assumptions
 - Everything in the repo is written in English; owner-facing session output uses the owner's language (DEC-018, DEC-045).
@@ -109,7 +107,7 @@ n/a: the kit itself has no application screens. Products made with it get a look
 | FR-008 | Init shall install the secret-check pre-commit hook | DEC-038 | A staged line with a credential pattern blocks the commit |
 | FR-009 | Init shall keep existing files unless `--force` is given, and never write secrets | | Second run lists "Kept existing" |
 | FR-010 | Init's last lines shall name the Lead's folder, the session name and `/cb-setup`, and say setup comes first | DEC-026 | Report text |
-| FR-079 | Init shall record the kit's version (`kitVersion`, the Crewbook repository commit) in `.claude/project.json`. `kit/update.mjs`, run by the Lead through `/cb-update` in its worktree with a clean tree, shall bring a running project up to the kit's version: replace kit files (deleting dropped ones only when untouched), replace `.github` files only when untouched, merge `CLAUDE.md` (keeping the project's title, description, Stage, Documents, Open decisions, stack lines, own rules, rows and sections) and `.claude/settings.json` (keeping every plugin, the project's permissions and hooks), never change Docker files, `CHANGELOG.md`, `README.md` or `docs/` outside `docs/templates/`, list what it did and the kit decisions since the old version, and write nothing with `--dry-run`. The PR always waits for the owner | DEC-066 | `kit/update.test.mjs`: an aged project is updated with each kind of file handled as stated; a second run changes nothing; a dirty tree and `main` are refused; a copy of the round-3 trial project updated with its description, decisions, stack, rules and design plugins kept |
+| FR-079 | Init shall record the kit's version (`kitVersion`, the playbook commit) in `.claude/project.json`. `kit/update.mjs`, run by the Lead through `/cb-update` in its worktree with a clean tree, shall bring a running project up to the kit's version: replace kit files (deleting dropped ones only when untouched), replace `.github` files only when untouched, merge `CLAUDE.md` (keeping the project's title, description, Stage, Documents, Open decisions, stack lines, own rules, rows and sections) and `.claude/settings.json` (keeping every plugin, the project's permissions and hooks), never change Docker files, `CHANGELOG.md`, `README.md` or `docs/` outside `docs/templates/`, list what it did and the kit decisions since the old version, and write nothing with `--dry-run`. The PR always waits for the owner | DEC-066 | `kit/update.test.mjs`: an aged project is updated with each kind of file handled as stated; a second run changes nothing; a dirty tree and `main` are refused; a copy of the round-3 trial project updated with its description, decisions, stack, rules and design plugins kept |
 
 ### 3.2 Roles (`scripts/roles.mjs`, `scripts/project-level.mjs`)
 | ID | Requirement | Origin | Acceptance |
@@ -196,10 +194,6 @@ n/a: the kit itself has no application screens. Products made with it get a look
 | FR-112 | `scripts/db-setup.mjs` shall create one database and login per role and environment on the shared Postgres, write each checkout's connection strings without printing them, and check, reset, migrate, seed, back up and restore them; a restore into a project database shall keep its login as owner (DEC-095) | DEC-092 | `init.test.mjs` (db-setup) |
 | FR-113 | Roles shall report to the Lead and take tasks only from the Lead and the owner; the Lead shall relay the owner's answers word for word, find stalled sessions and list them in `/cb-progress`; setup shall ask roles, autonomy and the idea together; an approval shall be asked alone and count only when the answer approves; `usage.mjs` shall count messages from other sessions apart | DEC-093 | `init.test.mjs` (relay) |
 | FR-114 | `model.mjs up` shall move a task to the first ladder step above its current model and effort, never skipping a step and never lowering it | DEC-095 | `init.test.mjs` (models off the ladder) |
-| FR-115 | Public documentation shall address developers already using Claude Code and lead with delivery benefits. Usage optimization may appear briefly as a supporting advantage in the opening, without a dedicated budget/token chapter or comparative cost pitch. Commands and operational instructions shall remain precise | DEC-098, DEC-099 | `README.md`, `HOW-TO-RUN.md`, book chapter 0, appendix C, social preview |
-| FR-116 | Every chapter and appendix shall provide Back, Contents and Next links at the top and bottom, following chapters 0-7 and appendices A-E in order. Chapter 0 shall link back to the README; appendix E shall link forward to the setup guide | DEC-100, DEC-101 | `docs/book/*.md` |
-| FR-117 | The main guide shall follow setup, planning, building, release and continuity, with optional design and team configuration chapters. Chapter 1 shall be the canonical setup guide; HOW-TO-RUN shall be a short entry point. Appendices shall group quick reference, configuration, troubleshooting, templates with checklist, and standards | DEC-101 | `README.md`, `HOW-TO-RUN.md`, `docs/book/*.md` |
-| FR-118 | Repository discovery shall describe a Claude Code workflow kit for experienced developers, using the current role model and descriptive topics. The SEO content plan shall distinguish existing documentation from proposed content and shall not invent search demand or comparative results | DEC-102 | GitHub About and topics, `README.md`, `docs/seo-plan.md` |
 | FR-040 | `/cb-build try [#n]` shall code and run the task with no tests and no merge, commit `<type>(<module>): <summary> (#n)`, push the role branch and keep the issue In progress | DEC-030 | `build.md` |
 | FR-041 | `/cb-build done [#n]` shall confirm the level and reach against the diff (raise, never lower), run the checks of that level, the role's own review in a fresh context on the final commit, `ci-local` when CI runs here, then open a PR into `dev` naming the commit reviewed and the PASS, and move the issue to In review | DEC-083, DEC-085 | `commands/cb-build.md`, PR template |
 | FR-042 | The Lead shall review every PR (`code-review`, plus `security-review` for L3), merge into `dev`, and when CI on `dev` is green close the issue and move it to Done | DEC-031 | Closed issue in Done |
@@ -289,7 +283,7 @@ n/a: the kit itself has no application screens. Products made with it get a look
 | NFR-006 | Maintainability | Kit tests: init, role-guard, release; one decision log and this SRS; new code files carry the SPDX and credit lines | CI |
 | NFR-007 | Portability | Projects run from the release image with `docker compose up` | `/cb-release` check |
 | NFR-008 | Safety | n/a | |
-| NFR-009 | Cost (not in 25010) | Each task on the cheapest model that does it well (DEC-084); context by phase; reviews and CI runs reused while valid; services once per machine; measured weekly (DEC-088). This is an internal optimization objective, not a comparative marketing criterion (DEC-099) | `scripts/model.mjs`, `scripts/usage.mjs`, kit rules |
+| NFR-009 | Cost (not in 25010) | Each task on the cheapest model that does it well (DEC-084); context by phase; reviews and CI runs reused while valid; services once per machine; measured weekly (DEC-088) | `scripts/usage.mjs`; book chapter 9 |
 
 ## 7. Removed requirements
 
@@ -328,10 +322,6 @@ n/a: the kit itself has no application screens. Products made with it get a look
 
 | Requirement | Decisions | Kit files | Tests | Status |
 |---|---|---|---|---|
-| FR-115 | DEC-098, DEC-099 | `README.md`, `HOW-TO-RUN.md`, `docs/book/`, `docs/assets/social-preview.html` | Editorial review, local link and command checks, rendered preview | Delivered |
-| FR-116 | DEC-100, DEC-101 | `docs/book/*.md` | Forward/backward sequence, boundary, link and anchor checks | Delivered |
-| FR-117 | DEC-101 | `README.md`, `HOW-TO-RUN.md`, `docs/book/*.md` | Editorial review, link and anchor checks, source comparison | Delivered |
-| FR-118 | DEC-102 | GitHub repository metadata, `README.md`, `docs/seo-plan.md` | Metadata readback, editorial and source review | Delivered |
 | FR-011, FR-012, FR-066, FR-089 | DEC-081 | `kit/scripts/roles.mjs`, `kit/scripts/project-level.mjs`, `kit/.claude/hooks/role-guard.cjs`, `kit/.claude/roles/` | `kit/init.test.mjs` (roles), `role-guard.test.cjs` (roles, longer path) | Delivered |
 | FR-026, FR-027, FR-029 to FR-031, FR-035 | DEC-082 | `kit/commands/cb-setup.md`, `kit/CLAUDE.md`, `templates/function-tree.md`, `templates/architecture-options.md` | `kit/init.test.mjs` (setup, approvals) | Delivered; to try on a new project |
 | FR-039, FR-041, FR-067, FR-096 | DEC-083 | `kit/commands/cb-plan.md`, `kit/commands/cb-build.md`, `kit/.github/ISSUE_TEMPLATE/task.yml`, PR template | `kit/init.test.mjs` (levels, task form) | Delivered |

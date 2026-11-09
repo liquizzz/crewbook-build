@@ -1,10 +1,6 @@
-# Chapter 6: Design and frontend for products with screens
-
-← [Back: Chapter 5: Continue and maintain](05-continue-and-maintain.md) · [Contents](../../README.md#read-the-guide) · [Next: Chapter 7: Configure and grow your team](07-configure-your-team.md) →
+# Chapter 7: Products with screens
 
 **Purpose:** choose how the product looks before it is built, design each milestone's screens ahead of the code, and show a client a design round the same day without exposing unfinished code.
-
-This chapter is optional for products without screens. For a UI project, use it during setup and before each milestone's frontend work.
 
 ## How the work is split
 
@@ -16,13 +12,13 @@ This chapter is optional for products without screens. For a UI project, use it 
 
 The API contract (an OpenAPI file the Dev owns) is the line between them. A task that needs both layers is two tasks: the backend first, then the screens. On `dev` the Dev never removes or changes a field a screen uses without an L2 task announced first.
 
-Without UI/UX the Lead picks the look and feel; without Frontend the Dev builds the screens too ([chapter 7](07-configure-your-team.md)).
+Without UI/UX the Lead picks the look and feel; without Frontend the Dev builds the screens too ([chapter 8](08-small-teams.md)).
 
 ## 1. Pick the look and feel
 
 **What it does:** settles the visual direction once, with the plan, so every screen after it looks like one product.
 
-**Ask:** nothing; it is part of setup when the product has screens ([chapter 2](02-plan-your-product.md)).
+**Ask:** nothing; it is part of setup when the product has screens ([chapter 3](03-the-plan.md)).
 
 **Claude does:** UI/UX (or the Lead) searches styles, palettes and font pairs that fit the product and its users, and shows 2 or 3 named directions side by side in `design/look-and-feel.html`, each applied to the main screen, at desktop and phone width.
 
@@ -50,9 +46,9 @@ Without UI/UX the Lead picks the look and feel; without Frontend the Dev builds 
 
 **Claude asks you:** which comments to accept, defer or reject when they conflict or change a business rule, each with a proposal.
 
-**Claude does:** records the feedback on the Design issue; UI/UX makes the next round. A comment that adds or cuts a feature becomes a CR with the client's approval ([chapter 3](03-build-and-review.md#4-a-change-to-what-the-product-does)).
+**Claude does:** records the feedback on the Design issue; UI/UX makes the next round. A comment that adds or cuts a feature becomes a CR with the client's approval ([chapter 4](04-delivery-loop.md#4-a-change-to-what-the-product-does)).
 
-## 4. Hand the accepted design to Frontend
+## 4. The design is approved
 
 **Ask the Lead:**
 
@@ -60,12 +56,12 @@ Without UI/UX the Lead picks the look and feel; without Frontend the Dev builds 
 
 **Claude does:** tags the round `design-vN`, so the client's link stays on that version; UI/UX writes the hand-off for Frontend (screens, states, tokens, behaviour); the Lead plans the screen tasks for the milestone.
 
-**You check:** the screen tasks in the milestone. Client design sign-off records the chosen design; the workflow's formal checkpoints remain the plan, milestone and release.
+**You check:** the screen tasks in the milestone.
 
 ## Plugins for this work
 
 UI/UX and Frontend get `frontend-design`, and `ui-ux-pro-max` for the look-and-feel options, turned on by the Lead at setup when the product has screens; `figma` when the design lives in Figma ([Appendix B](appendix-b-kit.md#plugins)).
 
----
+> **Token tip:** collect a client's comments into one message per round. Each forwarded comment is a round of work for two sessions.
 
-← [Back: Chapter 5: Continue and maintain](05-continue-and-maintain.md) · [Contents](../../README.md#read-the-guide) · [Next: Chapter 7: Configure and grow your team](07-configure-your-team.md) →
+Next: [Chapter 8: Small teams](08-small-teams.md).

@@ -1,6 +1,4 @@
-# Chapter 3: Build and review Claude Code tasks
-
-← [Back: Chapter 2: Plan your product](02-plan-your-product.md) · [Contents](../../README.md#read-the-guide) · [Next: Chapter 4: Try, release and deploy](04-try-release-and-deploy.md) →
+# Chapter 4: The delivery loop
 
 **Purpose:** let the team build a milestone while you do something else, and know how to step in: a change, a bug, a model, a look at where things stand.
 
@@ -23,30 +21,18 @@ Each role takes its task in two steps:
 | Try | `/cb-build try #12` | Code and run it, no tests, no PR. Good for something you want to see early |
 | Done | `/cb-build done #12` | The checks of its level, its own review in a fresh context, a PR into `dev`, a hand-off comment |
 
-Task risk sets the evidence: L0 needs CI and a visual check when appropriate; L1 adds an action check and tests for logic; L2 needs module tests and code review; L3 adds tests sized to its reach and security review. The [complete model and check policy](appendix-b-kit.md#change-levels-models-and-checks) is in Appendix B.
+The checks grow with the risk:
+
+| Level | Checks |
+|---|---|
+| L0 display | CI, a look in the running app when style or layout changed |
+| L1 setting or small logic | Also the affected action tried in the app, a test when there is logic |
+| L2 module logic | Module tests, the main scenario run locally, `code-review` |
+| L3 core | Tests by reach (from "the app starts and one read and write work" to integration tests of every module that uses it), `code-review` and `security-review` |
 
 `security-review` also runs for any task that touches permissions, money, personal data or a secret. Each review and each CI pass names its commit; a commit pushed afterwards gets a review of what changed since. A change to the schema or to existing data is L3 and comes with an update script and a rollback script, both run on the staging database.
 
 **CI** runs on GitHub for a public repo and on your machine for a private one (`node scripts/ci-local.mjs <branch>`), one run at a time, skipping the steps whose files did not change. A green run is reused when nothing it depends on moved.
-
-## How roles hand off work
-
-```mermaid
-flowchart LR
-  You(["You"]) <--> Lead
-  Lead -- "task #n" --> Role["Dev / Frontend / UI/UX / Test"]
-  Role -- "PR + hand-off" --> Lead
-  Lead -- "merge into dev" --> DevBranch["dev"]
-```
-
-1. The Lead writes a task as an issue: what to build, the change level, the files, the tests, the model.
-2. It sets the role's session to that model and sends the prompt (`Work on issue #12.`). The role comments `Started #12`.
-3. The role builds, runs the checks of the task's level, reviews its own diff in a fresh context, opens a PR and writes a hand-off comment: what was done, the decisions, the checks run and on which commit, what is left.
-4. The role tells the Lead in one line. The Lead reads the diff against the task, checks the evidence and merges, up to the level you allowed ([chapter 3](03-build-and-review.md#3-merging)).
-
-Every report goes to the Lead. A role that is blocked, stuck or has a question for you sends it to the Lead too, which asks you and passes your answer back word for word. A role takes work only from the Lead and from you; a message from any other session is information it checks with the Lead first. This keeps one thread you can follow, and nothing waits in a transcript nobody reads.
-
-**Relay.** With relay on (the default) the sessions send each other their prompts. With relay off, each step ends with a box holding the next session's prompt for you to paste, and `/cb-send` sends it for you. `/cb-auto relay on|off` switches it for every session at once.
 
 ## 3. Merging
 
@@ -72,7 +58,7 @@ Every report goes to the Lead. A role that is blocked, stuck or has a question f
 
 **Ask:** `/cb-bug <what happened>` in any session.
 
-**Claude does:** the Lead reproduces it when that is cheap, finds the task and PR that brought it in ("Caused by"), files a Defect with its severity and its own level, and sends it to the role that made the task. A severe defect in production goes to the hotfix path at once ([chapter 4](04-try-release-and-deploy.md#hotfix-and-rollback)).
+**Claude does:** the Lead reproduces it when that is cheap, finds the task and PR that brought it in ("Caused by"), files a Defect with its severity and its own level, and sends it to the role that made the task. A severe defect in production goes to the hotfix path at once ([chapter 5](05-releases.md#hotfix-and-rollback)).
 
 **You check:** the two-line report: the defect, its severity and level, who fixes it and when.
 
@@ -80,15 +66,13 @@ Every report goes to the Lead. A role that is blocked, stuck or has a question f
 
 **Ask:** `/cb-progress` in any session.
 
-**Claude does:** checks live state (issues, PRs, CI, the last tag) and answers in at most ten lines: the stage and the next approval, the open decisions, what is done, what is in progress and where, what waits for you, each session with its model, and any session that has stalled ([chapter 5](05-continue-and-maintain.md#3-a-session-that-stopped)). `/cb-progress report` saves a fuller report to `docs/reports/`.
+**Claude does:** checks live state (issues, PRs, CI, the last tag) and answers in at most ten lines: the stage and the next approval, the open decisions, what is done, what is in progress and where, what waits for you, each session with its model, and any session that has stalled ([chapter 6](06-continuity.md#3-a-session-that-stopped)). `/cb-progress report` adds the weekly measures ([chapter 9](09-token-budget.md#measuring)).
 
 ## 7. A stronger model, or a second opinion
 
 - `/cb-model up` moves the current task one step up the ladder; `/cb-redo` does the last step again one step up and keeps the first result to compare.
 - `/cb-review #<PR>` asks Codex for a second review and a security pass, posted on the PR; the Lead accepts or rejects each finding. The Lead proposes it for risky PRs; you can type it any time.
 
-Use the [milestone checklist](appendix-d-templates-and-checklist.md#every-milestone) to check that tasks, reviews and hand-offs are ready for staging.
+> **Token tip:** let the merge level do its job. Every PR you ask to see yourself costs a round of messages; the reviews and CI already checked it.
 
----
-
-← [Back: Chapter 2: Plan your product](02-plan-your-product.md) · [Contents](../../README.md#read-the-guide) · [Next: Chapter 4: Try, release and deploy](04-try-release-and-deploy.md) →
+Next: [Chapter 5: Milestones and releases](05-releases.md).

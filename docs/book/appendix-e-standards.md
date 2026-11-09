@@ -1,24 +1,22 @@
 # Appendix E: Standards map
 
-← [Back: Appendix D: Templates and checklist](appendix-d-templates-and-checklist.md) · [Contents](../../README.md#read-the-guide) · [Next: Get started](../../HOW-TO-RUN.md) →
-
 **Purpose:** show which public standard or practice each part of Crewbook Build for Claude follows, and what it leaves out on purpose.
 
-Crewbook aims at software one owner can trust and maintain, with no lost documents and code that is easy to control. It follows each standard where that costs the owner no extra steps or choices; the rest is left out and listed below. Nothing here is a certification.
+Crewbook aims at software one owner can trust and maintain, with no lost documents and code that is easy to control. It follows each standard where that costs the owner no extra steps or choices; the rest is left out and listed below. Nothing here is a certification. Sessions never read this appendix, so it adds no tokens.
 
 ## What follows what
 
 | Crewbook part | Standard or practice | Where |
 |---|---|---|
-| Three owner approvals (the plan, each milestone, each release), each with what was checked and the evidence | Stage-Gate (phase reviews in PMI and PRINCE2), reduced to the decisions only the owner can make | [Chapter 2](02-plan-your-product.md), [chapter 4](04-try-release-and-deploy.md), [Appendix D](appendix-d-templates-and-checklist.md) |
+| Three owner approvals (the plan, each milestone, each release), each with what was checked and the evidence | Stage-Gate (phase reviews in PMI and PRINCE2), reduced to the decisions only the owner can make | Chapters 3 and 5, Appendix D |
 | SRS with `FR-xxx` and `NFR-xxx` IDs, revision history, traceability matrix | ISO/IEC/IEEE 29148 (requirements), short form | `templates/srs.md` |
 | NFR rows | ISO/IEC 25010 quality characteristics | SRS section 6 |
 | Test strategy, exit criteria, product risks | ISO/IEC/IEEE 29119-3 (test plan), short form | `templates/test-strategy.md` |
 | Stories with Given/When/Then acceptance, in the user's words | BDD; user stories from Scrum | `templates/user-story.md`, brief |
 | ADRs with rejected options | Architecture Decision Records (Nygard) | `docs/tech/adr/` |
 | Architecture diagrams | C4 model | `templates/c4.md` |
-| CRs, change levels L0-L3 with the reach of L3, checks and reviews by level | Change management (ITIL), risk-based testing | [Chapter 3](03-build-and-review.md), [model and check policy](appendix-b-kit.md#change-levels-models-and-checks) |
-| One role per session, its own paths, a guard on every command; secrets and real data kept out of every session | Least privilege, separation of duties | `.claude/hooks/role-guard.cjs`, [role guard reference](appendix-b-kit.md#the-role-guard) |
+| CRs, change levels L0-L3 with the reach of L3, checks and reviews by level | Change management (ITIL), risk-based testing | Chapter 4 |
+| One role per session, its own paths, a guard on every command; secrets and real data kept out of every session | Least privilege, separation of duties | `.claude/hooks/role-guard.cjs`, chapter 2 |
 | Board columns, one task in progress per role | Kanban with a WIP limit of one | `scripts/setup-board.mjs`, kit `CLAUDE.md` |
 | Commit format `type(module): summary (#n)` | Conventional Commits | kit `CLAUDE.md` |
 | Version from issue labels | Semantic Versioning | `scripts/release.mjs` |
@@ -43,7 +41,3 @@ No extra steps. `init` turns on Dependabot alerts and fixes, plus secret scannin
 ```
 gh attestation verify oci://ghcr.io/<owner>/<repo>-app:v0.1.0 -R <owner>/<repo>
 ```
-
----
-
-← [Back: Appendix D: Templates and checklist](appendix-d-templates-and-checklist.md) · [Contents](../../README.md#read-the-guide) · [Next: Get started](../../HOW-TO-RUN.md) →

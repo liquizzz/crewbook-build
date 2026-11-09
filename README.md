@@ -1,14 +1,10 @@
 # Crewbook Build for Claude
 
-Build with Claude Code. Lead the team.
+Build with Claude Code sessions that share a plan, clear responsibilities and a review process.
 
-Crewbook is an open-source Claude Code workflow kit for developers building products and client software. Give your project a Lead to turn the idea into a plan, a Dev to build the application, and Frontend, UI/UX and Test sessions when you need them. Move from the first brief through reviewed PRs to a version you can try on staging and hand over to a client.
+A playbook and starter kit for people with a technology background who know how a software project is made (requirements, design, build, test, release) and want Claude Code to run it, whether or not they write code themselves. One session, the Lead, turns requirements into a plan and tasks, and runs the other roles (a Dev, and Frontend, UI/UX and Test when the project needs them), each in its own worktree with its own rules. Work moves through issues, reviewed pull requests, CI, a `staging` environment and tagged releases. You decide three times: the plan, each milestone and each release. You stay responsible for the decisions: what is built, the trade-offs, and what ships.
 
-Talk to the Lead, review the plan and try the product as it grows. Choose how much the team handles on its own. The three checkpoints are simple: approve the plan, accept each milestone, approve each release.
-
-Models chosen per task and reusable checks also help keep usage under control as the project grows.
-
-[Start your first Crewbook project](HOW-TO-RUN.md). With Claude Code, Git, Node.js 20+, Docker with Compose v2 and the GitHub CLI installed:
+[Set up your first project](HOW-TO-RUN.md). You need Claude Code, Git, Node.js 20+, Docker with Compose v2 and the GitHub CLI.
 
 ```bash
 git clone https://github.com/liquizzz/crewbook-build.git
@@ -18,13 +14,13 @@ git clone https://github.com/liquizzz/crewbook-build.git
 node crewbook-build/kit/init.mjs
 ```
 
-Answer three setup questions, open the Lead's worktree and type `/cb-setup`. The generated `START-HERE.md` guides you from there.
+Three questions (Enter takes each suggestion), then open the Lead's worktree in Claude Code and type `/cb-setup`.
 
-## How the Claude Code workflow works
+## How it works
 
 ```mermaid
 flowchart LR
-  You(["You"]) <-- "plan, milestones, releases" --> Lead
+  You(["You"]) <-- "idea, three approvals" --> Lead
   Lead --> Dev["Dev: backend, API, infra"]
   Lead -.-> UX["UI/UX: design"]
   Lead -.-> FE["Frontend: screens"]
@@ -32,62 +28,55 @@ flowchart LR
 ```
 
 1. You describe it: in your own words, a document, a product you want to beat, an old system to replace. The Lead asks at most three questions at a time, each with a suggested answer.
-2. You approve the plan: a one-page overview of the product, recommended architecture, environments and first milestone, with the stories and technical detail behind it.
-3. The team builds. The Lead assigns tasks and models by risk. Implementers open PRs with the checks and reviews each change needs; the Lead merges up to the level you allow.
+2. You approve the plan: stories, a function tree of modules and screens, three architectures with their cost (one recommended), the environments, the first milestone. One page.
+3. The team builds. The Lead writes each task with its risk level and the cheapest model that can do it. Each role builds test-first, reviews its own diff in a fresh context, and opens a PR. The Lead merges up to the level you allow.
 4. You try the milestone on `staging`, with 3 to 5 things to try, what a wrong result looks like, and links to the evidence. "All pass", or what failed.
-5. You approve the release: a version tag, Docker images and a handover for the client. `node scripts/run.mjs v0.1.0` runs that version on your machine.
+5. You approve the release: a version tag, a Docker image, a handover for the client. `node scripts/run.mjs v0.1.0` runs it anywhere.
 
 ## What you get
 
 | | |
 |---|---|
-| A project ready for the team | One initializer sets up the kit, branches, the Lead's worktree and `START-HERE.md`, with GitHub repo, label and board setup when you choose it |
+| A ready project in one command | Branches, the Lead's worktree, a GitHub repo with labels and a kanban board, CI (on GitHub, or on your machine for free with a private repo), Docker, the plugins, and a `START-HERE.md` with every next step |
 | A team split by layer | The Lead and the Dev always; UI/UX, Frontend and Test when the project needs them, added later with `/cb-add-role`. Each role in its own worktree, on its own branch, inside its own folders |
-| Clear boundaries for the work | Role instructions and hooks check branch pushes, file ownership and sensitive operations, so sessions have a defined place to work and a path to hand changes over |
+| A guard on every command | One hook checks every command, read and edit in every session and subagent: only your own branch, only the Lead merges, no skipped checks, no reading database backups, no reading `.env` files or dumping the environment, production only by you |
 | Checks sized to the risk | Four change levels, from a text fix (CI and a look) to core code (tests by reach, a code review and a security review). Reviews and CI are tied to the commit and reused while still valid |
+| Lower cost, measured | A model per task, from Haiku to Opus, climbing one step only when stuck; sessions cleared when a phase ends; one database server per machine for every project; a weekly report of where the tokens went |
 | Records a client can follow | Change requests with the client's approval and price, decisions with the options rejected, a requirements document kept current, a handover for each release, and the chain from any behaviour back to the request that caused it |
-| A workflow you can keep using | Issues and hand-offs let a fresh session pick up the work; `/cb-update` prepares supported kit updates as a PR for you to review |
+| Updates that keep your work | `/cb-update` brings the newest kit into a running project through a PR you approve; your files, rules and decisions stay |
 
-## Read the guide
+## The book
 
 | | Chapter | Use it to |
 |---|---|---|
-| 0 | [Meet Crewbook](docs/book/00-introduction.md) | Understand the team and choose where to start |
-| 1 | [Start your first project](docs/book/01-setup.md) | Prepare your machine and open the Lead session |
-| 2 | [Plan your product](docs/book/02-plan-your-product.md) | Choose the roles, shape the requirements and approve the plan |
-| 3 | [Build and review](docs/book/03-build-and-review.md) | Deliver tasks, review PRs, request changes and report bugs |
-| 4 | [Try, release and deploy](docs/book/04-try-release-and-deploy.md) | Accept a milestone and deliver a version your client can run |
-| 5 | [Continue and maintain](docs/book/05-continue-and-maintain.md) | Resume work, recover a session, move machines and update the kit |
-| 6 | [Design and frontend](docs/book/06-design-and-frontend.md) | Choose the look and feel and turn designs into screens |
-| 7 | [Configure your team](docs/book/07-configure-your-team.md) | Adjust autonomy and add or pause role sessions |
-
-Read chapters 1 to 5 for the main delivery path. Use chapter 6 when your product has screens, and chapter 7 when you want to change how the team works.
-
-### Reference
-
-| Appendix | Look up |
-|---|---|
-| [A. Quick reference](docs/book/appendix-a-quick-reference.md) | Commands, common tasks and Crewbook terms |
-| [B. Kit and configuration](docs/book/appendix-b-kit.md) | Installed files, scripts, models, environments and plugins |
-| [C. Troubleshooting](docs/book/appendix-c-faq.md) | Setup problems and questions during delivery |
-| [D. Templates and checklist](docs/book/appendix-d-templates-and-checklist.md) | What to check and which document to use |
-| [E. Standards map](docs/book/appendix-e-standards.md) | The practices behind the workflow |
+| 0 | [Introduction](docs/book/00-introduction.md) | See the idea in one minute and the seven-step quick start |
+| 1 | [Setup](docs/book/01-setup.md) | Install the tools and create the project |
+| 2 | [The team](docs/book/02-the-team.md) | Know who does what, how work moves and what the guard blocks |
+| 3 | [The plan](docs/book/03-the-plan.md) | Answer five questions and approve the plan |
+| 4 | [The delivery loop](docs/book/04-delivery-loop.md) | Let the team build; ask for a change; report a bug |
+| 5 | [Milestones and releases](docs/book/05-releases.md) | Try a milestone, approve a release, deploy, roll back |
+| 6 | [Continuity](docs/book/06-continuity.md) | Restart, recover a stalled session, update the kit |
+| 7 | [Products with screens](docs/book/07-products-with-screens.md) | Pick the look and feel; design ahead of the code |
+| 8 | [Small teams](docs/book/08-small-teams.md) | Run with fewer roles; add one later |
+| 9 | [Token budget](docs/book/09-token-budget.md) | See where the tokens go and keep them down |
+| A-E | [Templates](docs/book/appendix-a-templates.md) · [Kit](docs/book/appendix-b-kit.md) · [FAQ](docs/book/appendix-c-faq.md) · [Checklist](docs/book/appendix-d-checklist.md) · [Standards](docs/book/appendix-e-standards.md) | Look something up |
 
 ## FAQ
 
-**Who is it for?**
-Developers who already use Claude Code and want a repeatable way to deliver a product, an internal tool or a client project. Bring your programming experience; the kit gives your sessions the roles, records and delivery workflow to work together.
+**What do I need to know?**
+How a software project moves from requirements to a release, and what a requirement, an architecture choice, a test, a pull request and a staging environment are for. You do not need to write code: the sessions write the code, the tests and the documents, and each approval lists what to try, what a wrong result looks like and what the tests and reviews already cover. Reading code helps when you want to check a risky change yourself.
 
 **How is this different from vibe coding?**
-Crewbook keeps the request, implementation and review connected as the project grows. Each task has a risk level and checks to match; each milestone gets a staging version you can try before release. You can follow a change from the original request to the PR that delivered it.
+Vibe coding ships whatever the last prompt produced. Here every change has a requirement, a risk level, tests sized to it and a review tied to its commit, and nothing is released before you have tried it on `staging`. The tenth feature is as solid as the first.
 
-**How does Crewbook organize multiple Claude Code sessions?**
-Each role works in a separate Git worktree with its own branch and assigned folders. The Lead coordinates tasks, reviews PRs and merges the work into `dev`. You choose the merge and hand-off settings. See [build and review](docs/book/03-build-and-review.md) for the delivery loop and [team configuration](docs/book/07-configure-your-team.md) for the controls.
+**How is it different from agent teams, BMAD-METHOD or spec-kit?**
+All of them start from a spec. Crewbook carries on to the end of delivery: each role in its own session and worktree, a guard that keeps it in its lane, models chosen per task, CI, a staging environment, versioned Docker images, change requests and rollbacks, and three decisions for you. For a quick prototype spec-kit is faster. Crewbook is for software you will hand over or keep running.
 
 **What stack does it use?**
 Any. The Lead proposes three architectures with their cost and recommends one; a platform you or your client require is a constraint.
 
-
+**What does it cost?**
+A Claude subscription with Claude Code, and GitHub (the free plan is enough). [Chapter 9](docs/book/09-token-budget.md) shows the numbers and how the kit keeps them down.
 
 ## Repository
 
@@ -97,8 +86,8 @@ Any. The Lead proposes three architectures with their cost and recommends one; a
 | [docs/book/](docs/book/) | The book |
 | [templates/](templates/) | The documents the sessions fill in |
 | [kit/](kit/) | What `kit/init.mjs` installs into a project |
-| [docs/spec/](docs/spec/) | Crewbook's requirements and decision log |
-| [docs/ai-log.md](docs/ai-log.md) | How Crewbook was built with AI |
+| [docs/spec/](docs/spec/) | The playbook's own requirements and decision log |
+| [docs/ai-log.md](docs/ai-log.md) | How this playbook itself was built with AI |
 | [docs/assets/](docs/assets/) | The social preview image and its source |
 
 ## License

@@ -1,15 +1,13 @@
-# Chapter 1: Start your first Claude Code project
+# Chapter 1: Setup
 
-← [Back: Chapter 0: Meet Crewbook](00-introduction.md) · [Contents](../../README.md#read-the-guide) · [Next: Chapter 2: Plan your product](02-plan-your-product.md) →
+**Purpose:** go from an empty folder to a project with the kit installed, a GitHub repo with a board, and the Lead ready for your idea.
 
-**Purpose:** create the project, open the Lead and move into planning. This is the complete installation guide; the generated `START-HERE.md` gives the commands for your particular project.
+## You do this yourself (once per machine)
 
-<a id="you-do-this-yourself-once-per-machine"></a>
-## 1. Install the prerequisites
+These touch your machine and your accounts, so no session does them for you:
 
-Install the Claude Code desktop app, Git, Node.js 20 or newer, the GitHub CLI (`gh`), and Docker with Compose v2. Start Docker. The initializer stops if `docker compose` is missing.
-
-Sign in to GitHub in a terminal and allow the CLI to create boards:
+- Install the Claude Code desktop app, Git, Node.js 20 or newer, the GitHub CLI (`gh`) and Docker, and start Docker. `init` stops when `docker compose` is missing.
+- Sign in to GitHub in a terminal and let the CLI create boards:
 
 ```bash
 gh auth login
@@ -19,58 +17,93 @@ gh auth login
 gh auth refresh -s project
 ```
 
-These steps touch your machine and accounts, so you run them yourself. Plugins install during project creation through the `claude` command. If that fails, the initializer prints the `/plugin install` lines to paste into a session. The Lead checks them again before setup; [Appendix B](appendix-b-kit.md#plugins) lists the plugins by role.
-
-## 2. Clone the Crewbook repository
-
-Open PowerShell or Terminal, or the Terminal panel in Claude Code, and go to the folder where your projects live. Clone Crewbook next to the projects you will create:
-
-```bash
-cd <your projects folder>
-```
+- Clone the playbook next to where your projects live:
 
 ```bash
 git clone https://github.com/liquizzz/crewbook-build.git
 ```
 
-## 3. Create your project
+Plugins install themselves: `init` runs `scripts/plugins.mjs`, and the Lead's `/cb-setup` checks them before anything else. When the `claude` command is missing, `init` prints the `/plugin install` lines to paste into any session. Which plugin each role gets, and why, is in [Appendix B](appendix-b-kit.md#plugins).
 
-In the same terminal and folder:
+## 1. Create the project
+
+**What it does:** installs the kit into a new folder: the shared `CLAUDE.md`, the role files, the guard hook, the scripts, the issue forms, the workflows, the Docker files and the document templates. It creates the branches `main`, `dev` and `staging`, the Lead's worktree, the GitHub repo with its labels and kanban board, and `START-HERE.md`, your next steps as commands.
+
+**You run,** in a terminal, in the folder that holds `crewbook-build`:
 
 ```bash
 node crewbook-build/kit/init.mjs
 ```
 
-The initializer asks three questions. Press Enter to take a suggestion.
+**It asks you** three things, each with a suggestion (Enter takes it): the project name, the folder, and the GitHub repo (`private`, `public` or `none`).
 
-| Question | Example or default | Note |
-|---|---|---|
-| Project name | Tiny Todo | The product's name |
-| Where to create it | `./tiny-todo` | A new folder; init creates it |
-| GitHub repo | `private`, as `<you>/tiny-todo` | Choose `public` or `none` if needed |
+**It does:** everything above, then installs the plugins. A private repo runs CI on your machine, so it spends none of your GitHub Actions minutes; a public one runs it on GitHub for free.
 
-It installs the kit's role files, hooks, scripts, issue forms, workflows, Docker files and templates. It creates `main`, `dev` and `staging`, the Lead's worktree and `START-HERE.md`. When you choose a GitHub repo, it also sets up the repository, labels and board. Choosing `none` leaves the GitHub connection for later.
+**You check:** the "Please check" lines at the end of its report, then open `START-HERE.md`. On a new public repo, open its Actions tab once: if GitHub shows **Enable Actions on this repository**, click it, or nothing runs.
 
-Read the report's "Please check" lines and handle any warnings. Private repos use local CI (`node scripts/ci-local.mjs`); public repos use GitHub Actions. You can switch with `node scripts/ci-mode.mjs github`. On a new public repo, open its Actions tab once: if it shows **Enable Actions on this repository**, click it so CI and image builds can run.
+For scripts and tests: `node crewbook-build/kit/init.mjs <folder> --name "<name>" --github none --yes` asks nothing.
 
-For scripts and tests, `node crewbook-build/kit/init.mjs <folder> --name "<name>" --github none --yes` asks nothing.
+## 2. Start the Lead
 
-## 4. Open the Lead and begin setup
+**What it does:** opens the one session you talk to. It names itself "<Project> - Lead", files itself in a sidebar group named after the project, and runs the setup ([chapter 3](03-the-plan.md)).
 
-Open `START-HERE.md` in your new project. It names the Lead's worktree, such as `<project>-wt/lead`. Open a Claude Code session in that folder and type:
+**Ask:** open a Claude Code session in the Lead's folder (`<project>-wt/lead`, shown in `START-HERE.md`) and type, in your own language:
 
 > /cb-setup
 
-Write in your own language; the sessions answer in it. The Lead names its session "<Project> - Lead" and groups it under the project in the sidebar. Setup begins with roles, autonomy and your idea, then covers requirements, architecture and environments. [Chapter 2](02-plan-your-product.md) explains those choices and the plan approval.
+**Claude asks you:** the five setup questions, starting with the roles, how much runs without you and your idea, all in one message.
 
-After you approve the plan, the Lead creates the other roles' worktrees and sessions and assigns the first tasks. Until setup is done, another session tells you to finish it first. Check that the sidebar shows the Lead and the roles you chose.
+**Claude does:** the plan, then every other role's worktree and session, each detached and filed in the project's group.
 
-## Keep secrets in the terminal
+**You check:** the plan, once. Then the sidebar shows one group with the Lead and the roles you chose.
 
-When setup needs an API key or password, run `node scripts/set-secret.mjs <NAME>` in the project's main folder and enter the value through hidden input. Never paste secrets into chat. The Lead gives you the owner-run database setup command when it is needed. [Appendix B](appendix-b-kit.md#secrets-and-database-setup) covers these commands and shared services.
+Until setup is done, any other session you open only tells you to finish it first.
 
-If setup fails, use [troubleshooting](appendix-c-faq.md). Once the Lead is ready, continue to the plan rather than configuring every optional tool first.
+## Secrets
 
----
+**What it does:** puts an API key or a password where every checkout can use it and no session can read it.
 
-← [Back: Chapter 0: Meet Crewbook](00-introduction.md) · [Contents](../../README.md#read-the-guide) · [Next: Chapter 2: Plan your product](02-plan-your-product.md) →
+**You run,** in the project's main folder:
+
+```bash
+node scripts/set-secret.mjs <NAME>
+```
+
+Type the value when asked. Nothing shows on screen; the value goes into the git-ignored `.env.local` of every checkout. The guard stops any session, subagent or review from reading `.env` files or printing the environment, so the value stays out of every transcript. Never paste a secret into a chat. If one ever reaches a chat, replace it.
+
+The databases get their own command, which you run once when the Lead asks: `node scripts/db-setup.mjs create` makes one database and one login per role and writes each connection string where it belongs, without showing any of them ([chapter 2](02-the-team.md#environments)).
+
+## The machine's shared services
+
+**What it does:** runs each database engine once for every project on this machine (one Postgres 17, one SQL Server 2022, one Redis), so ten projects do not mean ten database containers.
+
+**Ask the Lead:**
+
+> /cb-env
+
+**Claude does:** shows what runs, proposes what the project needs, and gives you the commands that need a password, such as:
+
+```bash
+node scripts/hosts.mjs secret POSTGRES_PASSWORD
+```
+
+That command also changes the password in the running Postgres, so the file and the server never disagree. To open the shared server in a database tool, connect as `postgres` to `localhost:5432` with that password (in DBeaver, tick "Show all databases").
+
+**You check:** `node scripts/hosts.mjs` lists the services and the hosts.
+
+## Optional: a second-opinion reviewer
+
+Install the Codex plugin once per machine, in any session:
+
+```
+/plugin marketplace add openai/codex-plugin-cc
+/plugin install codex@openai-codex
+/reload-plugins
+/codex:setup
+```
+
+The Lead then offers `/cb-review #<PR>` on risky pull requests ([chapter 4](04-delivery-loop.md)).
+
+> **Token tip:** you do not need to read the kit's files. Each session reads only the part it needs.
+
+Next: [Chapter 2: The team](02-the-team.md).

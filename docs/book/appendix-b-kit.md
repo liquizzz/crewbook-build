@@ -1,13 +1,6 @@
-# Appendix B: Kit and configuration reference
-
-← [Back: Appendix A: Quick reference](appendix-a-quick-reference.md) · [Contents](../../README.md#read-the-guide) · [Next: Appendix C: Troubleshooting](appendix-c-faq.md) →
+# Appendix B: Kit reference
 
 **Purpose:** what `kit/init.mjs` installs in a project, what each part does, and how to change it with Claude.
-
-- [Installed files](#what-the-kit-installs) and [scripts](#scripts)
-- [Change levels, models and checks](#change-levels-models-and-checks), [role guard](#the-role-guard), [secrets](#secrets-and-database-setup), [environments](#environments) and [shared services](#the-machines-shared-services)
-- [Plugins](#plugins), [skills by task](#skills-by-task) and [optional second-opinion reviewer](#optional-a-second-opinion-reviewer)
-- [Kit updates](#update-the-kit-in-a-running-project), [first update for an older project](#first-update-for-an-older-project), [project-specific changes](#change-the-kit-for-one-project) and [licenses](#licenses)
 
 ## What the kit installs
 
@@ -16,18 +9,18 @@
 | `CLAUDE.md` | The rules every session reads: the three approvals, "The AI understands; the owner decides", plain language, roles by layer, models per task, fresh context, CI, reviews, merging, change levels, data changes, environments, hand-offs, everything through the Lead, stalled sessions, secrets, the Skills table |
 | `.claude/roles/<role>.md` | One file per role (`lead`, `dev`, `uiux`, `frontend`, `test`): what it owns, how it works, what it must not do, when it asks, how it recovers |
 | `.claude/role` (per worktree, not committed) | The worktree's role, read by the hooks |
-| `.claude/hooks/role-guard.cjs` | Runs before every command, file read, search and edit, in every session and subagent: pushes, merges, paths, backups, `.env` files and environment dumps, production deploys ([role guard](#the-role-guard)). It sees through wrappers and nested shells (`rtk`, `env`, `bash -c`, `powershell -Command`) and refuses encoded PowerShell |
+| `.claude/hooks/role-guard.cjs` | Runs before every command, file read, search and edit, in every session and subagent: pushes, merges, paths, backups, `.env` files and environment dumps, production deploys ([chapter 2](02-the-team.md#3-the-guard)). It sees through wrappers and nested shells (`rtk`, `env`, `bash -c`, `powershell -Command`) and refuses encoded PowerShell |
 | `.claude/hooks/session-start.cjs` | Tells a starting session its role, its recovery steps, its skills, and warns when it runs another model than its task's |
 | `.claude/ownership.json` | Which folders each role may edit; the longer path wins (Frontend's views inside the Dev's `src/`) |
 | `.claude/settings.json` | Registers the hooks; shared permissions; the plugins every role shares ([Plugins](#plugins)) |
 | `.claude/settings.local.json` (per worktree, not committed) | The role's own plugins, and its model provider in the `deepseek` mode |
 | `.claude/project.json` | Name, roles, repo, language, where CI runs, the images per layer, `devMigrate`, `stagingMigrate`, `db`, the kit version |
-| `.claude/commands/` | The slash commands ([quick reference](appendix-a-quick-reference.md#slash-commands)) |
+| `.claude/commands/` | The slash commands ([Commands](#commands)) |
 | `.github/ISSUE_TEMPLATE/` | Forms for CR, Task (level, reach, signals, model, tests), Defect (severity, "Caused by") and Design |
 | `.github/pull_request_template.md` | The checks by level, the commit each review and CI ran on, the hand-off |
 | `.github/workflows/` | `ci`, `docs-check`, `codeql` (public repos), `image-app` (release images with an SBOM and, on public repos, a provenance attestation), `image-design` (the design prototype). Every job skips itself when CI runs on your machine |
 | `.github/dependabot.yml` | Security fixes only, one grouped PR per ecosystem ([Appendix E](appendix-e-standards.md)) |
-| `docs/templates/` | The document templates ([Appendix D](appendix-d-templates-and-checklist.md)) |
+| `docs/templates/` | The document templates ([Appendix A](appendix-a-templates.md)) |
 | `docker-compose.yml`, `docker-compose.staging.yml`, `docker/*.Dockerfile`, `.dockerignore` | One image per layer, a health check on each; the staging overlay gives the backend its database, http cookies and network address. Adapted to the stack at setup |
 | `docker/shared-compose.yml` | The machine's shared services (Postgres, SQL Server, Redis, a registry), copied to `~/.crewbook/shared/` |
 | `START-HERE.md` | Your steps, as commands to type |
@@ -54,90 +47,27 @@
 | `setup-labels.mjs`, `setup-board.mjs`, `board-status.mjs` | Labels, the kanban board, moving an issue between columns |
 | `project-level.mjs` | Helpers the other scripts share |
 
-## Change levels, models and checks
+## Commands
 
-Each task starts on the model its level and difficulty signals allow. The level also determines its checks and reviews.
-
-| Level | Start | With all three signals | Required checks |
-|---|---|---|---|
-| L0 display | Sonnet low | Haiku low, about 3 files or fewer | CI; a look in the running app when style or layout changed |
-| L1 setting or small logic | Sonnet medium | Haiku medium | CI; affected action tried; a test when there is logic |
-| L2 module logic | Sonnet high | Sonnet high | CI; module tests; main scenario run locally; `code-review` |
-| L3 core | Opus medium | Sonnet high | CI; tests by reach; `code-review` and `security-review` |
-
-The three signals are: the request is clear, there is a pattern to copy, and no change to the architecture. L3 reach ranges from one point (the app starts and one read and write work) to integration tests of every module that uses it. Security review also runs whenever a task touches permissions, money, personal data or a secret. Schema or existing-data changes are L3, with update and rollback scripts both run on staging.
-
-The Lead's own analysis and design run on Opus medium, reading a PR on Sonnet medium (Opus at L3), coordination on Sonnet low. No task starts above Opus medium: Opus high, the top of the ladder, is reached only when a task is stuck or you ask for it.
-
-A task that fails twice on the same wrong reasoning moves one step up the ladder: Haiku low, Sonnet medium, Sonnet high, Opus medium, Opus high. A failure caused by the environment, an unclear request or a scope that grew is fixed at its cause, with the model kept. Escalation to Opus asks you first unless escalation is on and you separately allowed Opus. `/cb-auto escalate on` alone does not grant that permission. `/cb-model up` and `/cb-redo` let you request a stronger model for the task.
-
-## The role guard
-
-A hook runs before every command, file read, search and edit in every session, subagents included. It blocks:
-
-| Rule | Example it stops |
-|---|---|
-| Push only your own branch | The Dev pushing to `dev`, `staging` or `main` |
-| No force push to shared branches | `git push --force origin dev` |
-| No skipped checks | `--no-verify` |
-| Only the Lead merges | `gh pr merge` in the Dev's session |
-| Your own paths only | Frontend editing the backend's files |
-| No real data | Reading a database backup or dump |
-| No secrets | Reading `.env.local`, `printenv`, `docker compose config`, `docker inspect` without `--format` |
-| Production is yours | Any session running `deploy.mjs production` |
-
-The Lead's pushes to `main`, tags, releases and workflow runs open an approval prompt for you instead of running.
-
-## Secrets and database setup
-
-Run `node scripts/set-secret.mjs <NAME>` in the project's main folder. Hidden input writes the value to the git-ignored `.env.local` in every checkout. Role hooks block reading these files and printing environment dumps. Never paste a secret into chat; replace one that reaches a transcript.
-
-For database credentials, run `node scripts/db-setup.mjs create` when the Lead asks. It makes the databases and logins and writes their connection strings without printing passwords.
-
-## Environments
-
-Every role reaches the same kind of database server, each with its own database and login:
-
-| Database | Used by |
-|---|---|
-| `<project>_dev` | The Dev, while it builds |
-| `<project>_frontend` | Frontend, through the newest `api:dev-<sha>` image |
-| `<project>_test` | Test, through the images it pinned |
-| `<project>_ci_<id>` | Each CI run, created and dropped |
-| `<project>_staging` | The regression and your try of each milestone |
-
-Each login opens its own database only. `node scripts/db-setup.mjs create` (you run it once) makes them all and writes the connection strings into each worktree's `.env.local`; `db-setup.mjs check` proves each login is refused everywhere else. The engines themselves run once per machine for every project ([shared services](#the-machines-shared-services)).
-
-## The machine's shared services
-
-**What it does:** runs each database engine once for every project on this machine (one Postgres 17, one SQL Server 2022, one Redis), so ten projects do not mean ten database containers.
-
-**Ask the Lead:**
-
-> /cb-env
-
-**Claude does:** shows what runs, proposes what the project needs, and gives you the commands that need a password, such as:
-
-```bash
-node scripts/hosts.mjs secret POSTGRES_PASSWORD
-```
-
-That command also changes the password in the running Postgres, so the file and the server never disagree. To open the shared server in a database tool, connect as `postgres` to `localhost:5432` with that password (in DBeaver, tick "Show all databases").
-
-**You check:** `node scripts/hosts.mjs` lists the services and the hosts.
-
-## Optional: a second-opinion reviewer
-
-Install the Codex plugin once per machine, in any session:
-
-```
-/plugin marketplace add openai/codex-plugin-cc
-/plugin install codex@openai-codex
-/reload-plugins
-/codex:setup
-```
-
-The Lead then offers `/cb-review #<PR>` on risky pull requests ([chapter 3](03-build-and-review.md)).
+| Command | Who | What it does |
+|---|---|---|
+| `/cb-setup` | Lead | Five questions, the plan approval, every session ([chapter 3](03-the-plan.md)) |
+| `/cb-plan [milestone]` | Lead | Splits a milestone into tasks with level, reach, signals and model |
+| `/cb-build try` · `done` | Roles | Try a task in the running app; finish it with its checks, review and PR |
+| `/cb-change <request>` | Lead | A CR for a functional change, an ADR for a technical one |
+| `/cb-bug <what happened>` | Any | A Defect with "Caused by", its own level and severity, sent to the right role |
+| `/cb-release demo` | Lead | The milestone on `staging` and your milestone approval |
+| `/cb-release` | Lead | The handover, your release approval, the tag and the image |
+| `/cb-deploy <env> <tag>` | Dev for staging, you for production | A version on a server; the previous tag rolls back |
+| `/cb-env` | Lead | Shared services, hosts, the project's databases, reset, backup and restore |
+| `/cb-progress [report]` | Any | Live state in ten lines; `report` adds the weekly measures |
+| `/cb-model`, `/cb-redo` | Any; the Lead for another task | A stronger model for a task; the last step again one step up |
+| `/cb-review #<PR>` | Lead | A Codex second opinion and security pass |
+| `/cb-auto` | Any | The four switches of what runs without you; `off` stops all of them |
+| `/cb-send` | Any | Sends the last hand-off block's prompt to its session |
+| `/cb-add-role <role>` | Lead | Adds UI/UX, Frontend or Test |
+| `/cb-update` | Lead | The newest kit, through a PR you approve |
+| `/cb-help` | Any | Every command in one line, the one that fits the stage first |
 
 ## Plugins
 
@@ -177,16 +107,6 @@ The kit's `CLAUDE.md` names the skill for each kind of work, and each role file 
 | `docker-compose.staging.yml` | Added when missing; yours kept |
 | Docker files, `CHANGELOG.md`, `README.md`, `docs/` | Yours: never changed; the report says when the kit's Docker files changed since your version |
 
-## First update for an older project
-
-Projects from before roles by layer (Dev1, Dev2, DevOps, Lite and Full) stay on their existing kit version; `/cb-update` reports that limit and stops. For a compatible project that still has `/kit-update`, run that command once to bring in `/cb-update`. A project with neither command: run this once in its Lead folder (`<project>-wt/lead`), with your clone of crewbook-build next to the project:
-
-```bash
-node ../../crewbook-build/kit/update.mjs --dry-run
-```
-
-Then ask the Lead: "Update the kit as the dry run shows, then open a PR." From then on, `/cb-update` is there.
-
 ## Change the kit for one project
 
 **Ask the Lead:**
@@ -202,7 +122,3 @@ Then ask the Lead: "Update the kit as the dry run shows, then open a PR." From t
 ## Licenses
 
 Docs and templates: CC BY 4.0. Kit code: MIT ([kit/LICENSE](../../kit/LICENSE)). Keep the `SPDX-License-Identifier` line when you copy kit files.
-
----
-
-← [Back: Appendix A: Quick reference](appendix-a-quick-reference.md) · [Contents](../../README.md#read-the-guide) · [Next: Appendix C: Troubleshooting](appendix-c-faq.md) →

@@ -37,7 +37,7 @@
 | <e.g. p95 latency> | <...> | <...> |
 
 ## 6. What we learned
-- <lesson, and the Crewbook rule it confirms or changes>
+- <lesson, and the playbook rule it confirms or changes>
 
 ## 7. Next steps
 - <...>

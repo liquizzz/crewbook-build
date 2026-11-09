@@ -1,10 +1,8 @@
-# Chapter 4: Try, release and deploy your product
-
-← [Back: Chapter 3: Build and review](03-build-and-review.md) · [Contents](../../README.md#read-the-guide) · [Next: Chapter 5: Continue and maintain](05-continue-and-maintain.md) →
+# Chapter 5: Milestones and releases
 
 **Purpose:** try each milestone yourself before it ships, publish it as a numbered version only after your OK, and get back fast when something goes wrong.
 
-The next two checkpoints happen here: accept the milestone, then approve its release. Each comes with a `For you` block: what you are approving, a few things to try, and links to the checks and review results.
+Two of your three decisions happen here: the milestone (is this what you wanted?) and the release (publish it). Each comes with a `For you` block: what the decision means for the product, 1 to 3 things to try with what a wrong result looks like, what the tests and reviews already prove, and the risks still open.
 
 ## 1. Try the milestone on staging
 
@@ -17,7 +15,7 @@ The next two checkpoints happen here: accept the milestone, then approve its rel
 **Claude asks you:** only when something is still open: unfinished tasks (move them to the next milestone, or wait?) or medium defects (accept, or fix first?).
 
 **Claude does:**
-- merges `dev` into `staging`; the Dev runs the full CI once on it. The `staging` images build on your machine or the configured build host, or on GitHub when CI runs there. A separate staging server pulls the images;
+- merges `dev` into `staging`; the Dev runs the full CI once on it and builds the `staging` images (with CI on your machine, here; with a staging server, there);
 - starts `staging` with its own database, http cookies and the address people on your network open, from `docker-compose.staging.yml`, without printing a password;
 - has the regression run on `staging` (Test, or the Dev without Test), with the update and rollback scripts on the staging database when the milestone changed data;
 - has every acceptance criterion of the milestone's stories and CRs tried on `staging`, on desktop and at about 390 pixels wide, each result in `docs/tech/test-reports/<version>.md`, a defect for each failure;
@@ -75,8 +73,6 @@ No session can run the production command: the guard stops it. After your releas
 
 > **Data changes:** the kit makes a migration lighter (an update script and a rollback script, both tried on the staging database before the release). For a large or risky migration, the Lead tells you to have a database specialist review it, and the handover lists it for the client.
 
-Check the [milestone checklist](appendix-d-templates-and-checklist.md#every-milestone) before accepting the milestone or approving its release.
+> **Token tip:** the full regression runs once per milestone, on `staging`. After a fix only the affected area and the main journeys are tested again.
 
----
-
-← [Back: Chapter 3: Build and review](03-build-and-review.md) · [Contents](../../README.md#read-the-guide) · [Next: Chapter 5: Continue and maintain](05-continue-and-maintain.md) →
+Next: [Chapter 6: Continuity](06-continuity.md).
