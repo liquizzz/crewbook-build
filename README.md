@@ -16,20 +16,6 @@ node crewbook-build/kit/init.mjs
 
 Three questions (Enter takes each suggestion), then open the Lead's worktree in Claude Code and type `/cb-setup`.
 
-## What a run looks like
-
-The first trial of this kit built a small web app for team tasks: sign-in, teams, a task board, invitations, on desktop and phone. Your numbers depend on the project and the models; the kit measures them for you.
-
-| | |
-|---|---|
-| Setup to staging | 4 days, 21 tasks, 5 sessions working side by side |
-| Owner messages | 26 in total, about one per task |
-| Cost at list prices | About $102, about $4.90 a task (an earlier run on the old kit: about $13.70 a task) |
-| Defects after merge | 0 so far |
-| What it taught us | Four groups of fixes now in the kit: secrets kept out of every session, plugins per role, staging and database scripts, and every report routed through the Lead |
-
-The numbers come from `/cb-progress report`, which every project gets: tokens and cost per role, model, task and level, every week.
-
 ## How it works
 
 ```mermaid

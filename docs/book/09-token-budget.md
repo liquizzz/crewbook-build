@@ -2,19 +2,6 @@
 
 **Purpose:** get the product built for a reasonable cost, and see every week where the tokens went.
 
-## What a project costs: two real runs
-
-| | An earlier trial (old kit) | The first trial of this kit |
-|---|---|---|
-| Product | A CMS rewrite | A small web app for team tasks |
-| Models | Every role on Opus | A model per task: mostly Opus for the Lead and the Dev, mostly Sonnet for Frontend and Test, Haiku for the smallest tasks |
-| Work | 96 tasks in 14 days | 21 tasks in 4 days, to `staging` |
-| Cost at list prices | About $1,313, about $13.70 a task | About $102, about $4.90 a task |
-| Your messages | About 400, about 4 a task | 26, about 1 a task |
-| Defects found later | 10 | 0 so far (the milestone was not yet accepted) |
-
-The prices are list prices: on a subscription they show where the usage goes, not a bill. The second run is smaller, so the cost per task compares better than the totals. Most of the saving came from three things in this chapter: the model per task, fresh contexts, and checks sized to the risk.
-
 ## The biggest costs, and what the kit does about them
 
 | Cost | What the kit does |
@@ -51,7 +38,7 @@ Your messages and the messages sessions send each other are counted apart. Not c
 
 **Claude asks you:** the DeepSeek key first: `node scripts/set-secret.mjs DEEPSEEK_API_KEY` in a terminal. On a client project, the client's OK, since the code those roles see goes to DeepSeek.
 
-**Claude does:** writes each role's provider; an L3 task, or one without all three signals, still goes to Claude. DeepSeek sessions start from a terminal with `claude` in their folder, because sessions opened from the desktop app always run Claude. In our replays DeepSeek passed the same tasks but needed more calls and more time than Sonnet, so the default stays `claude`.
+**Claude does:** writes each role's provider; an L3 task, or one without all three signals, still goes to Claude. DeepSeek sessions start from a terminal with `claude` in their folder, because sessions opened from the desktop app always run Claude. The default stays `claude`.
 
 ## Habits that keep cost low
 

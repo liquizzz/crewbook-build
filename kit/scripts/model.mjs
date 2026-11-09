@@ -32,7 +32,7 @@ export function pick(kind, signals = 0, files = 0, level = null) {
     case "L0": return all && (!files || files <= 3) ? ["haiku", "low"] : ["sonnet", "low"];
     case "L1": return all ? ["haiku", "medium"] : ["sonnet", "medium"];
     case "L2": return ["sonnet", "high"];
-    case "L3": return all ? ["sonnet", "high"] : ["opus", "high"];
+    case "L3": return all ? ["sonnet", "high"] : ["opus", "medium"]; // Opus high only by the ladder, never by default
     case "ANALYSIS":
     case "DESIGN": return ["opus", "medium"];
     case "REVIEW": return String(level).toUpperCase() === "L3" ? ["opus", "medium"] : ["sonnet", "medium"];

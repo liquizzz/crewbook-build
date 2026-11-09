@@ -162,7 +162,7 @@ The look in the app runs from the source on the role's port with hot reload; no 
 | L0 | Haiku when all three signals are ticked and it touches about 3 files or fewer; otherwise Sonnet | low |
 | L1 | Sonnet; Haiku when all three signals are ticked | medium |
 | L2 | Sonnet | high |
-| L3 | Sonnet when all three signals are ticked; otherwise Opus | high |
+| L3 | Sonnet high when all three signals are ticked; otherwise Opus medium (Opus high only through the ladder) | medium or high |
 | Analysis (stories, function tree, architecture, CR, ADR, the API contract, splitting tasks) | Opus | medium |
 | Design | Opus | medium |
 | Reading a PR before a merge | Sonnet; Opus at L3 | medium |

@@ -61,9 +61,9 @@ Each task starts on the cheapest model that does it well, chosen from its level 
 | L0 display | Sonnet low | Haiku low, when it touches about 3 files or fewer |
 | L1 setting or small logic | Sonnet medium | Haiku medium |
 | L2 module logic | Sonnet high | Sonnet high |
-| L3 core | Opus high | Sonnet high |
+| L3 core | Opus medium | Sonnet high |
 
-The Lead's own analysis and design run on Opus medium, reading a PR on Sonnet medium (Opus at L3), coordination on Sonnet low.
+The Lead's own analysis and design run on Opus medium, reading a PR on Sonnet medium (Opus at L3), coordination on Sonnet low. No task starts above Opus medium: Opus high, the top of the ladder, is reached only when a task is stuck or you ask for it.
 
 A task that fails twice on the same wrong reasoning moves one step up the ladder: Haiku low, Sonnet medium, Sonnet high, Opus medium, Opus high. A failure caused by the environment, an unclear request or a scope that grew is fixed at its cause, with the model kept. Opus always asks you first, unless you allowed it with `/cb-auto escalate on`. `/cb-model up` and `/cb-redo` let you move a task up yourself ([chapter 9](09-token-budget.md)).
 
