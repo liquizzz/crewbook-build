@@ -19,7 +19,7 @@ gh auth login
 gh auth refresh -s project
 ```
 
-- Clone the playbook next to where your projects live:
+- Clone the Crewbook repository next to where your projects live:
 
 ```bash
 git clone https://github.com/liquizzz/crewbook-build.git

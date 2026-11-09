@@ -87,8 +87,8 @@ Any. The Lead proposes three architectures with their cost and recommends one; a
 | [docs/book/](docs/book/) | The book |
 | [templates/](templates/) | The documents the sessions fill in |
 | [kit/](kit/) | What `kit/init.mjs` installs into a project |
-| [docs/spec/](docs/spec/) | The playbook's own requirements and decision log |
-| [docs/ai-log.md](docs/ai-log.md) | How this playbook itself was built with AI |
+| [docs/spec/](docs/spec/) | Crewbook's requirements and decision log |
+| [docs/ai-log.md](docs/ai-log.md) | How Crewbook was built with AI |
 | [docs/assets/](docs/assets/) | The social preview image and its source |
 
 ## License

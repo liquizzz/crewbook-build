@@ -1,6 +1,6 @@
 # Decisions: Crewbook: Build
 
-The decision log for the playbook itself (the book and the kit). Each row records what was decided, why, and what was rejected, so a later change can see what it overturns. The requirements that follow from these decisions are in [srs.md](srs.md).
+Crewbook's decision log (the book and the kit). Each row records what was decided, why, and what was rejected, so a later change can see what it overturns. The requirements that follow from these decisions are in [srs.md](srs.md).
 
 **How to use it:** add a row the day a decision is made, with the next free ID. A decision that replaces an earlier one says so in its Status, and the earlier row gets "Superseded by DEC-0NN". Rows are never deleted. Decisions that come from a trial project are written without client names or details.
 

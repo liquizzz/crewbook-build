@@ -1,6 +1,6 @@
 # Software Requirements Specification: Crewbook Build for Claude
 
-The requirements of the playbook itself: what `kit/init.mjs` and the kit it installs must do, and what the book promises. Structure follows the playbook's own [SRS template](../../templates/srs.md). The reasons behind each requirement are in [decisions.md](decisions.md) (DEC-0NN).
+Crewbook's own requirements: what `kit/init.mjs` and the kit it installs must do, and what the book describes. Structure follows Crewbook's [SRS template](../../templates/srs.md). The reasons behind each requirement are in [decisions.md](decisions.md) (DEC-0NN).
 
 **Version:** 0.36 · **Status:** Current kit and book, with developer-focused positioning and book navigation · **Last updated:** 2026-11-09
 
@@ -87,7 +87,7 @@ The book's glossary ([chapter 0](../book/00-introduction.md#words)) applies. In 
 - GitHub for issues, PRs, Actions, the board and the image registry (`ghcr.io`); the free plan is enough.
 
 ### 2.3 Look and feel
-n/a: the playbook has no screens. Products made with it get a look-and-feel round at setup (FR-043).
+n/a: the kit itself has no application screens. Products made with it get a look-and-feel round at setup (FR-043).
 
 ### 2.4 Constraints and assumptions
 - Everything in the repo is written in English; owner-facing session output uses the owner's language (DEC-018, DEC-045).
@@ -108,7 +108,7 @@ n/a: the playbook has no screens. Products made with it get a look-and-feel roun
 | FR-008 | Init shall install the secret-check pre-commit hook | DEC-038 | A staged line with a credential pattern blocks the commit |
 | FR-009 | Init shall keep existing files unless `--force` is given, and never write secrets | | Second run lists "Kept existing" |
 | FR-010 | Init's last lines shall name the Lead's folder, the session name and `/cb-setup`, and say setup comes first | DEC-026 | Report text |
-| FR-079 | Init shall record the kit's version (`kitVersion`, the playbook commit) in `.claude/project.json`. `kit/update.mjs`, run by the Lead through `/cb-update` in its worktree with a clean tree, shall bring a running project up to the kit's version: replace kit files (deleting dropped ones only when untouched), replace `.github` files only when untouched, merge `CLAUDE.md` (keeping the project's title, description, Stage, Documents, Open decisions, stack lines, own rules, rows and sections) and `.claude/settings.json` (keeping every plugin, the project's permissions and hooks), never change Docker files, `CHANGELOG.md`, `README.md` or `docs/` outside `docs/templates/`, list what it did and the kit decisions since the old version, and write nothing with `--dry-run`. The PR always waits for the owner | DEC-066 | `kit/update.test.mjs`: an aged project is updated with each kind of file handled as stated; a second run changes nothing; a dirty tree and `main` are refused; a copy of the round-3 trial project updated with its description, decisions, stack, rules and design plugins kept |
+| FR-079 | Init shall record the kit's version (`kitVersion`, the Crewbook repository commit) in `.claude/project.json`. `kit/update.mjs`, run by the Lead through `/cb-update` in its worktree with a clean tree, shall bring a running project up to the kit's version: replace kit files (deleting dropped ones only when untouched), replace `.github` files only when untouched, merge `CLAUDE.md` (keeping the project's title, description, Stage, Documents, Open decisions, stack lines, own rules, rows and sections) and `.claude/settings.json` (keeping every plugin, the project's permissions and hooks), never change Docker files, `CHANGELOG.md`, `README.md` or `docs/` outside `docs/templates/`, list what it did and the kit decisions since the old version, and write nothing with `--dry-run`. The PR always waits for the owner | DEC-066 | `kit/update.test.mjs`: an aged project is updated with each kind of file handled as stated; a second run changes nothing; a dirty tree and `main` are refused; a copy of the round-3 trial project updated with its description, decisions, stack, rules and design plugins kept |
 
 ### 3.2 Roles (`scripts/roles.mjs`, `scripts/project-level.mjs`)
 | ID | Requirement | Origin | Acceptance |
