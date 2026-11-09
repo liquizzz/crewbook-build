@@ -1,43 +1,41 @@
 # Chapter 0: Crewbook Build for Claude
 
-**Purpose:** give people who know how a software project is made a repeatable way to build one with a team of Claude Code sessions, from the first requirements to a reviewed release, with every step written down so it can be checked, changed or handed over.
+**Purpose:** take a project from the first idea to a version you can try, release and hand over, with a team of Claude Code sessions.
+
+← [Back: README](../../README.md) · [Contents](../../README.md#the-book) · [Next: Chapter 1: Setup](01-setup.md) →
 
 ## The idea in one minute
 
-You talk to one session, the Lead. You tell it what you want in your own words. It turns that into a plan: who uses the product, what each screen does, how it is built, where it runs. You approve the plan once. From then on the Lead runs a small team of sessions (a Dev for the backend, a Frontend for the screens, a UI/UX designer and a tester when the project needs them), each in its own folder with its own rules. They build, test, review and merge. When a milestone is ready, you try it on a test copy of the product and say "All pass" or what is wrong. When you are happy, you approve the release.
+You already know how to build with Claude Code. Crewbook gives your sessions a way to work together as the project grows: a Lead to plan and coordinate, a Dev for the application, and UI/UX, Frontend and Test when you need them. Each role has its own worktree, tasks and hand-offs.
 
-Your part is three decisions: the plan, each milestone and each release. The team does the work between them, and the Lead reports it in a line or two.
+Describe the product to the Lead and approve the plan. The Lead assigns the work, follows the PRs and brings each milestone to staging for you to try. When you accept it, approve a release with its version tag and handover. These are the workflow's three checkpoints: the plan, the milestone and the release.
 
 ## Who this book is for
 
-You have a technology background and know how a software project is made: requirements, design, build, test, release. You may be a developer, a product owner, a project manager, a tester or a founder; writing code yourself is not required. You want Claude Code to run that process as a team of sessions that keep track of decisions, work in separate folders and hand over changes you can check. Crewbook supplies the workflow, with the scripts, role files and templates to start a project with it.
+The kit is for developers who already use Claude Code to create and debug projects. Familiarity with Git, PRs and tests lets you start with the workflow straight away.
 
-You should know what a requirement, an architecture choice, a test, a pull request and a staging environment are for, and be able to install tools and run a command in a terminal. The sessions write the code and use Git, GitHub and Docker; you judge the plan, the evidence and the release. Reading code helps when you want to check a risky change yourself.
-
-| You want | What you get |
+| What you are building | What Crewbook adds |
 |---|---|
-| Several sessions without losing the plan | Role files, one worktree per role, hand-offs on issues, recovery after a restart |
-| Changes you can review | Each task with a risk level, tests sized to it, a self-review tied to the commit, the Lead's review before merge |
-| A release you can inspect | A candidate on `staging`, the regression and acceptance evidence, a handover, your approval |
-| Work for a client | Change requests with the client's approval and price, a requirements document that stays current |
-| Control over cost | A model per task, fresh contexts by phase, weekly measures |
+| A product you will keep developing | Requirements and decisions the next session can pick up, with changes delivered through reviewed PRs |
+| A client project | A plan to approve, changes with their scope and price, staging demos and a release handover |
+| An application with a substantial UI | Dev and Frontend working from an agreed API contract, with UI/UX designing ahead of implementation |
+| An internal tool or API | A smaller team using the same planning, review and release workflow |
 
-The tools are listed in [How to run](../../HOW-TO-RUN.md).
+[How to run](../../HOW-TO-RUN.md) covers the tools and installation. Task-specific models and reusable checks help keep usage under control while the team builds.
 
-## What the book does not do
+## What stays in your hands
 
-- It does not replace your judgement. You own the architecture, the code quality, the security and the running of the product. The sessions share one way of thinking: if the Lead misunderstands you, the others can follow the mistake. The process makes the misunderstanding visible early (everything is written down) and you try the product yourself before each release.
-- It does not promise a secure product when you skip the approvals, the tests or your own try on `staging`.
-- It does not run your servers. Every release is a Docker image; you choose where it runs and you put it on production yourself.
-- It does not run without you. The sessions pass work to each other, and the Lead tells you when something needs you, but you keep them open and you answer.
+You set the product direction and choose how much the team handles on its own. The Lead brings you a recommendation with the work behind it: a plan, a working milestone or a release summary. You can inspect the code and evidence, request changes, and set the level of PRs the Lead may merge.
+
+Production hosting and credentials stay under your control. The team prepares the images, deployment commands and handover; you approve the release and run production deployment. See [chapter 5](05-releases.md) when you are ready to ship.
 
 ## Quick start: from idea to a running version
 
 | # | Where | You type | You get |
 |---|---|---|---|
-| 1 | Terminal | `node crewbook-build/kit/init.mjs` | A project with the kit, the branches, a GitHub repo with a board, and `START-HERE.md` ([chapter 1](01-setup.md)) |
+| 1 | Terminal | `node crewbook-build/kit/init.mjs` | The kit, branches and `START-HERE.md`, with GitHub repo and board setup when selected ([chapter 1](01-setup.md)) |
 | 2 | Lead | `/cb-setup`, then your idea in your own words | Five short questions, each with a suggestion; then one page with the plan to approve ([chapter 3](03-the-plan.md)) |
-| 3 | Nowhere | Nothing | The Lead splits the first milestone into tasks and sends them out; the sessions build, review and merge ([chapter 4](04-delivery-loop.md)) |
+| 3 | Lead | `/cb-progress` to follow the work | The Lead coordinates the first milestone; the sessions build and open PRs, and the Lead merges within your chosen level ([chapter 4](04-delivery-loop.md)) |
 | 4 | Lead | `/cb-release demo` | The milestone on `staging`, a link and 3 to 5 things to try. Say "All pass" or what failed ([chapter 5](05-releases.md)) |
 | 5 | Lead | `/cb-release` | The handover, your release approval, a version tag and its Docker image |
 | 6 | Terminal | `node scripts/run.mjs v0.1.0` | That version running on your machine |
@@ -47,7 +45,7 @@ The tools are listed in [How to run](../../HOW-TO-RUN.md).
 
 ```mermaid
 flowchart LR
-  O(["You, the owner"]) <-- "idea, three approvals" --> Lead["Lead"]
+  O(["You, the owner"]) <-- "plan, milestones, releases" --> Lead["Lead"]
   Lead --> Dev["Dev: backend, API, infrastructure"]
   Lead -.-> UX["UI/UX: the design"]
   Lead -.-> FE["Frontend: the screens"]
@@ -62,8 +60,8 @@ The Lead and the Dev are always there. The dotted roles are ticked by default at
 2. You approve three times: the plan, each milestone, each release, plus anything that touches money, accounts, secrets, production, deleting data or a client's scope, date or price.
 3. Everything is written down as soon as it is decided: stories, requirements, decisions and changes all live in the repo, so a new session, a new developer or the client can follow them.
 4. Risk sets the effort: each task gets a change level (L0 to L3). The level sets the tests, the reviews and who approves.
-5. Each task starts on the model its level needs, and moves up one step only when it is stuck ([chapter 9](09-token-budget.md)).
-6. Real data and secrets never reach a model: the guard blocks reading backups, `.env` files and environment dumps, in every session and subagent.
+5. Each task starts on the model its level needs, and moves up one step only when it is stuck ([models per task](02-the-team.md#4-models-per-task)).
+6. Keep credentials and database administration in the owner-run scripts. Role hooks check sensitive file access and operations as the sessions work.
 
 ## How each task is written in this book
 
@@ -81,7 +79,6 @@ The Lead and the Dev are always there. The dotted roles are ticked by default at
 
 Three phrases steer any session: "suggest" (propose ideas), "later" (park it under Open decisions until a step needs it) and "you decide" (take the recommendation and list the calls you made).
 
-> **Token tip** boxes show where cost adds up and how to avoid it.
 
 ## Chapters
 
@@ -95,7 +92,6 @@ Three phrases steer any session: "suggest" (propose ideas), "later" (park it und
 | [6 Continuity](06-continuity.md) | Restart, recover a stalled session, update the kit |
 | [7 Products with screens](07-products-with-screens.md) | Pick the look and feel; design ahead of the code |
 | [8 Small teams](08-small-teams.md) | Run with fewer roles; add one later |
-| [9 Token budget](09-token-budget.md) | See where tokens go and keep them down |
 | Appendices | [A Templates](appendix-a-templates.md) · [B Kit](appendix-b-kit.md) · [C FAQ](appendix-c-faq.md) · [D Checklist](appendix-d-checklist.md) · [E Standards](appendix-e-standards.md) |
 
 ## Words
@@ -106,7 +102,7 @@ Three phrases steer any session: "suggest" (propose ideas), "later" (park it und
 | Session | One Claude Code conversation playing one role |
 | Lead | Your one contact: the plan, the tasks, every change, the merges, the milestone and the release |
 | Role | Lead, Dev, UI/UX, Frontend or Test; the project's roles are chosen at setup |
-| Worktree | A separate folder of the same git repo, one per role, so sessions never edit the same files |
+| Worktree | A separate checkout of the same Git repo for each role, with its own branch and working files |
 | Branch | A line of work: `role/<role>` per role, `dev` (work in progress), `staging` (what you try), `main` (released) |
 | Issue | A GitHub item for one piece of work: a task, a CR, a defect, a decision |
 | PR (pull request) | A request to merge a branch into another; it shows the change, its checks and its reviews |
@@ -123,4 +119,6 @@ Three phrases steer any session: "suggest" (propose ideas), "later" (park it und
 | Model ladder | Haiku low, Sonnet medium, Sonnet high, Opus medium, Opus high: a task climbs one step when it is stuck |
 | Token | The unit Claude usage is measured and paid in |
 
-Next: [Chapter 1: Setup](01-setup.md).
+---
+
+← [Back: README](../../README.md) · [Contents](../../README.md#the-book) · [Next: Chapter 1: Setup](01-setup.md) →

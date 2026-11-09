@@ -2,6 +2,8 @@
 
 **Purpose:** what `kit/init.mjs` installs in a project, what each part does, and how to change it with Claude.
 
+← [Back: Appendix A: Templates](appendix-a-templates.md) · [Contents](../../README.md#the-book) · [Next: Appendix C: FAQ and troubleshooting](appendix-c-faq.md) →
+
 ## What the kit installs
 
 | Path in the project | What it does |
@@ -122,3 +124,7 @@ The kit's `CLAUDE.md` names the skill for each kind of work, and each role file 
 ## Licenses
 
 Docs and templates: CC BY 4.0. Kit code: MIT ([kit/LICENSE](../../kit/LICENSE)). Keep the `SPDX-License-Identifier` line when you copy kit files.
+
+---
+
+← [Back: Appendix A: Templates](appendix-a-templates.md) · [Contents](../../README.md#the-book) · [Next: Appendix C: FAQ and troubleshooting](appendix-c-faq.md) →

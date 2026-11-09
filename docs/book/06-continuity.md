@@ -2,6 +2,8 @@
 
 **Purpose:** close, clear or move any session and have it pick up its work within a minute, and notice at once when one has quietly stopped.
 
+← [Back: Chapter 5: Milestones and releases](05-releases.md) · [Contents](../../README.md#the-book) · [Next: Chapter 7: Products with screens](07-products-with-screens.md) →
+
 The work does not live in a session's memory. It lives in GitHub issues (tasks, hand-offs, decisions), in the repo's documents (requirements, CRs, ADRs, reports) and in git. A session that starts again reads them and knows where it is.
 
 ## 1. Restart a session
@@ -86,6 +88,6 @@ Read reports and PRs on GitHub from the web or your phone, and drive the session
 
 A project made before `/cb-update` existed runs the first update by hand ([How to run](../../HOW-TO-RUN.md#4-get-kit-updates-later)).
 
-> **Token tip:** a fresh session that reads its hand-off is cheaper than a long one compacted twice. Clear, do not compact again.
+---
 
-Next: [Chapter 7: Products with screens](07-products-with-screens.md).
+← [Back: Chapter 5: Milestones and releases](05-releases.md) · [Contents](../../README.md#the-book) · [Next: Chapter 7: Products with screens](07-products-with-screens.md) →

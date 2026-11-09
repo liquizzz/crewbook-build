@@ -2,6 +2,8 @@
 
 **Purpose:** choose how the product looks before it is built, design each milestone's screens ahead of the code, and show a client a design round the same day without exposing unfinished code.
 
+← [Back: Chapter 6: Continuity](06-continuity.md) · [Contents](../../README.md#the-book) · [Next: Chapter 8: Small teams](08-small-teams.md) →
+
 ## How the work is split
 
 | Role | Owns | Works on |
@@ -62,6 +64,6 @@ Without UI/UX the Lead picks the look and feel; without Frontend the Dev builds 
 
 UI/UX and Frontend get `frontend-design`, and `ui-ux-pro-max` for the look-and-feel options, turned on by the Lead at setup when the product has screens; `figma` when the design lives in Figma ([Appendix B](appendix-b-kit.md#plugins)).
 
-> **Token tip:** collect a client's comments into one message per round. Each forwarded comment is a round of work for two sessions.
+---
 
-Next: [Chapter 8: Small teams](08-small-teams.md).
+← [Back: Chapter 6: Continuity](06-continuity.md) · [Contents](../../README.md#the-book) · [Next: Chapter 8: Small teams](08-small-teams.md) →

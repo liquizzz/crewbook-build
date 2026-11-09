@@ -2,6 +2,8 @@
 
 **Purpose:** quick answers to what comes up most.
 
+← [Back: Appendix B: Kit reference](appendix-b-kit.md) · [Contents](../../README.md#the-book) · [Next: Appendix D: Process checklist](appendix-d-checklist.md) →
+
 ## Working with sessions
 
 **A session drafts something wrong.**
@@ -55,6 +57,9 @@ An older copy of the shared compose file did that. Any `hosts.mjs shared` comman
 
 ## Process
 
+**I already build with Claude Code. What does Crewbook add?**
+A team structure and a workflow you can reuse across projects: a Lead to coordinate, roles with their own worktrees, reviewed task PRs, staging demos and release handovers. Start with [How to run](../../HOW-TO-RUN.md), then follow the [quick start](00-introduction.md#quick-start-from-idea-to-a-running-version).
+
 **How much do I review myself?**
 At L0 and L1 the reviews and CI are usually enough. For L3 changes (shared code, sign-in, money, personal data, the schema) and anything the Lead flags, read the Lead's summary and the review findings, or the diff if you read code, and always try the release candidate on `staging`. Lower `/cb-auto merge` to see more PRs before they merge.
 
@@ -101,3 +106,7 @@ A cache mount was emptied while the layers above it stayed cached. The kit's rul
 
 **A Codex review fails or is out of quota.**
 The Lead says so. The roles' own `code-review` already ran; reply "skip" or try later.
+
+---
+
+← [Back: Appendix B: Kit reference](appendix-b-kit.md) · [Contents](../../README.md#the-book) · [Next: Appendix D: Process checklist](appendix-d-checklist.md) →

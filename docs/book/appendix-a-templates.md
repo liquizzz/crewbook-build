@@ -2,6 +2,8 @@
 
 **Purpose:** the documents the sessions fill in. You rarely open a template yourself: the session copies it into `docs/`, fills it in from what you said in plain words, and marks its guesses ⚠️ for you to correct.
 
+← [Back: Chapter 8: Small teams](08-small-teams.md) · [Contents](../../README.md#the-book) · [Next: Appendix B: Kit reference](appendix-b-kit.md) →
+
 **Ask any session:**
 
 > Use the `<template>` template for `<topic>`.
@@ -44,3 +46,7 @@ These are there when you, a client or a reviewer ask for them; the setup does no
 | [Case study](../../templates/case-study.md) | `docs/product/case-study.md` | The end of a project or a phase you want to show |
 
 Placeholders are in `<angle brackets>`. A session never leaves one unfilled: it writes its best guess marked ⚠️, or asks you when a guess would change the result.
+
+---
+
+← [Back: Chapter 8: Small teams](08-small-teams.md) · [Contents](../../README.md#the-book) · [Next: Appendix B: Kit reference](appendix-b-kit.md) →

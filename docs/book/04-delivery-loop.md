@@ -2,6 +2,8 @@
 
 **Purpose:** let the team build a milestone while you do something else, and know how to step in: a change, a bug, a model, a look at where things stand.
 
+← [Back: Chapter 3: The plan](03-the-plan.md) · [Contents](../../README.md#the-book) · [Next: Chapter 5: Milestones and releases](05-releases.md) →
+
 ## 1. The milestone becomes tasks
 
 **What it does:** splits the milestone into tasks a fresh session can build without asking again.
@@ -66,13 +68,13 @@ The checks grow with the risk:
 
 **Ask:** `/cb-progress` in any session.
 
-**Claude does:** checks live state (issues, PRs, CI, the last tag) and answers in at most ten lines: the stage and the next approval, the open decisions, what is done, what is in progress and where, what waits for you, each session with its model, and any session that has stalled ([chapter 6](06-continuity.md#3-a-session-that-stopped)). `/cb-progress report` adds the weekly measures ([chapter 9](09-token-budget.md#measuring)).
+**Claude does:** checks live state (issues, PRs, CI, the last tag) and answers in at most ten lines: the stage and the next approval, the open decisions, what is done, what is in progress and where, what waits for you, each session with its model, and any session that has stalled ([chapter 6](06-continuity.md#3-a-session-that-stopped)). `/cb-progress report` saves a fuller report to `docs/reports/`.
 
 ## 7. A stronger model, or a second opinion
 
 - `/cb-model up` moves the current task one step up the ladder; `/cb-redo` does the last step again one step up and keeps the first result to compare.
 - `/cb-review #<PR>` asks Codex for a second review and a security pass, posted on the PR; the Lead accepts or rejects each finding. The Lead proposes it for risky PRs; you can type it any time.
 
-> **Token tip:** let the merge level do its job. Every PR you ask to see yourself costs a round of messages; the reviews and CI already checked it.
+---
 
-Next: [Chapter 5: Milestones and releases](05-releases.md).
+← [Back: Chapter 3: The plan](03-the-plan.md) · [Contents](../../README.md#the-book) · [Next: Chapter 5: Milestones and releases](05-releases.md) →

@@ -2,7 +2,9 @@
 
 **Purpose:** try each milestone yourself before it ships, publish it as a numbered version only after your OK, and get back fast when something goes wrong.
 
-Two of your three decisions happen here: the milestone (is this what you wanted?) and the release (publish it). Each comes with a `For you` block: what the decision means for the product, 1 to 3 things to try with what a wrong result looks like, what the tests and reviews already prove, and the risks still open.
+← [Back: Chapter 4: The delivery loop](04-delivery-loop.md) · [Contents](../../README.md#the-book) · [Next: Chapter 6: Continuity](06-continuity.md) →
+
+The next two checkpoints happen here: accept the milestone, then approve its release. Each comes with a `For you` block: what you are approving, a few things to try, and links to the checks and review results.
 
 ## 1. Try the milestone on staging
 
@@ -73,6 +75,6 @@ No session can run the production command: the guard stops it. After your releas
 
 > **Data changes:** the kit makes a migration lighter (an update script and a rollback script, both tried on the staging database before the release). For a large or risky migration, the Lead tells you to have a database specialist review it, and the handover lists it for the client.
 
-> **Token tip:** the full regression runs once per milestone, on `staging`. After a fix only the affected area and the main journeys are tested again.
+---
 
-Next: [Chapter 6: Continuity](06-continuity.md).
+← [Back: Chapter 4: The delivery loop](04-delivery-loop.md) · [Contents](../../README.md#the-book) · [Next: Chapter 6: Continuity](06-continuity.md) →

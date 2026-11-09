@@ -2,6 +2,8 @@
 
 **Purpose:** go from an empty folder to a project with the kit installed, a GitHub repo with a board, and the Lead ready for your idea.
 
+← [Back: Chapter 0: Introduction](00-introduction.md) · [Contents](../../README.md#the-book) · [Next: Chapter 2: The team](02-the-team.md) →
+
 ## You do this yourself (once per machine)
 
 These touch your machine and your accounts, so no session does them for you:
@@ -104,6 +106,6 @@ Install the Codex plugin once per machine, in any session:
 
 The Lead then offers `/cb-review #<PR>` on risky pull requests ([chapter 4](04-delivery-loop.md)).
 
-> **Token tip:** you do not need to read the kit's files. Each session reads only the part it needs.
+---
 
-Next: [Chapter 2: The team](02-the-team.md).
+← [Back: Chapter 0: Introduction](00-introduction.md) · [Contents](../../README.md#the-book) · [Next: Chapter 2: The team](02-the-team.md) →

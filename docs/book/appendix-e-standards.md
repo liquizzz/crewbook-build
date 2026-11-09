@@ -2,7 +2,9 @@
 
 **Purpose:** show which public standard or practice each part of Crewbook Build for Claude follows, and what it leaves out on purpose.
 
-Crewbook aims at software one owner can trust and maintain, with no lost documents and code that is easy to control. It follows each standard where that costs the owner no extra steps or choices; the rest is left out and listed below. Nothing here is a certification. Sessions never read this appendix, so it adds no tokens.
+← [Back: Appendix D: Process checklist](appendix-d-checklist.md) · [Contents](../../README.md#the-book) · [Next: Get started](../../HOW-TO-RUN.md) →
+
+Crewbook aims at software one owner can trust and maintain, with no lost documents and code that is easy to control. It follows each standard where that costs the owner no extra steps or choices; the rest is left out and listed below. Nothing here is a certification.
 
 ## What follows what
 
@@ -41,3 +43,7 @@ No extra steps. `init` turns on Dependabot alerts and fixes, plus secret scannin
 ```
 gh attestation verify oci://ghcr.io/<owner>/<repo>-app:v0.1.0 -R <owner>/<repo>
 ```
+
+---
+
+← [Back: Appendix D: Process checklist](appendix-d-checklist.md) · [Contents](../../README.md#the-book) · [Next: Get started](../../HOW-TO-RUN.md) →

@@ -2,6 +2,8 @@
 
 **Purpose:** every step in order, so nothing is skipped. Each row says who does it, what it leaves behind, and how you can tell it was done.
 
+← [Back: Appendix C: FAQ and troubleshooting](appendix-c-faq.md) · [Contents](../../README.md#the-book) · [Next: Appendix E: Standards map](appendix-e-standards.md) →
+
 **Ask the Lead,** any time:
 
 > Check the project against Appendix D and list anything skipped.
@@ -47,3 +49,7 @@
 | Kit update (`/cb-update`) | Lead, your OK | [6](06-continuity.md#7-get-the-newest-kit) |
 
 Steps 7, 15 and 16 are yours and are never skipped.
+
+---
+
+← [Back: Appendix C: FAQ and troubleshooting](appendix-c-faq.md) · [Contents](../../README.md#the-book) · [Next: Appendix E: Standards map](appendix-e-standards.md) →

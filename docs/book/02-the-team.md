@@ -2,6 +2,8 @@
 
 **Purpose:** know who does what, how work moves from one session to the next, and what the guard stops, so you can tell at a glance whether the team is doing its job.
 
+← [Back: Chapter 1: Setup](01-setup.md) · [Contents](../../README.md#the-book) · [Next: Chapter 3: The plan](03-the-plan.md) →
+
 ## 1. The roles
 
 Each role is a Claude Code session in its own worktree, on its own branch `role/<role>`, with a role file (`.claude/roles/<role>.md`) that it reads first.
@@ -65,7 +67,7 @@ Each task starts on the cheapest model that does it well, chosen from its level 
 
 The Lead's own analysis and design run on Opus medium, reading a PR on Sonnet medium (Opus at L3), coordination on Sonnet low. No task starts above Opus medium: Opus high, the top of the ladder, is reached only when a task is stuck or you ask for it.
 
-A task that fails twice on the same wrong reasoning moves one step up the ladder: Haiku low, Sonnet medium, Sonnet high, Opus medium, Opus high. A failure caused by the environment, an unclear request or a scope that grew is fixed at its cause, with the model kept. Opus always asks you first, unless you allowed it with `/cb-auto escalate on`. `/cb-model up` and `/cb-redo` let you move a task up yourself ([chapter 9](09-token-budget.md)).
+A task that fails twice on the same wrong reasoning moves one step up the ladder: Haiku low, Sonnet medium, Sonnet high, Opus medium, Opus high. A failure caused by the environment, an unclear request or a scope that grew is fixed at its cause, with the model kept. Opus always asks you first, unless you allowed it with `/cb-auto escalate on`. `/cb-model up` and `/cb-redo` let you request a stronger model for the task.
 
 ## Environments
 
@@ -94,6 +96,6 @@ Each login opens its own database only. `node scripts/db-setup.mjs create` (you 
 
 `/cb-auto off` stops all of it at once, when you want to stop and look. Whatever the switches say, the three approvals, production, money, accounts, secrets, deleting data and the client's scope, date or price always wait for you.
 
-> **Token tip:** a role that only waits runs on Sonnet low. The Lead sets each session's model before it sends a task, so a waiting session costs almost nothing.
+---
 
-Next: [Chapter 3: The plan](03-the-plan.md).
+← [Back: Chapter 1: Setup](01-setup.md) · [Contents](../../README.md#the-book) · [Next: Chapter 3: The plan](03-the-plan.md) →

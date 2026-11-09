@@ -1,6 +1,6 @@
 # Crewbook Build for Claude: how to run
 
-From nothing to a project you can work on: about five minutes once your machine has the tools of step 0. You do not need to read the book first: the project you create gets its own `START-HERE.md`, with every next step as a short command to type.
+Create a project, open the Lead and describe what you want to build. The kit installs the team's workflow; the generated `START-HERE.md` takes you through the next steps. This guide assumes you already use Claude Code for software development.
 
 Steps 0 to 2 happen in a terminal. You need a Claude Code session only from step 3.
 
@@ -48,7 +48,7 @@ It asks three questions, each with a one-line hint. Press Enter to take the sugg
 
 The rest (the roles, the language, your idea, the stack and the environments) comes in the Lead's `/cb-setup`.
 
-Then it installs the kit, creates the branches and the Lead's worktree, creates and pushes the GitHub repo with its labels and kanban board, and writes `START-HERE.md`.
+Then it installs the kit, creates the branches and the Lead's worktree, and writes `START-HERE.md`. When you choose a GitHub repo, it also sets up the repository, labels and board. Choosing `none` leaves the GitHub connection for later.
 
 Read the "Please check" lines at the end of its report. A private repo runs CI on your machine (`node scripts/ci-local.mjs`), so it uses none of your GitHub Actions minutes; switch with `node scripts/ci-mode.mjs github`. On a new public repo, open its Actions tab on GitHub once: if it shows **Enable Actions on this repository**, click it, or CI and the Docker images never run.
 

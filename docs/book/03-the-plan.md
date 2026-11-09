@@ -2,6 +2,8 @@
 
 **Purpose:** turn your idea into a plan you approve once: who uses the product, what it does, how it is built, where it runs, and what the first milestone delivers.
 
+← [Back: Chapter 2: The team](02-the-team.md) · [Contents](../../README.md#the-book) · [Next: Chapter 4: The delivery loop](04-delivery-loop.md) →
+
 Setup is five questions and one approval. Each question comes with a suggestion you can take as it is, and the Lead drafts the answer to the next one while you read. Most owners finish it in one sitting.
 
 ## 1. Roles, autonomy and your idea
@@ -58,7 +60,7 @@ It then checks every login with `db-setup.mjs check`, proves a reset works, and 
 
 ## 5. The plan approval
 
-**What it does:** your first of three decisions. Everything after it is the team's work until the milestone is ready.
+**What it does:** the first checkpoint, agreeing what to build and how the team will deliver the first milestone. The Lead uses that plan to assign the work.
 
 **Claude asks you,** alone and on one page with links: what the product does and for whom, the stories, the function tree, the architecture and stack, the environments, the first milestone with its scope and AI time, the roles, the autonomy, and the open decisions. Then: approve, or say what to change.
 
@@ -72,6 +74,6 @@ It then checks every login with `db-setup.mjs check`, proves a reset works, and 
 
 Any question can wait. Say "later": the Lead writes it under Open decisions in `CLAUDE.md` with the step that needs it, opens a `decision` issue, and carries on with what does not depend on it. `/cb-progress` lists what is still open.
 
-> **Token tip:** the setup runs on the Lead's Opus. That pays back later: a clear plan lets most tasks start on a cheaper model.
+---
 
-Next: [Chapter 4: The delivery loop](04-delivery-loop.md).
+← [Back: Chapter 2: The team](02-the-team.md) · [Contents](../../README.md#the-book) · [Next: Chapter 4: The delivery loop](04-delivery-loop.md) →
