@@ -32,6 +32,8 @@ jobs:
         run: node kit/scripts/release.test.mjs
       - name: run helpers
         run: node kit/scripts/run.test.mjs
+      - name: database environments (PostgreSQL servers in Docker)
+        run: node kit/scripts/db-setup.test.mjs
       - name: init, set-level and session-start hook
         run: node kit/init.test.mjs
       - name: kit update

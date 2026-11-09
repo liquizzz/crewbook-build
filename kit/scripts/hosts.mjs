@@ -7,17 +7,19 @@
 //   node scripts/hosts.mjs set build <local|ssh:user@host> [path]   where images are built and ci-local runs
 //   node scripts/hosts.mjs set registry <host:port|ghcr.io/owner|none>
 //   node scripts/hosts.mjs set staging <ssh:user@host> [path] [url]  the server staging runs on (/cb-deploy staging)
-//   node scripts/hosts.mjs add db <name> <engine> <version> <host:port>   a database server (the shared one, or online)
 //   node scripts/hosts.mjs shared <up|down> <service...>   start or stop shared services on this machine:
-//                                                          sqlserver-2022, postgres-17, redis-7, registry
+//                                                          sqlserver-2022, redis-7, registry. PostgreSQL is per project:
+//                                                          node scripts/db-setup.mjs (connect, or managed create)
 //   node scripts/hosts.mjs secret <NAME>                   a password for the shared services (hidden, never printed;
-//                                                          POSTGRES_PASSWORD also changes it in the running server)
+//                                                          )
 //   --dry-run                                              print what would run
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { crewbookHome, mainCheckout, readHosts } from "./project-level.mjs";
 
+// PostgreSQL is no longer a machine-wide service: each project connects to a server or creates its own.
+const DB_MOVED = "PostgreSQL is set up per project now: node scripts/db-setup.mjs connect (a server you have) or node scripts/db-setup.mjs managed create (a server for this project). A postgres-17 already running keeps running; connect to it as an existing server.";
 const args = process.argv.slice(2).filter((a) => a !== "--dry-run");
 const dry = process.argv.includes("--dry-run");
 const home = crewbookHome();
@@ -40,8 +42,6 @@ if (!cmd) {
   console.log(`  build:    ${hosts.build ? (typeof hosts.build === "string" ? hosts.build : `ssh:${hosts.build.ssh} ${hosts.build.path || ""}`) : "local (this machine)"}`);
   console.log(`  registry: ${hosts.registry || "GHCR (the repo's owner on ghcr.io)"}`);
   console.log(`  staging:  ${hosts.staging ? `ssh:${hosts.staging.ssh} ${hosts.staging.path || ""} ${hosts.staging.url || ""}`.trim() : "this machine (node scripts/run.mjs staging)"}`);
-  const dbs = Object.entries(hosts.databases || {});
-  console.log(`  databases: ${dbs.length ? dbs.map(([n, d]) => `${n} (${d.engine} ${d.version} at ${d.host})`).join(", ") : "none yet"}`);
   const ps = fs.existsSync(sharedFile) ? spawnSync("docker", ["compose", "-f", sharedFile, "ps", "--format", "{{.Service}} {{.Status}}"], { encoding: "utf8" }) : null;
   console.log(`\nShared services here: ${ps?.status === 0 && ps.stdout.trim() ? ps.stdout.trim().split(/\r?\n/).join(", ") : "none running"}`);
   process.exit(0);
@@ -63,17 +63,10 @@ if (cmd === "set") {
   process.exit(0);
 }
 
-if (cmd === "add" && what === "db") {
-  const [name, engine, version, host] = rest;
-  if (!name || !engine || !version || !host) fail("Usage: node scripts/hosts.mjs add db <name> <engine> <version> <host:port>");
-  save({ ...hosts, databases: { ...(hosts.databases || {}), [name]: { engine, version, host } } });
-  console.log(`Database server ${name}: ${engine} ${version} at ${host}. Each project gets its own databases and logins on it (/cb-env setup).`);
-  process.exit(0);
-}
+if (cmd === "add" && what === "db") fail(DB_MOVED);
 
 // The password each shared service needs, from ~/.crewbook/.env. It is set when the service's data is first created;
-// "secret" changes it in the running server too (POSTGRES_PASSWORD), so the file and the server never differ.
-const NEEDS = { "sqlserver-2022": "MSSQL_SA_PASSWORD", "postgres-17": "POSTGRES_PASSWORD" };
+const NEEDS = { "sqlserver-2022": "MSSQL_SA_PASSWORD" };
 const inEnvFile = (name) => {
   try {
     return fs.readFileSync(path.join(home, ".env"), "utf8").split(/\r?\n/).some((l) => l.startsWith(`${name}=`) && l.length > name.length + 1);
@@ -97,7 +90,8 @@ if (cmd === "shared" && ["up", "down"].includes(what)) {
   if (/:\?run node scripts\/hosts\.mjs secret/.test(copy) && !dry) {
     fs.writeFileSync(sharedFile, copy.replace(/\$\{([A-Z_]+):\?run node scripts\/hosts\.mjs secret [A-Z_]+\}/g, "${$1:-}"));
   }
-  if (what === "up" && !rest.length) fail("Name the services to start: sqlserver-2022, postgres-17, redis-7, registry.");
+  if (what === "up" && !rest.length) fail("Name the services to start: sqlserver-2022, redis-7, registry.");
+  if (rest.some((x) => /^postgres/.test(x))) fail(DB_MOVED);
   // Each service's password, checked only for the services being started (the compose file has no ":?" check).
   const missing = what === "up" ? rest.map((s) => NEEDS[s]).filter((v) => v && !inEnvFile(v)) : [];
   if (missing.length && dry) console.log(missing.map((v) => `Needs ${v} (node scripts/hosts.mjs secret ${v}) before it starts.`).join("\n"));
@@ -110,7 +104,7 @@ if (cmd === "shared" && ["up", "down"].includes(what)) {
   if (!fs.existsSync(path.join(home, ".env"))) fs.writeFileSync(path.join(home, ".env"), "");
   const r = spawnSync("docker", a, { stdio: "inherit" });
   if (r.status === 0 && what === "up") {
-    const ports = { "sqlserver-2022": ["sqlserver", "2022", "localhost:1433"], "postgres-17": ["postgres", "17", "localhost:5432"], "redis-7": ["redis", "7", "localhost:6379"] };
+    const ports = { "sqlserver-2022": ["sqlserver", "2022", "localhost:1433"], "redis-7": ["redis", "7", "localhost:6379"] };
     const dbs = { ...(hosts.databases || {}) };
     for (const s of rest) if (ports[s] && !dbs[s]) dbs[s] = { engine: ports[s][0], version: ports[s][1], host: ports[s][2] };
     const next = { ...hosts, databases: dbs };
@@ -149,18 +143,7 @@ if (cmd === "secret" && /^[A-Z][A-Z0-9_]*$/.test(what || "")) {
   const lines = (fs.existsSync(envFile) ? fs.readFileSync(envFile, "utf8").split(/\r?\n/) : []).filter((l) => l && !l.startsWith(`${what}=`));
   fs.writeFileSync(envFile, [...lines, `${what}=${value}`].join("\n") + "\n");
   console.log(`${what} set in ${envFile} (not shown).`);
-  // The value only applies when a server's data is first created. For a running shared Postgres, change it there too,
-  // over the container's local socket (no old password needed); the value goes through stdin, never the command line.
-  if (what === "POSTGRES_PASSWORD") {
-    const container = spawnSync("docker", ["ps", "-q", "--filter", "label=com.docker.compose.project=crewbook-shared", "--filter", "label=com.docker.compose.service=postgres-17"], { encoding: "utf8" });
-    const id = (container.stdout || "").trim().split(/\r?\n/)[0];
-    if (id) {
-      const sql = `ALTER ROLE postgres PASSWORD '${value.replace(/'/g, "''")}';\n`;
-      const r = spawnSync("docker", ["exec", "-i", id, "psql", "-U", "postgres", "-q", "-v", "ON_ERROR_STOP=1"], { input: sql, encoding: "utf8" });
-      console.log(r.status === 0 ? "The running shared Postgres uses the new password too." : "Could not change it in the running Postgres; it still has the old one. Run this again once it runs.");
-    }
-  }
   process.exit(0);
 }
 
-fail("Usage: node scripts/hosts.mjs [set <build|registry|staging> ... | add db ... | shared <up|down> <service...> | secret <NAME>] [--dry-run]");
+fail("Usage: node scripts/hosts.mjs [set <build|registry|staging> ... | shared <up|down> <service...> | secret <NAME>] [--dry-run]");

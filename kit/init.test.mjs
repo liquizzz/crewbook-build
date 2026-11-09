@@ -50,7 +50,7 @@ try {
   check("lite: plain documents by default, no humanizer plugin", read(a, "CLAUDE.md").includes("- Documents: plain") && !read(a, ".claude", "settings.json").includes("humanizer@humanizer") && JSON.parse(read(a, ".claude", "project.json")).humanize === false);
   check("design plugins left to setup", !read(a, ".claude", "settings.json").includes("ui-ux-pro-max@ui-ux-pro-max-skill\": true") && read(a, "CLAUDE.md").includes("at setup when the product has screens") && read(a, ".claude", "commands", "cb-setup.md").includes("design plugins"));
   check("plan before building: stories, function tree, three architectures", read(a, "CLAUDE.md").includes("**Plan before building.**") && read(a, ".claude", "commands", "cb-setup.md").includes("docs/product/function-tree.md") && read(a, ".claude", "commands", "cb-setup.md").includes("three architectures") && read(a, ".claude", "commands", "cb-setup.md").includes("docs/tech/solution-design.md") && ["function-tree.md", "architecture-options.md", "solution-design.md"].every((t) => fs.existsSync(path.join(a, "docs", "templates", t))));
-  check("setup: five questions, the plan approval, the sessions, no PO", ["**Roles.**", "**Autonomy.**", "**Requirements** (`product-management", "**Deployment model and stack** (`superpowers", "**Environments.**", "**The plan approval.**", "**The sessions.**", "roles.mjs set", "roles.mjs worktrees"].every((t) => read(a, ".claude", "commands", "cb-setup.md").includes(t)) && !/\bPO\b|gate/.test(read(a, ".claude", "commands", "cb-setup.md")));
+  check("setup: ten steps in order, the plan approval after the environments, worktrees after the plan, no PO", ["**Tools**", "**The idea, the roles and the autonomy**", "**Requirements** (`requirements`; `product-management", "**Deployment model and stack** (`stack`; `superpowers", "**The look and feel** (`design`)", "**GitHub** (`github`)", "**Environments** (`environments`", "**The plan approval** (`plan`)", "**Worktrees** (`worktrees`)", "**Sessions and the first milestone**", "roles.mjs set", "roles.mjs worktrees", "setup-state.mjs", "connect-github.mjs"].every((t) => read(a, ".claude", "commands", "cb-setup.md").includes(t)) && !/\bPO\b|gate/.test(read(a, ".claude", "commands", "cb-setup.md")));
   check("reports: on /cb-progress report only, no daily brief", read(a, ".claude", "commands", "cb-progress.md").includes("docs/reports/<YYYY-MM-DD>.md") && !/morning brief|end-of-day/i.test(read(a, ".claude", "roles", "lead.md") + read(a, "CLAUDE.md") + read(a, "START-HERE.md")));
   // A repo that is not public runs CI on this machine: run.mjs builds the tag here; in github mode it pulls the image.
   check("ci: local by default without a public repo", JSON.parse(read(a, ".claude", "project.json")).ci === "local" && node([path.join("scripts", "ci-mode.mjs")], { cwd: a }).includes("ci: local"));
@@ -67,7 +67,7 @@ try {
   check("setup: one image per layer, dependency files first", read(a, ".claude", "roles", "lead.md").includes("one image per layer") && read(a, ".claude", "roles", "lead.md").includes("dependency files before the source") && read(a, ".claude", "commands", "cb-release.md").includes("node scripts/run.mjs staging"));
   const plug = node([path.join("scripts", "plugins.mjs"), "--dry-run"], { cwd: a });
   check("plugins: installed from the enabled list, marketplaces first", plug.includes("claude plugin marketplace add thedotmack/claude-mem") && plug.includes("claude plugin install claude-mem@thedotmack --scope user") && plug.includes("claude plugin install superpowers@claude-plugins-official --scope user") && plug.indexOf("marketplace add") < plug.indexOf("plugin install"));
-  check("plugins: /cb-setup checks them before anything else", read(a, ".claude", "commands", "cb-setup.md").includes("**Plugins first:**") && read(a, ".claude", "commands", "cb-setup.md").includes("node scripts/plugins.mjs"));
+  check("plugins: /cb-setup checks them before anything else", read(a, ".claude", "commands", "cb-setup.md").includes("1. **Tools** (`tools`). Check your own skill list") && read(a, ".claude", "commands", "cb-setup.md").includes("node scripts/plugins.mjs"));
   check("links: issue numbers carry a title and CR, never bare", read(a, "CLAUDE.md").includes("An issue or PR number never stands alone") && read(a, "CLAUDE.md").includes("**Next:** [#12") && read(a, ".claude", "commands", "cb-progress.md").includes("as a link with its short title"));
   check("sessions: created at setup with a model and detached at once", read(a, "CLAUDE.md").includes("**Opening sessions:**") && read(a, "CLAUDE.md").includes("detach it to top level at once") && read(a, "CLAUDE.md").includes("file it back into your sidebar group") && read(a, ".claude", "commands", "cb-setup.md").includes("named after the project") && read(a, ".claude", "commands", "cb-setup.md").includes("`model` Sonnet") && read(a, ".claude", "commands", "cb-add-role.md").includes("`/cb-setup` step 7") && read(a, ".claude", "commands", "cb-plan.md").includes("rule \"Opening sessions\""));
   check("board: same seven columns at every level", ["Backlog", "Approved", "Ready", "In progress", "In review", "Testing", "Done"].every((c) => read(a, "scripts", "setup-board.mjs").includes(`["${c}",`)) && !read(a, "scripts", "setup-board.mjs").includes("readProject"));
@@ -148,8 +148,11 @@ try {
   check("set-secret: written to main checkout and worktrees", [a, wt(a, "lead"), wt(a, "uiux")].every((d) => read(d, ".env.local").includes("DEMO_API_KEY=s3cret-value")));
   check("set-secret: git-ignored", git(a, "status", "--porcelain") === "" && git(wt(a, "lead"), "status", "--porcelain") === "");
   fs.writeFileSync(path.join(a, ".env"), "STACK_KEY=from-dot-env\n");
+  // Databases made before the worktrees (setup prepares them before the plan): fake per-role strings.
+  fs.appendFileSync(path.join(a, ".env.local"), ["DEV_DATABASE_URL=postgresql://d:x@localhost:5432/t_dev", "DEV_SHADOW_DATABASE_URL=postgresql://d:x@localhost:5432/t_dev_shadow", "TEST_DATABASE_URL=postgresql://t:x@localhost:5432/t_test", ""].join("\n"));
   node([path.join("scripts", "new-role-worktree.mjs"), "dev"], { cwd: wt(a, "lead") });
   check("new worktree: secrets copied, own port", read(wt(a, "dev"), ".env.local").includes("DEMO_API_KEY=s3cret-value") && read(wt(a, "dev"), ".env.local").includes("PORT=5201"));
+  check("new worktree: the role's own database is its DATABASE_URL", /^DATABASE_URL=postgresql:\/\/d:x@localhost:5432\/t_dev$/m.test(read(wt(a, "dev"), ".env.local")) && /^SHADOW_DATABASE_URL=.*t_dev_shadow$/m.test(read(wt(a, "dev"), ".env.local")));
   check("new worktree: a git-ignored .env is carried too", read(wt(a, "dev"), ".env.local").includes("STACK_KEY=from-dot-env") && git(a, "status", "--porcelain") === "");
   node([path.join("scripts", "new-role-worktree.mjs"), "frontend"], { cwd: wt(a, "lead") });
   check("roles by layer: Frontend gets its own worktree, port and rules; /cb-add-role exists", read(wt(a, "frontend"), ".env.local").includes("PORT=5202") && read(wt(a, "frontend"), ".claude", "role").trim() === "frontend" && read(a, "CLAUDE.md").includes("**Roles by layer.**") && fs.existsSync(path.join(a, ".claude", "roles", "frontend.md")) && !fs.existsSync(path.join(a, ".claude", "roles", "devops.md")) && fs.existsSync(path.join(a, ".claude", "commands", "cb-add-role.md")) && read(a, ".github", "pull_request_template.md").includes("Self-review"));
@@ -297,11 +300,34 @@ try {
   envRun("hosts.mjs", "set", "registry", "192.168.1.10:5000");
   envRun("hosts.mjs", "set", "staging", "ssh:deploy@192.168.1.20", "/srv/tiny-todo", "http://192.168.1.20:3000");
   const shown = envRun("hosts.mjs").stdout;
-  const sharedUp = envRun("hosts.mjs", "shared", "up", "sqlserver-2022", "postgres-17", "--dry-run").stdout;
-  check("hosts: set once for every project, shared services by profile, no password in hosts.json", shown.includes("192.168.1.10:5000") && shown.includes("deploy@192.168.1.20") && sharedUp.includes("--profile sqlserver-2022 --profile postgres-17") && sharedUp.includes("up -d --wait") && !/password/i.test(fs.readFileSync(path.join(crewHome, "hosts.json"), "utf8")) && fs.existsSync(path.join(a, "docker", "shared-compose.yml")));
-  check("relay: every report goes through the Lead, stalled sessions found, approvals asked alone", read(a, "CLAUDE.md").includes("**Everything goes through the Lead.**") && read(a, "CLAUDE.md").includes("**Stalled sessions.**") && read(a, ".claude", "commands", "cb-progress.md").includes("stalled sessions") && read(a, ".claude", "commands", "cb-setup.md").includes("counts as the plan approval only when it says so") && read(a, ".claude", "commands", "cb-setup.md").includes("ask them together in your first message"));
+  const sharedUp = envRun("hosts.mjs", "shared", "up", "sqlserver-2022", "redis-7", "--dry-run").stdout;
+  const pgShared = envRun("hosts.mjs", "shared", "up", "postgres-17", "--dry-run");
+  check("hosts: set once for every project, shared services by profile, no password in hosts.json", shown.includes("192.168.1.10:5000") && shown.includes("deploy@192.168.1.20") && sharedUp.includes("--profile sqlserver-2022 --profile redis-7") && pgShared.status === 1 && pgShared.stderr.includes("db-setup.mjs connect") && sharedUp.includes("up -d --wait") && !/password/i.test(fs.readFileSync(path.join(crewHome, "hosts.json"), "utf8")) && fs.existsSync(path.join(a, "docker", "shared-compose.yml")));
+  check("relay: every report goes through the Lead, stalled sessions found, approvals asked alone", read(a, "CLAUDE.md").includes("**Everything goes through the Lead.**") && read(a, "CLAUDE.md").includes("**Stalled sessions.**") && read(a, ".claude", "commands", "cb-progress.md").includes("stalled sessions") && read(a, ".claude", "commands", "cb-setup.md").includes("counts as the plan approval only when it says so") && read(a, ".claude", "commands", "cb-setup.md").includes("in your first message to the owner, so they answer all three in one reply") && read(a, ".claude", "commands", "cb-setup.md").includes("never a separate sign-off") && !/approve, or say what to change. Put/.test(read(a, ".claude", "commands", "cb-setup.md")));
+  // Setup steps: recorded only after their check, in order; a file alone does not count.
+  const st = (...x) => spawnSync("node", [path.join("scripts", "setup-state.mjs"), ...x], { cwd: wt(a, "lead"), encoding: "utf8" });
+  const leadPj = path.join(wt(a, "lead"), ".claude", "project.json");
+  const leadPjText = fs.readFileSync(leadPj, "utf8");
+  const firstNext = st("next").stdout.trim();
+  const outOfOrder = st("done", "stack");
+  const tools = st("done", "tools");
+  const ideaNoAnswer = st("done", "idea");
+  fs.writeFileSync(leadPj, JSON.stringify({ ...JSON.parse(fs.readFileSync(leadPj, "utf8")), roles: ["lead", "dev"] }, null, 2));
+  const ideaOk = st("done", "idea", "--autonomy", "keep the defaults");
+  fs.mkdirSync(path.join(wt(a, "lead"), "docs", "product", "stories"), { recursive: true });
+  fs.writeFileSync(path.join(wt(a, "lead"), "docs", "product", "function-tree.md"), "# tree\n");
+  const reqNoStories = st("done", "requirements");
+  fs.writeFileSync(path.join(wt(a, "lead"), "docs", "product", "stories", "US-001-x.md"), "# story\n");
+  const reqOk = st("done", "requirements");
+  const afterReq = st("next").stdout.trim();
+  const reset = st("reset", "requirements");
+  const afterReset = st("next").stdout.trim();
+  check("setup-state: steps in order, each recorded only after its check, the owner's autonomy answer kept, reset goes back", firstNext === "tools" && outOfOrder.status === 1 && outOfOrder.stderr.includes("first") && tools.status === 0 && ideaNoAnswer.status === 1 && ideaOk.status === 0 && JSON.parse(fs.readFileSync(leadPj, "utf8")).autonomyAnswer === "keep the defaults" && reqNoStories.status === 1 && reqOk.status === 0 && afterReq === "stack" && reset.status === 0 && afterReset === "requirements");
+  fs.writeFileSync(leadPj, leadPjText);
+  const ghCheck = spawnSync("node", [path.join("scripts", "connect-github.mjs"), "--check"], { cwd: wt(a, "lead"), encoding: "utf8" });
+  check("connect-github: a project made with GitHub none says it is not connected and how to connect", ghCheck.status === 1 && ghCheck.stdout.includes("node scripts/connect-github.mjs <owner/name>"));
   const dbPlan = envRun("db-setup.mjs", "--plan").stdout;
-  check("db-setup: one database and login per role and environment, CI login apart", dbPlan.includes("tiny_todo_dev (login tiny_todo_dev) -> DEV_DATABASE_URL") && dbPlan.includes("tiny_todo_staging (login tiny_todo_staging) -> STAGING_DATABASE_URL") && dbPlan.includes("login tiny_todo_ci (CI, creates databases)"));
+  check("db-setup: one project account for every database of the project, CI included", dbPlan.includes("Project account: tiny_todo") && dbPlan.includes("tiny_todo_dev -> DEV_DATABASE_URL") && dbPlan.includes("tiny_todo_staging -> STAGING_DATABASE_URL") && dbPlan.includes("tiny_todo_ci_*"));
   const leadProject = path.join(wt(a, "lead"), ".claude", "project.json");
   const leadProjectText = fs.readFileSync(leadProject, "utf8");
   fs.writeFileSync(leadProject, JSON.stringify({ ...JSON.parse(leadProjectText), buildHost: "ssh:ci@192.168.1.10", images: [{ name: "api", paths: ["api"] }, { name: "web", paths: ["web"] }] }, null, 2));

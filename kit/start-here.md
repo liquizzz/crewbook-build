@@ -10,15 +10,16 @@ Done by `init`: the kit, branches `main`, `dev` and `staging`, GitHub repo {{rep
 
 ## 1. Setup. Session: Lead
 
-Open a new Claude Code session in `{{lead}}`, name it "{{name}} - Lead" and type `/cb-setup`. Write to it in your own language: the sessions talk to you in it. Setup asks five things, each with a default or a proposal:
+Open a new Claude Code session in `{{lead}}`, name it "{{name}} - Lead" and type `/cb-setup`. Write to it in your own language: the sessions talk to you in it. Setup runs in order, each step with a default or a proposal, and picks up where it stopped if you type `/cb-setup` again:
 
-1. **Roles.** The Lead and the Dev are always on; UI/UX, Frontend and Test are ticked by default. Untick what the project does not need: without UI/UX the Lead designs, without Frontend the Dev builds both layers, without Test the Dev tests and the Lead accepts.
-2. **Autonomy.** What runs without you: sessions pass work to each other (on), the Lead merges by itself (all levels), a stuck task moves to a stronger model below Opus (on), Test checks each merged task (off).
-3. **Requirements.** Describe the idea in your own words. The Lead discusses it briefly, then writes the first draft: the stories, the ones usually missing for this kind of product as suggestions, and the function tree (modules, screens, main actions).
-4. **Deployment model and stack.** The Lead asks about scale once, then proposes three architectures with their stack and cost, one recommended. Pick one, ask for a change, or say "you decide".
-5. **Environments.** The Lead proposes the databases, the build host and `staging`, reusing what already runs on your machine.
+1. **Your idea, the roles and the autonomy,** in one reply. Describe the idea in your own words. The Lead and the Dev are always on; UI/UX, Frontend and Test are ticked by default: untick what the project does not need (without UI/UX the Lead designs, without Frontend the Dev builds both layers, without Test the Dev tests and the Lead accepts). Autonomy: sessions pass work to each other (on), the Lead merges by itself (all levels), a stuck task moves to a stronger model below Opus (on), Test checks each merged task (off).
+2. **Requirements.** The Lead asks a few questions, then drafts the stories, the ones usually missing as suggestions, and the function tree. Tell it what to change; you approve everything together with the plan.
+3. **Deployment model and stack.** Three architectures with their stack and cost, one recommended. Pick one, ask for a change, or say "you decide".
+4. **Look and feel,** when the product has screens: 2-3 named directions on one page. Pick one by its name.
+5. **GitHub,** only if the project is not connected yet: the repository name and whether it is private.
+6. **Environments.** The database: a server you already have (`node scripts/db-setup.mjs connect`, paste its connection string; online, on this machine or behind NAT) or one Crewbook creates for this project (`node scripts/db-setup.mjs managed create`). The project gets one account for all its databases. Then the build host and `staging`.
 
-Then you approve **the plan** on one page, and the Lead creates every other session (Roles: {{roles}}).
+Then you approve **the plan** on one page, and the Lead creates every other worktree and session (Roles: {{roles}}).
 
 **You do:** if the repo is public (CI on GitHub), open {{actions}} once and click **Enable Actions on this repository** if GitHub shows it. Open the board once (GitHub → your profile → Projects), choose View → Layout → Board, and click **Save**.
 

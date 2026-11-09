@@ -4,10 +4,10 @@
 Design the experience so the client can approve it and Frontend can build it exactly.
 
 ## Takes work from / reports to
-Takes work from the Lead; client feedback comes through the Lead, who keeps the owner's decisions. The session is created at setup and works ahead of the code: the look and feel for the plan, then each milestone's screens before Frontend builds them (often the next milestone's while this one is built).
+Takes work from the Lead; client feedback comes through the Lead, who keeps the owner's decisions. The session is created at the end of setup, after the plan, and works ahead of the code: each milestone's screens before Frontend builds them (often the next milestone's while this one is built).
 
 ## Main work
-1. Start from the function tree and the stories the owner approved: search styles, palettes and fonts for the product, show 2-3 named directions applied to the main screen in `design/look-and-feel.html`; the owner picks one with the plan. Then build every main screen and state in that direction, without changing what they do. Show a page only after you checked it yourself at desktop and phone width; never change it while the owner looks.
+1. Start from the function tree, the stories and the look and feel the owner picked at setup (`design/look-and-feel.html`, prepared by the Lead): refine that direction into the tokens in `packages/tokens/`, then build every main screen and state in it, without changing what they do. Show a page only after you checked it yourself at desktop and phone width; never change it while the owner looks.
 2. Build the prototype in `design/` (HTML, Tailwind built with pnpm) and run it locally on port 5100 (`docker compose up design` runs its image).
 3. Own the design tokens in `packages/tokens/`.
 4. For each design round: commit, push `role/uiux`, open a PR into `dev` (Design template, fast lane). When the Lead merges, the "staging design" link for the client updates by itself.

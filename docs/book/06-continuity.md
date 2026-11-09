@@ -61,12 +61,11 @@ Read reports and PRs on GitHub from the web or your phone, and drive the session
 
 **Claude does:** has each session commit and push, takes a `staging` backup (`node scripts/db-setup.mjs backup`, saved under `~/.crewbook/backups/`), and lists the worktrees to recreate and the secrets the project uses (names only).
 
-**You do,** on the new machine. Secrets and `.env.local` never travel in git, so the databases and their passwords are set up again there:
+**You do,** on the new machine. Secrets and `.env.local` never travel in git, and a server's data does not travel with the code, so they are set up again there:
 1. Clone the repo, run `node scripts/new-role-worktree.mjs lead`, open the Lead there and ask it to "recreate the worktrees".
-2. Start the shared database server: `node scripts/hosts.mjs secret POSTGRES_PASSWORD`, then `node scripts/hosts.mjs shared up postgres-17`. If the old machine's server stays the shared one on your network, register it with `node scripts/hosts.mjs add db` instead.
-3. `node scripts/db-setup.mjs create`: every database and login, with new passwords written into each worktree's `.env.local`. `db-setup.mjs check` confirms them.
-4. Bring `staging` back: copy the backup file over and run `node scripts/db-setup.mjs restore <file> <project>_staging`. The other databases come back from their seed: ask the Lead to reset them.
-5. `node scripts/set-secret.mjs <NAME>` for each other secret on the list (API keys and the like).
+2. The database environment. For an existing server, run `node scripts/db-setup.mjs connect` and paste the same connection string (from where you keep it, never from git). For a server the old machine created, either keep it running there and connect to it as an existing server, or run `node scripts/db-setup.mjs managed create` here for a new one. Then `node scripts/db-setup.mjs create`: the project's databases and each worktree's URLs. `db-setup.mjs check` confirms them.
+3. Bring `staging` back: copy the backup file over and run `node scripts/db-setup.mjs restore <file> <project>_staging`. The other databases come back from their seed: ask the Lead to reset them.
+4. `node scripts/set-secret.mjs <NAME>` for each other secret on the list (API keys and the like).
 
 `db-setup.mjs env` only copies connection strings that already sit in the main checkout's `.env.local`, so it helps after adding a worktree, never on a fresh machine.
 

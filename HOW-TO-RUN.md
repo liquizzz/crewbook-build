@@ -56,13 +56,14 @@ Read the "Please check" lines at the end of its report. A private repo runs CI o
 
 Open `START-HERE.md` in your new project folder. Its first step tells you which folder to open in Claude Code (a worktree, which is a second folder of the same project, one per session, such as `tiny-todo-wt\lead`) and the command to type there: `/cb-setup` (every command starts with `cb`, for Crewbook). Write to the Lead in your own language; the sessions answer in it.
 
-Setup asks five things, each with a suggestion you can take as it is:
+Setup runs in order, each step with a suggestion you can take as it is:
 
-1. The roles: the Lead and the Dev always; UI/UX, Frontend and Test ticked by default. Untick what the project does not need.
-2. How much runs without you: the sessions pass work to each other, the Lead merges by itself up to the level you choose (`off`, `only-L0`, `up-to-L1`, `up-to-L2`, `all`), a stuck task moves to a stronger model, Test checks each merged task.
-3. Your idea, in your own words: the Lead writes the stories, suggests the ones usually missing and draws the function tree.
-4. The deployment model and stack: three options with their cost, one recommended; pick one or say "you decide".
-5. The environments: the databases, the build host and `staging`, reusing what already runs on your machine (`node scripts/hosts.mjs`).
+1. Your idea, the roles and how much runs without you, in one reply. The Lead and the Dev are always on; UI/UX, Frontend and Test are ticked by default.
+2. The requirements: the Lead drafts the stories, suggests the ones usually missing and draws the function tree; you correct the draft.
+3. The deployment model and stack: three options with their cost, one recommended; pick one or say "you decide".
+4. The look and feel, when the product has screens: 2-3 named directions; pick one.
+5. GitHub, only if init skipped it.
+6. The database: a server you already have (`node scripts/db-setup.mjs connect`, paste its connection string) or one Crewbook creates for this project (`node scripts/db-setup.mjs managed create`). Either way the project gets one account for all its databases.
 
 You approve the plan on one page, and the Lead creates every other session. From there the Lead plans each milestone (`/cb-plan`), the sessions build and pass work to each other, and you step in when something waits for you. `/cb-release demo` gives you the milestone to try on `staging`; `/cb-release` publishes it after your OK. `/cb-progress` tells you where the project stands at any time; `/cb-help` lists every command. Set API keys and passwords with `node scripts/set-secret.mjs <NAME>`, never in the chat.
 

@@ -71,23 +71,44 @@ node scripts/set-secret.mjs <NAME>
 
 Type the value when asked. Nothing shows on screen; the value goes into the git-ignored `.env.local` of every checkout. The guard stops any session, subagent or review from reading `.env` files or printing the environment, so the value stays out of every transcript. Never paste a secret into a chat. If one ever reaches a chat, replace it.
 
-The databases get their own command, which you run once when the Lead asks: `node scripts/db-setup.mjs create` makes one database and one login per role and writes each connection string where it belongs, without showing any of them ([chapter 2](02-the-team.md#environments)).
+Database connection strings have their own command, `node scripts/db-setup.mjs connect`, which checks them before keeping them ([below](#the-database-environment)).
 
-## The machine's shared services
+## The database environment
 
-**What it does:** runs each database engine once for every project on this machine (one Postgres 17, one SQL Server 2022, one Redis), so ten projects do not mean ten database containers.
+**What it does:** gives the project a PostgreSQL server to work on, in one of two ways. Either way the project gets one account that owns all its databases, and each role gets a URL to its own database ([chapter 2](02-the-team.md#environments)).
+
+| You choose | What happens |
+|---|---|
+| I have an environment | A server you already run: on this machine (installed or in Docker), online, or behind NAT. You paste its connection string; Crewbook creates the project's account and databases on it and never starts, stops or reconfigures the server |
+| Crewbook creates one for this project | Crewbook starts a server for this project (Docker on this machine today), with its own name, port and password kept in the project. Another project can later use it as "an environment I have" |
+
+**Ask:** nothing; the Lead offers the choice during setup ([chapter 3](03-the-plan.md#6-the-environments)), with its recommendation.
+
+**You run,** in a terminal in the project's main folder, one of:
+
+```bash
+node scripts/db-setup.mjs connect
+```
+
+```bash
+node scripts/db-setup.mjs managed create
+```
+
+`connect` asks for the connection string without showing it. Give the address the app really reaches: behind NAT, the mapped address and port. An admin connection string lets Crewbook create one account for the project; an account that may already create databases becomes the project's account as it is. With less, Crewbook says what is missing and changes nothing.
+
+**You check:** `node scripts/db-setup.mjs status`: the kind of environment, the project account, the databases, and where they were checked. No password ever shows.
+
+To give a second project a server this project created, run `node scripts/db-setup.mjs admin-url` here and paste it into the other project's `connect`; that project then creates its own account and databases on it. This project still owns the server: stopping or deleting it (`managed down`, `managed destroy`) asks for `--confirm` and names the other projects first.
+
+## The machine's other shared services
+
+**What it does:** runs SQL Server, Redis, a model server or a registry once for every project on this machine, so ten projects do not mean ten containers.
 
 **Ask the Lead:**
 
 > /cb-env
 
-**Claude does:** shows what runs, proposes what the project needs, and gives you the commands that need a password, such as:
-
-```bash
-node scripts/hosts.mjs secret POSTGRES_PASSWORD
-```
-
-That command also changes the password in the running Postgres, so the file and the server never disagree. To open the shared server in a database tool, connect as `postgres` to `localhost:5432` with that password (in DBeaver, tick "Show all databases").
+**Claude does:** shows what runs and gives you the commands that need a password, such as `node scripts/hosts.mjs secret MSSQL_SA_PASSWORD`.
 
 **You check:** `node scripts/hosts.mjs` lists the services and the hosts.
 

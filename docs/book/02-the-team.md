@@ -69,7 +69,7 @@ A task that fails twice on the same wrong reasoning moves one step up the ladder
 
 ## Environments
 
-Every role reaches the same kind of database server, each with its own database and login:
+The project has one database account, and every database belongs to it; each role's URL points at its own database:
 
 | Database | Used by |
 |---|---|
@@ -79,7 +79,7 @@ Every role reaches the same kind of database server, each with its own database 
 | `<project>_ci_<id>` | Each CI run, created and dropped |
 | `<project>_staging` | The regression and your try of each milestone |
 
-Each login opens its own database only. `node scripts/db-setup.mjs create` (you run it once) makes them all and writes the connection strings into each worktree's `.env.local`; `db-setup.mjs check` proves each login is refused everywhere else. The engines themselves run once per machine for every project ([chapter 1](01-setup.md#the-machines-shared-services)).
+The databases are kept apart by name, with one account; the roles do not get separate logins. The admin connection string, when there is one, stays in the main checkout and never reaches a worktree or the app. `node scripts/db-setup.mjs create` makes the databases and writes each worktree's URLs; `db-setup.mjs check` proves the account opens each one from this machine. The app's containers, a build host and a staging server reach the server by their own route, so they are checked there before they count as ready ([chapter 1](01-setup.md#the-database-environment)).
 
 ## 5. How much runs without you
 

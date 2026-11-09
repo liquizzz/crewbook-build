@@ -14,7 +14,7 @@
 //   them since it left dev. On dev itself, or when the branch changed a shared input, every step runs: the CI files,
 //   a lockfile or package manifest, the build configuration, the Docker files, a migration, and the paths listed under
 //   "shared" in ci-steps.json (shared code, the schema). When the reach of a change is unclear, list it there.
-//   Every step also gets CI_DB_NAME and CI_DB_PREFIX (a database for this run on the shared server, and the prefix of
+//   Every step also gets CI_DB_NAME and CI_DB_PREFIX (a database for this run on the project's server, created with CI_DATABASE_URL, and the prefix of
 //   them all) and the environment variable CI_CHANGED_FILES: the path of a text file listing the files the branch
 //   changed (empty text when every file counts), for a step that checks only those, for example a linter's --include.
 // A PASS is kept per pair of commits (branch + dev): run again on the same pair, it is reused at once, so the
@@ -198,7 +198,7 @@ const touched = (patterns) => !changedFiles || patterns.some((p) => changedFiles
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "crewbook-ci-"));
 const work = path.join(dir, "src");
-// CI_DB_NAME: a database name for this run's integration tests on the shared server (<project>_ci_<sha>_<time>), to
+// CI_DB_NAME: a database name for this run's integration tests on the project's server (<project>_ci_<sha>_<time>), to
 // create at the start and drop at the end; CI_DB_PREFIX names them all, so a first step can drop the old ones.
 const ciPrefix = `${path.basename(sh("git rev-parse --show-toplevel")).toLowerCase().replace(/[^a-z0-9]+/g, "_")}_ci_`;
 const ciDb = `${ciPrefix}${headSha.slice(0, 7)}_${Date.now().toString(36)}`;

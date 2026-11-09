@@ -22,6 +22,11 @@ export const ROLE_INFO = {
 };
 // Local ports for the roles that run the app.
 export const PORTS = { uiux: 5100, dev: 5201, frontend: 5202, test: 5300 };
+// The connection string each role uses as its DATABASE_URL (scripts/db-setup.mjs writes them all).
+export const ROLE_DATABASE_KEY = { dev: "DEV_DATABASE_URL", frontend: "FRONTEND_DATABASE_URL", test: "TEST_DATABASE_URL" };
+// Secrets that stay in the main checkout's .env.local only, never copied to a worktree: the database admin, the managed
+// server's password and the project account's own URL (scripts/db-setup.mjs). Worktrees get the per-database URLs.
+export const MAIN_ONLY_KEYS = ["DB_ADMIN_URL", "DB_PROJECT_URL", "DB_MANAGED_ADMIN_PASSWORD"];
 // Roles the kit no longer has, and who does their work now (their worktrees are kept until the owner removes them).
 export const RETIRED_ROLES = {
   po: "the Lead (DEC-074)",

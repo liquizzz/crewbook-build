@@ -6,7 +6,7 @@ List the kit's commands for the owner, in the owner's language (commands stay in
 
 | Group | Command | What it does |
 |---|---|---|
-| Setup | `/cb-setup` | Five questions (roles, autonomy, requirements, stack, environments), the plan approval, every session created; run again, it goes on where it stopped |
+| Setup | `/cb-setup` | Ten steps from the idea to the plan approval (the roles and autonomy, requirements, stack, look and feel, GitHub, environments), then every worktree and session; run again, it goes on where it stopped |
 | | `/cb-add-role <uiux\|frontend\|test>` | Adds a role later |
 | | `/cb-help` | This list |
 | Work | `/cb-plan [milestone]` | The Lead splits a milestone into tasks and sends them out |

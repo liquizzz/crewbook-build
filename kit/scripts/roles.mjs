@@ -44,7 +44,19 @@ function worktrees(roles) {
     execFileSync("node", [path.join(scriptDir, "new-role-worktree.mjs"), role], { cwd: here, stdio: ["ignore", "pipe", "pipe"] });
     made.push(role);
   }
-  return { made, all: roles.map((role) => ({ role, title: roleTitle(role), folder: worktreePath(root, role), port: PORTS[role] || null })) };
+  // The databases may exist already (setup prepares them before the plan): give every checkout its connection strings
+  // and each role its own DATABASE_URL again. Nothing is printed but the count.
+  let env = null;
+  const dbSetup = path.join(scriptDir, "db-setup.mjs");
+  const mainEnv = path.join(root, ".env.local");
+  if (made.length && fs.existsSync(dbSetup) && fs.existsSync(mainEnv) && /^[A-Z_]*DATABASE_URL=./m.test(fs.readFileSync(mainEnv, "utf8"))) {
+    try {
+      env = execFileSync("node", [dbSetup, "env"], { cwd: here, stdio: ["ignore", "pipe", "pipe"] }).toString().trim();
+    } catch (e) {
+      env = `db-setup env failed: ${String(e.stderr || e.message).trim().split(/\r?\n/)[0]}`;
+    }
+  }
+  return { made, env, all: roles.map((role) => ({ role, title: roleTitle(role), folder: worktreePath(root, role), port: PORTS[role] || null })) };
 }
 
 if (!cmd) {
@@ -67,10 +79,11 @@ if (cmd === "set") {
 
 if (cmd === "worktrees") {
   if (!project.roles) fail("The roles are not chosen yet: node scripts/roles.mjs set <roles> first.");
-  const { made, all } = worktrees(project.roles);
+  const { made, all, env } = worktrees(project.roles);
   if (json) console.log(JSON.stringify(all));
   else {
     if (made.length) console.log(`Created: ${made.map(roleTitle).join(", ")}`);
+    if (env) console.log(env);
     for (const w of all) console.log(`${w.title.padEnd(9)} ${w.folder}${w.port ? ` (port ${w.port})` : ""}`);
   }
   process.exit(0);
@@ -84,7 +97,8 @@ if (cmd === "add") {
   if (roles.includes(role)) fail(`${roleTitle(role)} is already one of the project's roles.`);
   const next = ROLES.filter((r) => roles.includes(r) || r === role);
   console.log(`Added ${roleTitle(role)}. Roles: ${next.map(roleTitle).join(", ")}\n  ${save(next)}`);
-  const { all } = worktrees([role]);
+  const { all, env } = worktrees([role]);
+  if (env && !json) console.log(env);
   console.log(`  worktree: ${all[0].folder}`);
   console.log(`Next: ${role === "frontend" ? "move the frontend folders from \"dev\" to \"frontend\" in .claude/ownership.json, " : role === "uiux" ? "create design/ and packages/tokens/ for UI/UX, " : "give Test its folders in .claude/ownership.json if they differ from the defaults, "}commit, merge into dev and push; open tasks keep their role.`);
   process.exit(0);

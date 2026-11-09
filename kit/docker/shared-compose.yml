@@ -5,8 +5,9 @@
 # Each runs once: a project or an environment is a database, a login or a Redis number inside them, never another
 # container. Copied to ~/.crewbook/shared/docker-compose.yml; add a service there for another version a project needs
 # (for example sqlserver-2017), never one per project. Passwords come from ~/.crewbook/.env (hosts.mjs secret <NAME>).
-# The passwords have no ":?" check here: compose reads every service, so one would stop "up postgres-17" for want of
-# the SQL Server password. hosts.mjs checks the password of each service it starts instead.
+# The passwords have no ":?" check here: compose reads every service, so one service would stop for want of another's
+# password; hosts.mjs checks the password of each service it starts instead. PostgreSQL is not here: each project
+# connects to a server or creates its own (scripts/db-setup.mjs).
 name: crewbook-shared
 
 services:
@@ -20,15 +21,6 @@ services:
     volumes: ["sqlserver-2022:/var/opt/mssql"]
     restart: unless-stopped
 
-  postgres-17:
-    profiles: ["postgres-17"]
-    # pgvector also serves plain Postgres; PostGIS gets its own service only when a project needs it.
-    image: pgvector/pgvector:pg17
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
-    ports: ["5432:5432"]
-    volumes: ["postgres-17:/var/lib/postgresql/data"]
-    restart: unless-stopped
 
   redis-7:
     profiles: ["redis-7"]
@@ -47,5 +39,4 @@ services:
 
 volumes:
   sqlserver-2022:
-  postgres-17:
   registry:

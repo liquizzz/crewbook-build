@@ -11,7 +11,7 @@ import { execFileSync, execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { PORTS, RETIRED_ROLES, ROLES, applyRolePlugins, roleTitle } from "./project-level.mjs";
+import { MAIN_ONLY_KEYS, PORTS, RETIRED_ROLES, ROLES, ROLE_DATABASE_KEY, applyRolePlugins, roleTitle } from "./project-level.mjs";
 
 const role = (process.argv[2] || "").toLowerCase();
 if (RETIRED_ROLES[role]) {
@@ -72,11 +72,21 @@ if (!fs.existsSync(local)) {
   const carried = [".env", ".env.local"]
     .map((f) => path.join(root, f))
     .filter((f) => fs.existsSync(f))
-    .flatMap((f) => fs.readFileSync(f, "utf8").split(/\r?\n/).filter((l) => /^[A-Z][A-Z0-9_]*=/.test(l) && !l.startsWith("PORT=")));
+    .flatMap((f) => fs.readFileSync(f, "utf8").split(/\r?\n/).filter((l) => /^[A-Z][A-Z0-9_]*=/.test(l) && !l.startsWith("PORT=") && !MAIN_ONLY_KEYS.some((k) => l.startsWith(`${k}=`))));
   for (const line of carried) {
     const key = line.slice(0, line.indexOf("="));
     env = env.split(/\r?\n/).filter((l) => !l.startsWith(`${key}=`)).join("\n");
     env += `${env && !env.endsWith("\n") ? "\n" : ""}${line}\n`;
+  }
+  // The role's own database becomes its DATABASE_URL (scripts/db-setup.mjs writes the per-role strings), so a worktree
+  // made after the databases connects to the right one; never printed.
+  const own = ROLE_DATABASE_KEY[role];
+  const value = own && env.match(new RegExp(`^${own}=(.*)$`, "m"));
+  if (value && value[1]) {
+    env = env.replace(/^DATABASE_URL=.*\n?/m, "");
+    env += `${env && !env.endsWith("\n") ? "\n" : ""}DATABASE_URL=${value[1]}\n`;
+    const shadow = role === "dev" && env.match(/^DEV_SHADOW_DATABASE_URL=(.*)$/m);
+    if (shadow && shadow[1]) env = env.replace(/^SHADOW_DATABASE_URL=.*\n?/m, "") + `SHADOW_DATABASE_URL=${shadow[1]}\n`;
   }
   if (PORTS[role]) {
     env = env.replace(/^PORT=.*\n?/m, "");

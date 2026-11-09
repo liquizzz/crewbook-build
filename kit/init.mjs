@@ -11,8 +11,8 @@
 //
 // It creates the folder and a git repo, copies the kit, fills in the project name, writes START-HERE.md,
 // creates the branches and the Lead's worktree and, unless you say none, creates the GitHub repo, pushes the
-// branches and sets up the labels and the board. Everything else is decided in the Lead's /cb-setup (five questions:
-// the roles, the autonomy, the requirements, the deployment model and stack, the environments), which also creates
+// branches and sets up the labels and the board. Everything else is decided in the Lead's /cb-setup (ten steps:
+// the idea with the roles and the autonomy, the requirements, the stack, the look and feel, GitHub, the environments, the plan), which also creates
 // the other roles' worktrees and sessions. The language follows the owner's first message to the Lead.
 // Existing files are kept unless --force is given. It never writes secrets.
 // To bring a project that already runs up to a newer kit, use update.mjs instead.
@@ -379,4 +379,4 @@ console.log(`
 Next: open ${path.join(dest, "START-HERE.md")} and follow it step by step.
 Step 1: open Claude Code desktop in this folder, name the session "${name} - Lead", and type /cb-setup:
   ${lead}
-Setup asks five questions, each with a suggestion, then creates every other session for you.`);
+Setup asks for your idea, the roles and how much runs without you, drafts the plan with you, then creates every other session.`);

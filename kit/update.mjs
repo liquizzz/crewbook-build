@@ -390,6 +390,13 @@ const main = mainCheckout(root);
 const withPlugins = ROLES.filter((r) => fs.existsSync(worktreePath(main, r)));
 if (withPlugins.length && !dry) for (const r of withPlugins) applyRolePlugins(worktreePath(main, r), r);
 if (withPlugins.length) out.notes.push(`Plugins per role set in the settings.local.json of ${withPlugins.join(", ")}; each session picks them up when it starts again (or /reload-plugins).`);
+// The old database model (one login per role on the machine's shared server): say so; never read, move or change anything.
+{
+  const envKeys = fs.existsSync(path.join(main, ".env.local")) ? fs.readFileSync(path.join(main, ".env.local"), "utf8").split(/\r?\n/).map((l) => l.split("=")[0]) : [];
+  if (!project.database && (project.db || (envKeys.includes("DEV_DATABASE_URL") && !envKeys.includes("DB_PROJECT_URL")))) {
+    out.notes.push("Databases: this project uses the old model (one login per role on the machine's shared server). It keeps working. To move to one project account: back up staging, then the owner runs node scripts/db-setup.mjs connect with that server's admin and node scripts/db-setup.mjs adopt-legacy (see /cb-env). Nothing was changed.");
+  }
+}
 const retired = Object.keys(RETIRED_ROLES).filter((r) => fs.existsSync(worktreePath(main, r)));
 if (retired.length) out.notes.push(`Retired roles: ${retired.map((r) => `${r} (its work goes to ${RETIRED_ROLES[r]})`).join(", ")}. The Lead moves their open work, the owner closes their sessions, then removes each worktree: git worktree remove "${worktreePath(main, retired[0])}".`);
 if (!project.models) out.notes.push("Models: chosen per task now (rule \"Models\"); the project runs the claude mode. For DeepSeek on the Dev, Frontend and Test: /cb-model mode deepseek.");

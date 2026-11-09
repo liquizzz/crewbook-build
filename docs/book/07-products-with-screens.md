@@ -6,13 +6,13 @@
 
 | Role | Owns | Works on |
 |---|---|---|
-| UI/UX | `design/` (a clickable prototype), `packages/tokens/` (colours, fonts, spacing as named values) | The look and feel for the plan, then each milestone's screens, often one milestone ahead |
+| UI/UX | `design/` (a clickable prototype), `packages/tokens/` (colours, fonts, spacing as named values) | The chosen look and feel turned into tokens, then each milestone's screens, often one milestone ahead |
 | Frontend | The screens in the product (`web/` or the UI folders inside the backend project) | The screens, against the API contract, or against a mock generated from it while the backend is still on its way |
 | Dev | The backend and the API contract | The endpoints the screens call |
 
 The API contract (an OpenAPI file the Dev owns) is the line between them. A task that needs both layers is two tasks: the backend first, then the screens. On `dev` the Dev never removes or changes a field a screen uses without an L2 task announced first.
 
-Without UI/UX the Lead picks the look and feel; without Frontend the Dev builds the screens too ([chapter 8](08-small-teams.md)).
+Without UI/UX the Lead keeps designing after setup; without Frontend the Dev builds the screens too ([chapter 8](08-small-teams.md)).
 
 ## 1. Pick the look and feel
 
@@ -20,7 +20,7 @@ Without UI/UX the Lead picks the look and feel; without Frontend the Dev builds 
 
 **Ask:** nothing; it is part of setup when the product has screens ([chapter 3](03-the-plan.md)).
 
-**Claude does:** UI/UX (or the Lead) searches styles, palettes and font pairs that fit the product and its users, and shows 2 or 3 named directions side by side in `design/look-and-feel.html`, each applied to the main screen, at desktop and phone width.
+**Claude does:** the Lead, at setup and before the plan (the UI/UX session opens after it), searches styles, palettes and font pairs that fit the product and its users, and shows 2 or 3 named directions side by side in `design/look-and-feel.html`, each applied to the main screen, at desktop and phone width.
 
 **You check:** the page. Pick one by its name ("Direction B, calm"). Picking a direction is a choice, not the plan approval: the Lead puts it into the plan and asks for the approval on its own.
 

@@ -334,6 +334,13 @@ function checkCommand(command, role, cwd) {
       }
       if (rest[0] === "exec" && rest.some((w) => ["env", "printenv"].includes(w.toLowerCase()))) return { block: SECRET_BLOCK };
     }
+    // The database steps that take a secret, change a server's life cycle or move ownership are the owner's, in a terminal.
+    const dbAt = words.findIndex((w) => /(^|[\\/])db-setup\.mjs$/.test(w));
+    if (dbAt >= 0) {
+      const sub = words[dbAt + 1];
+      const owner = ["connect", "admin-url", "adopt-legacy"].includes(sub) || (sub === "managed" && words[dbAt + 2] !== "status");
+      if (owner) return { block: `"db-setup.mjs ${sub}${sub === "managed" ? ` ${words[dbAt + 2] || ""}` : ""}" is run by the owner in a terminal (it takes a secret or changes a server). Give the owner the command.` };
+    }
     if (words.some((w) => /(^|[\\/])deploy\.mjs$/.test(w)) && words.includes("production")) {
       return { block: "Production is deployed by the owner in a terminal (node scripts/deploy.mjs production <tag> --owner). Give the owner the command." };
     }
