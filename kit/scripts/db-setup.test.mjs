@@ -109,7 +109,9 @@ else {
     const envM = envOf(path.join(M, ".env.local"));
     const devM = envOf(`${M}-wt-dev/.env.local`);
     check("local SQL Server: a login for the project owns its databases; nothing to install (the container's sqlcmd)", upM.status === 0 && createM.status === 0 && pj(M).services.database.account === "mike" && /^Server=127\.0\.0\.1,\d+;Database=mike_dev;User Id=mike;/.test(devM.DATABASE_URL || ""));
-    const ownersM = runSql(envM.DATABASE_ADMIN_URL, "SELECT name, SUSER_SNAME(owner_sid) FROM sys.databases WHERE name LIKE 'mike[_]%' ORDER BY name");
+    // Through the container's own sqlcmd, as db-setup does: this machine may have none.
+    const mikeDb = spawnSync("docker", ["ps", "-q", "--filter", "label=com.docker.compose.project=mike-services", "--filter", "label=com.docker.compose.service=database"], { encoding: "utf8" }).stdout.trim().split(/\s+/)[0];
+    const ownersM = runSql(envM.DATABASE_ADMIN_URL, "SELECT name, SUSER_SNAME(owner_sid) FROM sys.databases WHERE name LIKE 'mike[_]%' ORDER BY name", { container: mikeDb });
     check("local SQL Server: mike_dev and mike_staging belong to the login mike", ownersM.length === 2 && ownersM.every((r) => r[1] === "mike"));
     check("two local projects: their own compose projects, ports and accounts", pj(M).services.database.port !== portA && pj(M).services.cache.port !== pj(A).services.cache.port && parseRedisUrl(envM.CACHE_PROJECT_URL).port !== parseRedisUrl(envA.CACHE_PROJECT_URL).port);
 
