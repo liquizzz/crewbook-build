@@ -18,7 +18,7 @@
 | 4 | Stack | Lead | `docs/tech/solution-design.md`, Docker per layer, CI, `.claude/ownership.json`, the SRS baseline | You picked an option; `docker compose up --build` starts |
 | 5 | The look and feel (products with screens) | Lead, before the plan | `design/look-and-feel.html` | You picked a direction by name |
 | 6 | GitHub, when init skipped it | Lead, after your OK | The repository, branches, labels, the board, `"repo"` in `.claude/project.json` | `node scripts/connect-github.mjs --check` says connected |
-| 7 | Environments | Lead, and you for `db-setup.mjs connect` or `managed create` | One project account, every database, each worktree's URLs, `docs/tech/ops/environments.md` | `db-setup.mjs check` is all ok and `reset-check` worked; other places marked pending |
+| 7 | Environments | Lead; you only for `db-setup.mjs connect` when the project uses servers you already have | The database and the cache (local by default), one project account each, every database, each worktree's URLs, `docs/tech/ops/environments.md` | `db-setup.mjs check` is all ok and `reset-check` worked |
 | 8 | The plan approval | You | `"setup": true`, milestone v0.1.0, `CLAUDE.md` filled in | You said "Approved" |
 | 9 | Worktrees and sessions | Lead | One worktree per role with its own `DATABASE_URL`, one session per role filed in the project's group | `node scripts/setup-state.mjs` shows every step done |
 

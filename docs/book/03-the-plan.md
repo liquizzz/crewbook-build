@@ -60,23 +60,11 @@ Every guess carries ⚠️. The function tree later gives the folders, each role
 
 ## 6. The environments
 
-**What it does:** gets the database, the build host and `staging` ready before the first task.
+**What it does:** gets the database, the cache, the build host and `staging` ready before the first task.
 
-**Claude asks you:** which kind of database environment, with its recommendation:
-- **I have an environment:** a PostgreSQL server you already run, on this machine, online or behind NAT. You give its connection string; Crewbook never starts, stops or reconfigures it.
-- **Crewbook creates one for this project:** a server with its own name, port and password kept in the project.
+**Claude does:** by default, starts the database and the cache in the project's own Docker (`node scripts/db-setup.mjs local`), with one account each and passwords you never see; creates every database of the project and writes each worktree's URLs (`create`); checks that the accounts reach them (`check`) and that a reset works on a scratch database made for it (`reset-check`); proposes the build host, the registry and where `staging` runs; writes `docs/tech/ops/environments.md`.
 
-**You run,** in a terminal, the one that fits ([chapter 1](01-setup.md#the-database-environment)):
-
-```bash
-node scripts/db-setup.mjs connect
-```
-
-```bash
-node scripts/db-setup.mjs managed create
-```
-
-**Claude does:** creates every database of the project, all owned by one project account, and writes each worktree's URLs (`db-setup.mjs create`); checks that the account opens each database (`check`) and that a reset works on a scratch database made for it (`reset-check`); proposes the build host, the registry and where `staging` runs; writes `docs/tech/ops/environments.md`. A place it could not check from this machine (a staging server, a build host) is marked as pending.
+**Claude asks you:** nothing for the default. If the project must use servers you already have (a company SQL Server, a shared Redis), say so: you then paste their connection strings in a terminal ([chapter 1](01-setup.md#the-database-and-the-cache)).
 
 **You check:** `node scripts/db-setup.mjs status`. You never see a password.
 

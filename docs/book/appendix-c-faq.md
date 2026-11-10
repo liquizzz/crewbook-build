@@ -44,8 +44,11 @@ The prompts only cover pushes to `main`, tags, releases and workflow runs. Ask t
 
 ## Databases
 
+**Do I need to set up a database?**
+No. By default the database and the cache run in the project's own Docker, set up during setup. Only a project that must use servers you already have needs `connect`.
+
 **Which connection string do I give `connect`?**
-The one the app really reaches, with its SSL options. Behind NAT, the mapped address and port, never the server's own `localhost:5432`. An admin lets Crewbook create the project's account; an account with `CREATEDB` is used as it is.
+The one the app really reaches, with its SSL options. Behind NAT, the mapped address and port. An admin lets Crewbook create the project's account; an account that may already create databases is used as it is. SQL Server takes an ADO.NET string (`Server=host,port;User Id=…;Password=…`) and needs `sqlcmd` on this machine.
 
 **`connect` says the account may not create databases.**
 It needs `CREATEDB`, or an admin that can create logins and databases. Ask the server's owner for one of the two; nothing was stored or changed.
@@ -54,7 +57,7 @@ It needs `CREATEDB`, or an admin that can create logins and databases. Ask the s
 The project account keeps its own password, so the app and the roles keep working. Run `connect` again with the new admin only if this project needs to create accounts or databases with it.
 
 **My project uses the old model (one login per role).**
-It keeps working. To move: back up `staging`, run `node scripts/db-setup.mjs connect` with that server's admin, then `node scripts/db-setup.mjs adopt-legacy`. The databases and their tables move to one project account, the data stays, and the old logins stay until you drop them.
+It keeps working. To move: back up `staging`, run `node scripts/db-setup.mjs connect database` with that server's admin, then `node scripts/db-setup.mjs adopt-legacy`. The databases and their tables move to one project account, the data stays, and the old logins stay until you drop them.
 
 **A role's connection string is missing after I added a worktree.**
 `node scripts/db-setup.mjs env` writes every checkout's URLs again, with no new passwords.

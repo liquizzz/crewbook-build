@@ -33,11 +33,11 @@
 | `roles.mjs` | Shows the roles, sets them at setup, adds one later, creates the worktrees |
 | `new-role-worktree.mjs` | A role's worktree, branch, port and plugins, and its model in the `deepseek` mode |
 | `set-secret.mjs` | You set one secret through hidden input; it goes to `.env.local` in every checkout |
-| `db-setup.mjs` | The project's database environment: `connect` (an existing server, by its connection string) or `managed create` (a server for this project), one project account for every database, `create`, `env`, `check`, `status`, `reset`, `reset-check`, `migrate`, `seed`, `backup`, `restore`, `adopt-legacy`. The owner runs `connect`, `managed` and `admin-url`; nothing prints a password |
-| `pg-client.mjs` | A small PostgreSQL client over a connection string (SSL, SCRAM), so the database scripts need no `psql` and no container |
+| `db-setup.mjs` | The project's database (PostgreSQL or SQL Server) and cache (Redis): `use`, `local` (the default, in the project's own Docker), `connect database|cache` (a server you already have), one project account per service, `create`, `env`, `check`, `status`, `reset`, `reset-check`, `migrate`, `seed`, `backup`, `restore`, `adopt-legacy`. Nothing prints a password |
+| `pg-client.mjs`, `redis-client.mjs`, `mssql-client.mjs`, `service-engines.mjs` | Small clients over a connection string (PostgreSQL, Redis) and SQL Server through `sqlcmd`, behind one interface for `db-setup.mjs` |
 | `setup-state.mjs` | Where `/cb-setup` stands: each step recorded only after its check passes |
 | `connect-github.mjs` | Connects a project made without GitHub: the repo, the branches, labels, Dependabot, the board, where CI runs |
-| `hosts.mjs` | The machine's build host, registry, staging server and other shared services (SQL Server, Redis); `secret <NAME>` for their passwords. PostgreSQL is per project (`db-setup.mjs`) |
+| `hosts.mjs` | The machine's build host, registry and staging server; `secret <NAME>` for their passwords. Databases and caches are per project (`db-setup.mjs`) |
 | `run.mjs` | Runs a version in Docker with one command (`v0.1.0`, `staging`, `dev`, `--source`, `--stop`). Builds an image once per set of files, tags `:dev-<sha>` from the service's own image, migrates the Frontend and staging databases from the image just built, starts `staging` with its own values without printing them |
 | `ci-local.mjs`, `ci-steps.json`, `ci-mode.mjs` | CI on your machine: one run at a time, steps skipped when their files did not change, a PASS reused while valid, `--full` once per milestone; `ci-mode.mjs` switches between `local` and `github` |
 | `model.mjs` | Picks a task's model from its level and signals, records it, moves it up the ladder, switches the project's mode |

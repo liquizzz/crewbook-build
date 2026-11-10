@@ -46,10 +46,12 @@ const CHECKS = {
   environments: () => {
     if (!exists("docs/tech/ops/environments.md")) return "docs/tech/ops/environments.md is missing.";
     if (args.includes("--no-database")) return true;
-    // The environment chosen (existing or managed), the project account in place, the databases created and checked.
-    const db = project.database || {};
-    if (!db.type || !db.account) return "No database environment yet: the owner runs node scripts/db-setup.mjs connect (a server you have) or managed create (one for this project), or pass --no-database.";
-    if (!db.created) return "The databases are not created yet: node scripts/db-setup.mjs create.";
+    // Each service local or existing with its project account, the databases created, everything checked.
+    const svcs = Object.entries(project.services || {}).filter(([, s]) => s && s.engine && s.engine !== "none");
+    if (!svcs.length) return "No database or cache chosen: node scripts/db-setup.mjs use database <postgres|mssql> (and use cache redis), or pass --no-database.";
+    const missing = svcs.filter(([, s]) => !s.account).map(([k]) => k);
+    if (missing.length) return `No project account yet for: ${missing.join(", ")}. node scripts/db-setup.mjs local (the default), or the owner runs connect.`;
+    if (project.services.database && project.services.database.engine !== "none" && !project.services.database.created) return "The databases are not created yet: node scripts/db-setup.mjs create.";
     return quietOk("node", [path.join(scripts, "db-setup.mjs"), "check"]) || "node scripts/db-setup.mjs check failed: fix it before going on.";
   },
   plan: () => project.setup === true || 'The plan is not approved yet ("setup": true in .claude/project.json).',

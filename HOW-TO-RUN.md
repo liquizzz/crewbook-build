@@ -63,7 +63,7 @@ Setup runs in order, each step with a suggestion you can take as it is:
 3. The deployment model and stack: three options with their cost, one recommended; pick one or say "you decide".
 4. The look and feel, when the product has screens: 2-3 named directions; pick one.
 5. GitHub, only if init skipped it.
-6. The database: a server you already have (`node scripts/db-setup.mjs connect`, paste its connection string) or one Crewbook creates for this project (`node scripts/db-setup.mjs managed create`). Either way the project gets one account for all its databases.
+6. The database and the cache: they run in this project's own Docker by default, nothing to answer. If you already have servers for them, tell the Lead; you then paste their connection strings with `node scripts/db-setup.mjs connect database` (or `cache`).
 
 You approve the plan on one page, and the Lead creates every other session. From there the Lead plans each milestone (`/cb-plan`), the sessions build and pass work to each other, and you step in when something waits for you. `/cb-release demo` gives you the milestone to try on `staging`; `/cb-release` publishes it after your OK. `/cb-progress` tells you where the project stands at any time; `/cb-help` lists every command. Set API keys and passwords with `node scripts/set-secret.mjs <NAME>`, never in the chat.
 

@@ -25,6 +25,10 @@ assert.equal(containerUrl("postgresql://u:p@127.0.0.1:5432/db"), "postgresql://u
 assert.equal(containerUrl("postgresql://u:p@[::1]:5432/db"), "postgresql://u:p@host.docker.internal:5432/db");
 assert.equal(containerUrl("postgresql://u:p@db.example.com:5432/db"), "postgresql://u:p@db.example.com:5432/db", "another host stays");
 assert.equal(containerUrl("not a url"), null);
+// A SQL Server ADO.NET string and a Redis URL get the same treatment.
+assert.equal(containerUrl("Server=localhost,51433;Database=d;User Id=u;Password=CHANGE_ME;TrustServerCertificate=True"), "Server=host.docker.internal,51433;Database=d;User Id=u;Password=CHANGE_ME;TrustServerCertificate=True");
+assert.equal(containerUrl("Server=db.example.com,1433;Database=d;User Id=u;Password=CHANGE_ME"), "Server=db.example.com,1433;Database=d;User Id=u;Password=CHANGE_ME");
+assert.equal(containerUrl("redis://u:p@127.0.0.1:56379"), "redis://u:p@host.docker.internal:56379");
 
 // The LAN address people reach this machine on: a 192.168 or 10 address before Docker's and WSL's 172.x ones.
 const nic = (address, internal = false, family = "IPv4") => ({ address, internal, family });

@@ -69,7 +69,7 @@ A task that fails twice on the same wrong reasoning moves one step up the ladder
 
 ## Environments
 
-The project has one database account, and every database belongs to it; each role's URL points at its own database:
+The project has one database account, and every database belongs to it; each role's URL points at its own database. A Redis cache, when the stack has one, gets one account too, limited to the project's keys, and each role its own key prefix:
 
 | Database | Used by |
 |---|---|
@@ -79,7 +79,7 @@ The project has one database account, and every database belongs to it; each rol
 | `<project>_ci_<id>` | Each CI run, created and dropped |
 | `<project>_staging` | The regression and your try of each milestone |
 
-The databases are kept apart by name, with one account; the roles do not get separate logins. The admin connection string, when there is one, stays in the main checkout and never reaches a worktree or the app. `node scripts/db-setup.mjs create` makes the databases and writes each worktree's URLs; `db-setup.mjs check` proves the account opens each one from this machine. The app's containers, a build host and a staging server reach the server by their own route, so they are checked there before they count as ready ([chapter 1](01-setup.md#the-database-environment)).
+The databases are kept apart by name, with one account; the roles do not get separate logins. The admin connection string, when there is one, stays in the main checkout and never reaches a worktree or the app. `node scripts/db-setup.mjs create` makes the databases and writes each worktree's URLs; `db-setup.mjs check` proves the account opens each one from this machine. The app's containers, a build host and a staging server reach the server by their own route, so they are checked there before they count as ready ([chapter 1](01-setup.md#the-database-and-the-cache)).
 
 ## 5. How much runs without you
 

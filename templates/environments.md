@@ -5,15 +5,17 @@ Save as `docs/tech/ops/environments.md`. Written by the Lead at setup (question 
 | Field | Value |
 |---|---|
 | Status | Draft / Ready (every database exists and a reset works) |
-| Database environment | existing (the owner's server) / managed (created for this project) |
-| Project account | <name> (one account owns every database of this project) |
+| Database | PostgreSQL / SQL Server · local (this project's own Docker) / existing (the owner's server) |
+| Cache | Redis / none · local / existing |
+| Project accounts | <name> (one account per service for the whole project) |
 | Machine's hosts | `node scripts/hosts.mjs` |
 
 ## Servers
 
 | What | Where | Shared with other projects |
 |---|---|---|
-| Database server | <engine version, host:port as the app reaches it; behind NAT the mapped address> | managed: other projects may connect to it; existing: owned by <who> |
+| Database server | <engine version, host:port as the app reaches it> | local: this project only; existing: owned by <who> |
+| Cache server | <Redis version, host:port> | local: this project only; existing: owned by <who>; keys `<project>:*` |
 | Build host | <this machine / ssh:user@host, path> | yes |
 | Registry | <ghcr.io/owner / host:port> | yes |
 | Staging | <this machine / ssh:user@host, url> | |
@@ -51,7 +53,8 @@ At most 10,000 rows per table; every case the tests need, related rows kept toge
 
 | Command | Does |
 |---|---|
-| `connect` / `managed create` | the environment, by the owner in a terminal |
+| `local` | the database and the cache in this project's own Docker (the default) |
+| `connect database` / `connect cache` | a server the owner already has, by the owner in a terminal |
 | `create` | every database above, owned by the project account |
 | `check` / `reset-check` | the account opens each database / a reset works on a scratch database |
 | `migrate <db>` | the schema up to date |

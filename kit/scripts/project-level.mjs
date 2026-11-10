@@ -26,7 +26,7 @@ export const PORTS = { uiux: 5100, dev: 5201, frontend: 5202, test: 5300 };
 export const ROLE_DATABASE_KEY = { dev: "DEV_DATABASE_URL", frontend: "FRONTEND_DATABASE_URL", test: "TEST_DATABASE_URL" };
 // Secrets that stay in the main checkout's .env.local only, never copied to a worktree: the database admin, the managed
 // server's password and the project account's own URL (scripts/db-setup.mjs). Worktrees get the per-database URLs.
-export const MAIN_ONLY_KEYS = ["DB_ADMIN_URL", "DB_PROJECT_URL", "DB_MANAGED_ADMIN_PASSWORD"];
+export const MAIN_ONLY_KEYS = ["DATABASE_ADMIN_URL", "DATABASE_PROJECT_URL", "DATABASE_LOCAL_PASSWORD", "CACHE_ADMIN_URL", "CACHE_PROJECT_URL", "CACHE_LOCAL_PASSWORD", "DB_ADMIN_URL", "DB_PROJECT_URL", "DB_MANAGED_ADMIN_PASSWORD"];
 // Roles the kit no longer has, and who does their work now (their worktrees are kept until the owner removes them).
 export const RETIRED_ROLES = {
   po: "the Lead (DEC-074)",
@@ -198,6 +198,9 @@ export function serviceImage(configJson, name, tag) {
 // A connection string as a container must use it: this machine's own addresses (localhost, 127.0.0.1, ::1) become
 // host.docker.internal. null when it is not a URL. Never log the result: it holds the password.
 export function containerUrl(value) {
+  if (/(^|;)\s*(Server|Data Source)\s*=/i.test(String(value)) && !/^[a-z]+:\/\//i.test(String(value))) {
+    return String(value).replace(/((?:Server|Data Source)\s*=\s*)(tcp:)?(localhost|127\.0\.0\.1)/i, "$1$2host.docker.internal");
+  }
   try {
     const u = new URL(value);
     if (["localhost", "127.0.0.1", "[::1]", "::1"].includes(u.hostname)) u.hostname = "host.docker.internal";

@@ -63,7 +63,7 @@ Read reports and PRs on GitHub from the web or your phone, and drive the session
 
 **You do,** on the new machine. Secrets and `.env.local` never travel in git, and a server's data does not travel with the code, so they are set up again there:
 1. Clone the repo, run `node scripts/new-role-worktree.mjs lead`, open the Lead there and ask it to "recreate the worktrees".
-2. The database environment. For an existing server, run `node scripts/db-setup.mjs connect` and paste the same connection string (from where you keep it, never from git). For a server the old machine created, either keep it running there and connect to it as an existing server, or run `node scripts/db-setup.mjs managed create` here for a new one. Then `node scripts/db-setup.mjs create`: the project's databases and each worktree's URLs. `db-setup.mjs check` confirms them.
+2. The database and the cache. Local ones: `node scripts/db-setup.mjs local` starts new ones here with new passwords. Existing servers: `node scripts/db-setup.mjs connect database` (and `cache`) with the same connection strings, from where you keep them, never from git. Then `node scripts/db-setup.mjs create`: the databases and each worktree's URLs. `db-setup.mjs check` confirms them.
 3. Bring `staging` back: copy the backup file over and run `node scripts/db-setup.mjs restore <file> <project>_staging`. The other databases come back from their seed: ask the Lead to reset them.
 4. `node scripts/set-secret.mjs <NAME>` for each other secret on the list (API keys and the like).
 

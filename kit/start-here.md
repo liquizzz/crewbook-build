@@ -17,7 +17,7 @@ Open a new Claude Code session in `{{lead}}`, name it "{{name}} - Lead" and type
 3. **Deployment model and stack.** Three architectures with their stack and cost, one recommended. Pick one, ask for a change, or say "you decide".
 4. **Look and feel,** when the product has screens: 2-3 named directions on one page. Pick one by its name.
 5. **GitHub,** only if the project is not connected yet: the repository name and whether it is private.
-6. **Environments.** The database: a server you already have (`node scripts/db-setup.mjs connect`, paste its connection string; online, on this machine or behind NAT) or one Crewbook creates for this project (`node scripts/db-setup.mjs managed create`). The project gets one account for all its databases. Then the build host and `staging`.
+6. **Environments.** The database and the cache run in this project's own Docker, set up for you. Only if you already have servers (a company database or Redis), tell the Lead: you then paste their connection strings with `node scripts/db-setup.mjs connect database` (or `cache`). Then the build host and `staging`.
 
 Then you approve **the plan** on one page, and the Lead creates every other worktree and session (Roles: {{roles}}).
 

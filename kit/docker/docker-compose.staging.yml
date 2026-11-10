@@ -6,6 +6,7 @@
 #   DATABASE_URL   STAGING_DATABASE_URL from .env.local, with localhost turned into host.docker.internal
 #   COOKIE_SECURE  false: staging runs on plain http on the local network
 #   PUBLIC_URL     the address people on the network open (links in invitation and password e-mails)
+#   REDIS_URL, REDIS_PREFIX   the project's Redis account and the staging key prefix, when the project has a cache
 # The service is the backend image ("backend" in .claude/project.json, else api, else app). Rename it here when the
 # backend has another name, and remove a key the app does not read.
 services:
@@ -18,3 +19,5 @@ services:
       DATABASE_URL:
       COOKIE_SECURE:
       PUBLIC_URL:
+      REDIS_URL:
+      REDIS_PREFIX:

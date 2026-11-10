@@ -16,8 +16,8 @@ if (!/^[A-Z][A-Z0-9_]*$/.test(name)) {
   console.error("Usage: node scripts/set-secret.mjs <NAME>   (capital letters, digits and _, for example GEMINI_API_KEY)");
   process.exit(1);
 }
-if (["DB_ADMIN_URL", "DB_PROJECT_URL", "DB_MANAGED_ADMIN_PASSWORD"].includes(name) || /_DATABASE_URL$/.test(name)) {
-  console.error("Database connection strings are set with node scripts/db-setup.mjs connect (it checks them, keeps the admin in the main checkout only and writes each role's URL).");
+if (/^(DB|DATABASE|CACHE)_/.test(name) || /_DATABASE_URL$/.test(name) || /^REDIS_/.test(name)) {
+  console.error("Database and cache connection strings are set with node scripts/db-setup.mjs (local, or connect): it checks them, keeps the admin in the main checkout only and writes each role's URL.");
   process.exit(1);
 }
 if (name === "PORT") {

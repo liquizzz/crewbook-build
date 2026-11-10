@@ -300,9 +300,9 @@ try {
   envRun("hosts.mjs", "set", "registry", "192.168.1.10:5000");
   envRun("hosts.mjs", "set", "staging", "ssh:deploy@192.168.1.20", "/srv/tiny-todo", "http://192.168.1.20:3000");
   const shown = envRun("hosts.mjs").stdout;
-  const sharedUp = envRun("hosts.mjs", "shared", "up", "sqlserver-2022", "redis-7", "--dry-run").stdout;
+  const sharedUp = envRun("hosts.mjs", "shared", "up", "registry", "--dry-run").stdout;
   const pgShared = envRun("hosts.mjs", "shared", "up", "postgres-17", "--dry-run");
-  check("hosts: set once for every project, shared services by profile, no password in hosts.json", shown.includes("192.168.1.10:5000") && shown.includes("deploy@192.168.1.20") && sharedUp.includes("--profile sqlserver-2022 --profile redis-7") && pgShared.status === 1 && pgShared.stderr.includes("db-setup.mjs connect") && sharedUp.includes("up -d --wait") && !/password/i.test(fs.readFileSync(path.join(crewHome, "hosts.json"), "utf8")) && fs.existsSync(path.join(a, "docker", "shared-compose.yml")));
+  check("hosts: set once for every project, shared services by profile, no password in hosts.json", shown.includes("192.168.1.10:5000") && shown.includes("deploy@192.168.1.20") && sharedUp.includes("--profile registry") && pgShared.status === 1 && pgShared.stderr.includes("db-setup.mjs local") && sharedUp.includes("up -d --wait") && !/password/i.test(fs.readFileSync(path.join(crewHome, "hosts.json"), "utf8")) && fs.existsSync(path.join(a, "docker", "shared-compose.yml")));
   check("relay: every report goes through the Lead, stalled sessions found, approvals asked alone", read(a, "CLAUDE.md").includes("**Everything goes through the Lead.**") && read(a, "CLAUDE.md").includes("**Stalled sessions.**") && read(a, ".claude", "commands", "cb-progress.md").includes("stalled sessions") && read(a, ".claude", "commands", "cb-setup.md").includes("counts as the plan approval only when it says so") && read(a, ".claude", "commands", "cb-setup.md").includes("in your first message to the owner, so they answer all three in one reply") && read(a, ".claude", "commands", "cb-setup.md").includes("never a separate sign-off") && !/approve, or say what to change. Put/.test(read(a, ".claude", "commands", "cb-setup.md")));
   // Setup steps: recorded only after their check, in order; a file alone does not count.
   const st = (...x) => spawnSync("node", [path.join("scripts", "setup-state.mjs"), ...x], { cwd: wt(a, "lead"), encoding: "utf8" });
@@ -327,7 +327,7 @@ try {
   const ghCheck = spawnSync("node", [path.join("scripts", "connect-github.mjs"), "--check"], { cwd: wt(a, "lead"), encoding: "utf8" });
   check("connect-github: a project made with GitHub none says it is not connected and how to connect", ghCheck.status === 1 && ghCheck.stdout.includes("node scripts/connect-github.mjs <owner/name>"));
   const dbPlan = envRun("db-setup.mjs", "--plan").stdout;
-  check("db-setup: one project account for every database of the project, CI included", dbPlan.includes("Project account: tiny_todo") && dbPlan.includes("tiny_todo_dev -> DEV_DATABASE_URL") && dbPlan.includes("tiny_todo_staging -> STAGING_DATABASE_URL") && dbPlan.includes("tiny_todo_ci_*"));
+  check("db-setup: one project account for every database of the project, CI included", dbPlan.includes("project account tiny_todo") && dbPlan.includes("tiny_todo_dev -> DEV_DATABASE_URL") && dbPlan.includes("tiny_todo_staging -> STAGING_DATABASE_URL") && dbPlan.includes("tiny_todo_ci_*"));
   const leadProject = path.join(wt(a, "lead"), ".claude", "project.json");
   const leadProjectText = fs.readFileSync(leadProject, "utf8");
   fs.writeFileSync(leadProject, JSON.stringify({ ...JSON.parse(leadProjectText), buildHost: "ssh:ci@192.168.1.10", images: [{ name: "api", paths: ["api"] }, { name: "web", paths: ["web"] }] }, null, 2));

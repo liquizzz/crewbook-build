@@ -60,7 +60,7 @@ const env = (tag) => ({ ...process.env, ...(tag ? { IMAGE_TAG: tag } : {}), ...(
 
 // Staging's own values for the backend container (docker-compose.staging.yml lists the keys without a value). They hold
 // the staging database password: kept in this process, passed to docker compose only, never printed.
-const APP_KEYS = ["DATABASE_URL", "COOKIE_SECURE", "PUBLIC_URL"];
+const APP_KEYS = ["DATABASE_URL", "COOKIE_SECURE", "PUBLIC_URL", "REDIS_URL", "REDIS_PREFIX"];
 const WEB_PORT = process.env.WEB_PORT || String(project.webPort || PORT);
 let stagingVars;
 const stagingEnv = () => {
@@ -77,7 +77,11 @@ const stagingEnv = () => {
   if (!url) step("no STAGING_DATABASE_URL in .env.local: staging starts without a database (the owner creates them once: node scripts/db-setup.mjs create)");
   // Plain http on the local network: the session cookie must not require https. STAGING_PUBLIC_URL overrides the address.
   const publicUrl = process.env.STAGING_PUBLIC_URL || `http://${lanAddress(os.networkInterfaces()) || "localhost"}:${WEB_PORT}`;
-  return (stagingVars = { ...(url ? { DATABASE_URL: url } : {}), COOKIE_SECURE: "false", PUBLIC_URL: publicUrl.replace(/\/+$/, "") });
+  // The cache, when the project has one: its account as the container reaches it, and the staging key prefix.
+  const cacheLine = [...file.matchAll(/^\s*(?:export\s+)?REDIS_URL=(.*)$/gm)].pop();
+  const prefixLine = [...file.matchAll(/^\s*(?:export\s+)?STAGING_REDIS_PREFIX=(.*)$/gm)].pop();
+  const cache = cacheLine && cacheLine[1].trim() ? { REDIS_URL: containerUrl(cacheLine[1].trim()) || cacheLine[1].trim(), REDIS_PREFIX: prefixLine ? prefixLine[1].trim() : "" } : {};
+  return (stagingVars = { ...(url ? { DATABASE_URL: url } : {}), ...cache, COOKIE_SECURE: "false", PUBLIC_URL: publicUrl.replace(/\/+$/, "") });
 };
 // The environment of a docker compose command: only `up` of staging gets staging's values; other versions never get
 // them from the shell, and a build, pull or push of staging runs without .env.local.

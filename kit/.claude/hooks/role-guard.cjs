@@ -338,8 +338,8 @@ function checkCommand(command, role, cwd) {
     const dbAt = words.findIndex((w) => /(^|[\\/])db-setup\.mjs$/.test(w));
     if (dbAt >= 0) {
       const sub = words[dbAt + 1];
-      const owner = ["connect", "admin-url", "adopt-legacy"].includes(sub) || (sub === "managed" && words[dbAt + 2] !== "status");
-      if (owner) return { block: `"db-setup.mjs ${sub}${sub === "managed" ? ` ${words[dbAt + 2] || ""}` : ""}" is run by the owner in a terminal (it takes a secret or changes a server). Give the owner the command.` };
+      const owner = ["connect", "adopt-legacy"].includes(sub) || (sub === "local" && words[dbAt + 2] === "destroy");
+      if (owner) return { block: `"db-setup.mjs ${sub}${sub === "local" ? " destroy" : ""}" is run by the owner in a terminal (it takes a secret, moves ownership or deletes data). Give the owner the command.` };
     }
     if (words.some((w) => /(^|[\\/])deploy\.mjs$/.test(w)) && words.includes("production")) {
       return { block: "Production is deployed by the owner in a terminal (node scripts/deploy.mjs production <tag> --owner). Give the owner the command." };

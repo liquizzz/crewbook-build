@@ -393,8 +393,8 @@ if (withPlugins.length) out.notes.push(`Plugins per role set in the settings.loc
 // The old database model (one login per role on the machine's shared server): say so; never read, move or change anything.
 {
   const envKeys = fs.existsSync(path.join(main, ".env.local")) ? fs.readFileSync(path.join(main, ".env.local"), "utf8").split(/\r?\n/).map((l) => l.split("=")[0]) : [];
-  if (!project.database && (project.db || (envKeys.includes("DEV_DATABASE_URL") && !envKeys.includes("DB_PROJECT_URL")))) {
-    out.notes.push("Databases: this project uses the old model (one login per role on the machine's shared server). It keeps working. To move to one project account: back up staging, then the owner runs node scripts/db-setup.mjs connect with that server's admin and node scripts/db-setup.mjs adopt-legacy (see /cb-env). Nothing was changed.");
+  if (!project.services && !project.database && (project.db || (envKeys.includes("DEV_DATABASE_URL") && !envKeys.includes("DB_PROJECT_URL")))) {
+    out.notes.push("Databases: this project uses the old model (one login per role on the machine's shared server). It keeps working. To move to one project account: back up staging, then the owner runs node scripts/db-setup.mjs connect database with that server's admin and node scripts/db-setup.mjs adopt-legacy (see /cb-env). Nothing was changed.");
   }
 }
 const retired = Object.keys(RETIRED_ROLES).filter((r) => fs.existsSync(worktreePath(main, r)));

@@ -8,8 +8,8 @@
 //   node scripts/hosts.mjs set registry <host:port|ghcr.io/owner|none>
 //   node scripts/hosts.mjs set staging <ssh:user@host> [path] [url]  the server staging runs on (/cb-deploy staging)
 //   node scripts/hosts.mjs shared <up|down> <service...>   start or stop shared services on this machine:
-//                                                          sqlserver-2022, redis-7, registry. PostgreSQL is per project:
-//                                                          node scripts/db-setup.mjs (connect, or managed create)
+//                                                          registry. Databases and caches are per project:
+//                                                          node scripts/db-setup.mjs (local, or connect)
 //   node scripts/hosts.mjs secret <NAME>                   a password for the shared services (hidden, never printed;
 //                                                          )
 //   --dry-run                                              print what would run
@@ -18,8 +18,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { crewbookHome, mainCheckout, readHosts } from "./project-level.mjs";
 
-// PostgreSQL is no longer a machine-wide service: each project connects to a server or creates its own.
-const DB_MOVED = "PostgreSQL is set up per project now: node scripts/db-setup.mjs connect (a server you have) or node scripts/db-setup.mjs managed create (a server for this project). A postgres-17 already running keeps running; connect to it as an existing server.";
+// Databases and caches are no longer machine-wide services: each project runs its own, or connects to yours.
+const DB_MOVED = "Databases and caches are set up per project now: node scripts/db-setup.mjs local (in the project's own Docker) or node scripts/db-setup.mjs connect database|cache (a server you already have). A service already running keeps running; connect to it as an existing server.";
 const args = process.argv.slice(2).filter((a) => a !== "--dry-run");
 const dry = process.argv.includes("--dry-run");
 const home = crewbookHome();
@@ -66,7 +66,7 @@ if (cmd === "set") {
 if (cmd === "add" && what === "db") fail(DB_MOVED);
 
 // The password each shared service needs, from ~/.crewbook/.env. It is set when the service's data is first created;
-const NEEDS = { "sqlserver-2022": "MSSQL_SA_PASSWORD" };
+const NEEDS = {};
 const inEnvFile = (name) => {
   try {
     return fs.readFileSync(path.join(home, ".env"), "utf8").split(/\r?\n/).some((l) => l.startsWith(`${name}=`) && l.length > name.length + 1);
@@ -90,8 +90,8 @@ if (cmd === "shared" && ["up", "down"].includes(what)) {
   if (/:\?run node scripts\/hosts\.mjs secret/.test(copy) && !dry) {
     fs.writeFileSync(sharedFile, copy.replace(/\$\{([A-Z_]+):\?run node scripts\/hosts\.mjs secret [A-Z_]+\}/g, "${$1:-}"));
   }
-  if (what === "up" && !rest.length) fail("Name the services to start: sqlserver-2022, redis-7, registry.");
-  if (rest.some((x) => /^postgres/.test(x))) fail(DB_MOVED);
+  if (what === "up" && !rest.length) fail("Name the service to start: registry.");
+  if (rest.some((x) => /^(postgres|sqlserver|redis)/.test(x))) fail(DB_MOVED);
   // Each service's password, checked only for the services being started (the compose file has no ":?" check).
   const missing = what === "up" ? rest.map((s) => NEEDS[s]).filter((v) => v && !inEnvFile(v)) : [];
   if (missing.length && dry) console.log(missing.map((v) => `Needs ${v} (node scripts/hosts.mjs secret ${v}) before it starts.`).join("\n"));
@@ -104,7 +104,7 @@ if (cmd === "shared" && ["up", "down"].includes(what)) {
   if (!fs.existsSync(path.join(home, ".env"))) fs.writeFileSync(path.join(home, ".env"), "");
   const r = spawnSync("docker", a, { stdio: "inherit" });
   if (r.status === 0 && what === "up") {
-    const ports = { "sqlserver-2022": ["sqlserver", "2022", "localhost:1433"], "redis-7": ["redis", "7", "localhost:6379"] };
+    const ports = {};
     const dbs = { ...(hosts.databases || {}) };
     for (const s of rest) if (ports[s] && !dbs[s]) dbs[s] = { engine: ports[s][0], version: ports[s][1], host: ports[s][2] };
     const next = { ...hosts, databases: dbs };
