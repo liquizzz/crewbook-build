@@ -38,10 +38,11 @@ flowchart LR
 | | |
 |---|---|
 | A ready project in one command | Branches, the Lead's worktree, a GitHub repo with labels and a kanban board, CI (on GitHub, or on your machine for free with a private repo), Docker, the plugins, and a `START-HERE.md` with every next step |
+| A database with nothing to set up | PostgreSQL or SQL Server, and Redis when the stack needs it, run in the project's own Docker with passwords you never see. A server you already have works too: paste its connection string once. One account for the project, and each role works on its own database |
 | A team split by layer | The Lead and the Dev always; UI/UX, Frontend and Test when the project needs them, added later with `/cb-add-role`. Each role in its own worktree, on its own branch, inside its own folders |
 | A guard on every command | One hook checks every command, read and edit in every session and subagent: only your own branch, only the Lead merges, no skipped checks, no reading database backups, no reading `.env` files or dumping the environment, production only by you |
 | Checks sized to the risk | Four change levels, from a text fix (CI and a look) to core code (tests by reach, a code review and a security review). Reviews and CI are tied to the commit and reused while still valid |
-| Lower cost, measured | A model per task, from Haiku to Opus, climbing one step only when stuck; sessions cleared when a phase ends; one database server per machine for every project; a weekly report of where the tokens went |
+| Lower cost, measured | A model per task, from Haiku to Opus, climbing one step only when stuck; sessions cleared when a phase ends; CI on your own machine when the repo is private; a weekly report of where the tokens went |
 | Records a client can follow | Change requests with the client's approval and price, decisions with the options rejected, a requirements document kept current, a handover for each release, and the chain from any behaviour back to the request that caused it |
 | Updates that keep your work | `/cb-update` brings the newest kit into a running project through a PR you approve; your files, rules and decisions stay |
 
