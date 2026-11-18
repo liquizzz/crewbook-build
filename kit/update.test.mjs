@@ -128,7 +128,8 @@ try {
   check("CLAUDE.md: own section and table row kept", claude.includes("## Client notes\nThe client reviews on Fridays.") && claude.includes("| Deploy to the client's server |"));
   check("CLAUDE.md: kit rules are the new ones, the Roles line from the project", claude.includes("- **Opening sessions:**") && /^- Roles: Lead, Dev, Frontend\./m.test(claude));
   const merged = JSON.parse(read(lead, ".claude/settings.json"));
-  check("settings: own plugin, permission and hook kept", merged.enabledPlugins["frontend-design@claude-plugins-official"] === true && merged.permissions.allow.includes("Bash(uv *)") && merged.hooks.PostToolUse?.[0].hooks[0].command === "node own-hook.cjs");
+  check("settings: own plugin, permission and hook kept", merged.enabledPlugins["frontend-design@claude-plugins-official"] === true && merged.permissions.allow.includes("Bash(uv *)") && merged.hooks.PostToolUse?.some((g) => g.hooks[0].command === "node own-hook.cjs"));
+  check("settings: the clear guard arrives with an update", JSON.stringify(merged.hooks.PostToolUse).includes("clear-guard.cjs") && JSON.stringify(merged.hooks.PreToolUse).includes("clear-guard.cjs"));
   check("settings: a plugin the kit turns off stays on when the project turned it on", merged.enabledPlugins["rampstack-seo@anthropic-plugin-directory"] === true);
   check("settings: claude-mem moves from every role to the Lead", merged.enabledPlugins["claude-mem@thedotmack"] === false && run.out.includes("claude-mem@thedotmack is now off"));
   check("settings: kit hooks still there", JSON.stringify(merged.hooks.PreToolUse).includes("role-guard.cjs"));

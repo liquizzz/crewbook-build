@@ -82,6 +82,7 @@ try {
   check("session-start: lead gets role, skills and recovery", leadReminder.includes("you are the lead session") && leadReminder.includes("superpowers:writing-plans") && leadReminder.includes("The AI understands") && leadReminder.includes("Recovery"));
   check("session-start: main checkout is told to use a worktree", hook(a).includes("has no role"));
   check("session-start: registered in settings", read(a, ".claude", "settings.json").includes("session-start.cjs"));
+  check("clear guard: installed and registered", fs.existsSync(path.join(a, ".claude", "hooks", "clear-guard.cjs")) && read(a, ".claude", "settings.json").includes("clear-guard.cjs"));
   // A UI/UX worktree made before setup is told to wait; after setup it works. A retired role is told to stop.
   node([path.join("scripts", "new-role-worktree.mjs"), "uiux"], { cwd: wt(a, "lead") });
   const uiWaits = hook(wt(a, "uiux"));

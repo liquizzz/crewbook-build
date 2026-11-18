@@ -26,6 +26,8 @@ jobs:
           git config --global init.defaultBranch main
       - name: role-guard hook
         run: node kit/.claude/hooks/role-guard.test.cjs
+      - name: clear-guard hook
+        run: node kit/.claude/hooks/clear-guard.test.cjs
       - name: secret check
         run: node kit/hooks/pre-commit.test.mjs
       - name: release script

@@ -10,6 +10,7 @@
 | `.claude/roles/<role>.md` | One file per role (`lead`, `dev`, `uiux`, `frontend`, `test`): what it owns, how it works, what it must not do, when it asks, how it recovers |
 | `.claude/role` (per worktree, not committed) | The worktree's role, read by the hooks |
 | `.claude/hooks/role-guard.cjs` | Runs before every command, file read, search and edit, in every session and subagent: pushes, merges, paths, backups, `.env` files and environment dumps, production deploys ([chapter 2](02-the-team.md#3-the-guard)). It sees through wrappers and nested shells (`rtk`, `env`, `bash -c`, `powershell -Command`) and refuses encoded PowerShell |
+| `.claude/hooks/clear-guard.cjs` | After a merge, stops the Lead's first message to each session it has not cleared; the same message sent again goes through ([chapter 6](06-continuity.md#2-fresh-context-by-phase)) |
 | `.claude/hooks/session-start.cjs` | Tells a starting session its role, its recovery steps, its skills, and warns when it runs another model than its task's |
 | `.claude/ownership.json` | Which folders each role may edit; the longer path wins (Frontend's views inside the Dev's `src/`) |
 | `.claude/settings.json` | Registers the hooks; shared permissions; the plugins every role shares ([Plugins](#plugins)) |

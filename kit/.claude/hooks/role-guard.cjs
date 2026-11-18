@@ -439,6 +439,12 @@ function main() {
     process.stderr.write(`[role-guard] ${result.block}\n`);
     process.exit(2);
   }
+  // A merge makes the role's session due for a clear before its next message (clear-guard.cjs).
+  if (role === "lead" && found.root && (tool === "Bash" || tool === "PowerShell") && /\bgh(\.exe)?\s+pr\s+merge\b/.test(ti.command || "")) {
+    try {
+      require("./clear-guard.cjs").noteMerge(found.root);
+    } catch {}
+  }
   if (result && result.ask) {
     process.stdout.write(JSON.stringify({
       hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "ask", permissionDecisionReason: `[role-guard] ${result.ask}` },

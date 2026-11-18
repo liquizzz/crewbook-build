@@ -201,7 +201,7 @@ if (args[0] === "task") {
   if (!fs.existsSync(worktreePath(root, role))) fail(`${roleTitle(role)} has no worktree yet.`);
   const task = { issue: Number(String(issue).replace("#", "")), model, effort, steps: [] };
   fs.writeFileSync(taskFile(role), JSON.stringify(task, null, 2) + "\n");
-  console.log(`${roleTitle(role)} · #${task.issue}: ${model} ${effort} (${MODEL_IDS[model]}). Set it on the session (set_session_model, set_session_effort) before you send the task.`);
+  console.log(`${roleTitle(role)} · #${task.issue}: ${model} ${effort} (${MODEL_IDS[model]}). If this role's last PR is merged, clear its session first (clear_session). Set the model on the session (set_session_model, set_session_effort) before you send the task.`);
   process.exit(0);
 }
 

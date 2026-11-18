@@ -60,6 +60,26 @@
             "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/role-guard.cjs\""
           }
         ]
+      },
+      {
+        "matcher": "SendMessage|mcp__ccd_session_mgmt__send_message",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/clear-guard.cjs\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__ccd_session_mgmt__clear_session",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/clear-guard.cjs\""
+          }
+        ]
       }
     ]
   },

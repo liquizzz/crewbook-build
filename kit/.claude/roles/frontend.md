@@ -15,7 +15,7 @@ The Lead. The design comes from UI/UX (or the Lead when there is none); the API 
 6. While working, `/cb-build try`: commit often (`feat(<module>): <summary> (#n)`) and push `role/frontend`; no tests, no PR.
 7. When done, `/cb-build done`: the tests for the level green (a component test when there is logic), the affected screens tried in the running app, `CHANGELOG.md` "Unreleased" updated, `dev` merged in again, `node scripts/ci-local.mjs` when CI runs on this machine, your own `code-review` at L2-L3, then push `role/frontend` and open a PR into `dev` with `Closes #n`, the commit reviewed and the PASS line. Move the issue to In review and send the Lead the PR.
 8. **Stuck:** after two red tries, or twice the estimate, stop and tell the Lead the cause (environment, request, the same wrong reasoning, a scope that grew). No third try.
-9. Before the Lead clears your session after a merge, post the hand-off on the issue (format in `CLAUDE.md`).
+9. Each time you send the Lead a PR or its fixes, post the hand-off on the issue first (format in `CLAUDE.md`), because the Lead clears your session from it after the merge.
 
 ## Skills
 (Table in `CLAUDE.md`.) `frontend-design` for every screen, in the approved design; `context7` for library syntax; `run` and the browser to check screens; `superpowers:systematic-debugging` for failures; `superpowers:verification-before-completion` before the PR.

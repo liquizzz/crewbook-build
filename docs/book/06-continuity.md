@@ -25,9 +25,9 @@ A long session pays for its whole history on every call, so the kit clears sessi
 | Dev, Frontend | After each merged PR, once the hand-off is on the issue |
 | Test | When a test round ends and its report is written |
 | UI/UX | After a design package is approved and its notes are saved |
-| Lead | At the end of a big phase (the plan approved, a milestone accepted, a release out), after writing where things stand; `/compact` naming what to keep when a phase is still open but the context is full of noise |
+| Lead | At the end of a big phase (the first tasks sent after the plan approval, a milestone accepted, a release out), after writing where things stand; `/compact` naming what to keep when a phase is still open but the context is full of noise |
 
-The Lead clears the other sessions itself. A session with a PR in review, a retest waiting or work not pushed is never cleared. Switching a task's model is never a reason to clear.
+The Lead clears the other sessions itself, from the hand-off each role posts when it sends a PR. After a merge, a hook stops the Lead's first message to a session it has not cleared; sending the message again goes through, for a role with other work. The app refuses to clear a session that is open on screen, pinned or serving Remote Control, and then the Lead asks you to type `/clear` there. A session with a PR in review, a retest waiting or work not pushed is never cleared. Switching a task's model is never a reason to clear.
 
 ## 3. A session that stopped
 
